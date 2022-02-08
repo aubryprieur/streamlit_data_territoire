@@ -4,6 +4,6 @@ pandas==1.2.3
 streamlit==0.79.0
 altair
 geopandas
-requests==0.13.19
+requests==2.27.1
 json
 folium==0.12.1
