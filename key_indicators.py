@@ -5,7 +5,7 @@ import altair as alt
 import geopandas as gpd
 import requests
 import json # library to handle JSON files
-from streamlit_folium import folium_static
+# from streamlit_folium import folium_static
 import folium # map rendering library
 
 st.set_page_config(layout ="wide")
