@@ -1128,7 +1128,8 @@ st.line_chart(df_glob_remplacement_transposed)
 
 
 
-st.title('III.FAMILLES MONOPARENTALES')
+st.title('III.FAMILLES')
+st.header('1.Part des familles monoparentales')
 st.subheader("a.Comparaison sur une année")
 # Commune
 def part_fam_mono_com(fichier, code_commune, annee):
@@ -1368,27 +1369,127 @@ st.table(df_glob_fam_monop)
 df_glob_fam_monop_transposed = df_glob_fam_monop.T
 st.line_chart(df_glob_fam_monop_transposed)
 
+st.header('2.Part des familles nombreuses')
+st.subheader("a.Comparaison sur une année")
+st.caption("Une famille est dite nombreuse lorsqu'elle comprend trois enfants ou plus - définition INSEE")
+# Commune
+def part_fam_nombreuses_com(fichier, code_commune, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, encoding= 'unicode_escape', sep = ';')
+    year = annee[-2:]
+    df_ville = df.loc[df["COM"]==code_commune,]
+    nom_ville = df_ville.loc[df["COM"]==code_commune, 'COM']
+    familles = df_ville.loc[:, 'C'+ year + '_FAM'].astype(float).sum(axis = 0, skipna = True)
+    familles_nombreuses = (df_ville.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (df_ville.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
+    part_fam_nombreuses = round((familles_nombreuses / familles)*100,2)
+    df_Part_fam_nombreuses = pd.DataFrame(data=part_fam_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_commune])
+    return df_Part_fam_nombreuses
+indice_fam_nombreuses_com = part_fam_nombreuses_com("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_commune, select_annee)
 
-st.title("Test carte")
-#json1 = f"lille.geojson"
-# data_geo = json.load(open('lille.geojson'))
-# st.write(data_geo)
+# EPCI
+def part_fam_nombreuses_epci(fichier, epci, annee):
+    epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "MODIF_IRIS": str,"COM": str, "LAB_IRIS": str, "DEP": str, "UU2010": str, "GRD_QUART": str}, encoding= 'unicode_escape', sep = ';')
+    year = annee[-2:]
+    df_epci_com = pd.merge(df[['COM', 'C' + year + '_FAM', 'C' + year + '_NE24F3', 'C' + year + '_NE24F4P']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
+    df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM','C'+ year +'_FAM' , 'C'+ year + '_NE24F3' , 'C'+ year + '_NE24F4P']]
+    familles = df_epci.loc[:, 'C'+ year + '_FAM'].sum(axis = 0, skipna = True)
+    familles_nombreuses = (df_epci.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (df_epci.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
+    part_familles_nombreuses = round((familles_nombreuses / familles)*100,2)
+    df_part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_epci])
+    return df_part_familles_nombreuses
+indice_fam_nombreuses_epci = part_fam_nombreuses_epci("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_epci,select_annee)
 
-# m = folium.Map(location=[46.227638,2.213749], tiles='CartoDB positron', name="Light Map",
-#                zoom_start=5, attr="My Data attribution")
 
-# folium.Choropleth(
-#     geo_data=json1,
-#     name="choropleth",
-#     data=india_covid_data,
-#     columns=["state_code",choice_selected],
-#     key_on="feature.properties.state_code",
-#     fill_color="YlOrRd",
-#     fill_opacity=0.7,
-#     line_opacity=.1,
-#     legend_name=choice_selected
-# ).add_to(m)
-# folium.features.GeoJson('states_india.geojson',
-#                         name="States", popup=folium.features.GeoJsonPopup(fields=["st_nm"])).add_to(m)
+# Département
+def part_fam_nombreuses_departement_M2017(fichier, departement, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape',sep = ';')
+    year = annee[-2:]
+    df_departement = df.loc[df["DEP"]==departement, 'C'+ year +'_FAM' : 'C'+ year + '_NE24F4P']
+    familles = df_departement.loc[:, 'C'+ year + '_FAM']
+    familles_nombreuses = (df_departement.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (df_departement.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
+    df_familles = pd.DataFrame(data=familles)
+    df_familles_nombreuses = pd.DataFrame(data=familles_nombreuses)
+    Somme_familles = df_familles.sum(axis = 0, skipna = True)
+    Somme_familles_nombreuses = df_familles_nombreuses.sum(axis = 0, skipna = True)
+    val_familles = Somme_familles.values[0]
+    val_familles_nombreuses = Somme_familles_nombreuses.values[0]
+    part_familles_nombreuses = round((val_familles_nombreuses / val_familles)*100,2)
+    df_Part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_departement])
+    return df_Part_familles_nombreuses
 
-# folium_static(m)
+def part_fam_nombreuses_departement_P2017(fichier, departement, annee):
+    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str}, encoding= 'unicode_escape',sep = ',')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_dpt = pd.merge(df[['COM', 'C' + year +'_FAM', 'C' + year + '_NE24F3', 'C' + year + '_NE24F4P']], communes_select[['COM','DEP']],  on='COM', how='left')
+    df_departement = df_dpt.loc[df_dpt["DEP"]==departement, ['DEP', 'COM','C'+ year +'_FAM' , 'C'+ year + '_NE24F3', 'C'+ year + '_NE24F4P']]
+    familles = df_departement.loc[:, 'C'+ year + '_FAM'].sum(axis = 0, skipna = True)
+    familles_nombreuses = (df_departement.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (df_departement.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
+    part_familles_nombreuses = round((familles_nombreuses / familles)*100,2)
+    df_part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_departement])
+    return df_part_familles_nombreuses
+
+if int(select_annee) < 2017:
+    valeurs_fam_nombreuses_dep = part_fam_nombreuses_departement_M2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_departement,select_annee)
+else :
+    valeurs_fam_nombreuses_dep = part_fam_nombreuses_departement_P2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_departement,select_annee)
+
+# Région
+#si année de 2014 à 2016 (inclus)
+def part_fam_nombreuses_region_M2017(fichier, region, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape', sep = ';')
+    year = annee[-2:]
+    df_regions = df.loc[df["REG"]==str(region), 'C'+ year +'_FAM' : 'C'+ year + '_NE24F4P']
+    familles = df_regions.loc[:, 'C'+ year + '_FAM']
+    familles_nombreuses = (df_regions.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (df_regions.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
+    df_familles = pd.DataFrame(data=familles)
+    df_familles_nombreuses = pd.DataFrame(data=familles_nombreuses)
+    Somme_familles = df_familles.sum(axis = 0, skipna = True)
+    Somme_familles_nombreuses = df_familles_nombreuses.sum(axis = 0, skipna = True)
+    val_familles = Somme_familles.values[0]
+    val_familles_nombreuses = Somme_familles_nombreuses.values[0]
+    part_familles_nombreuses = round((val_familles_nombreuses / val_familles)*100,0)
+    df_Part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_region])
+    return df_Part_familles_nombreuses
+
+#si année de 2017 à ... (inclus)
+def part_fam_nombreuses_region_P2017(fichier, region, annee):
+    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str, "REG": str}, encoding= 'unicode_escape', sep = ',')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_regions = pd.merge(df[['COM', 'C' + year +'_FAM', 'C' + year + '_NE24F3', 'C' + year + '_NE24F4P']], communes_select[['COM','REG']],  on='COM', how='left')
+    df_region = df_regions.loc[df_regions["REG"]==str(region), ['REG', 'COM','C'+ year +'_FAM' , 'C'+ year + '_NE24F3', 'C'+ year + '_NE24F4P']]
+    familles = df_region.loc[:, 'C'+ year + '_FAM'].sum(axis = 0, skipna = True)
+    familles_nombreuses = (df_region.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (df_region.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
+    part_familles_nombreuses = round((familles_nombreuses / familles)*100,2)
+    df_part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_region])
+    return df_part_familles_nombreuses
+
+if int(select_annee) < 2017:
+    valeurs_fam_nombreuses_reg = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",str(round(code_region)),select_annee)
+else :
+    valeurs_fam_nombreuses_reg = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",str(round(code_region)),select_annee)
+
+# France
+def part_fam_nombreuses_France(fichier, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape', sep = ';')
+    year = annee[-2:]
+    familles = df.loc[:, 'C'+ year + '_FAM']
+    familles_nombreuses = df.loc[:, 'C'+ year + '_NE24F3' : 'C'+ year + '_NE24F4P']
+    Somme_familles = familles.sum(axis = 0, skipna = True)
+    Somme_familles_nombreuses = (familles_nombreuses.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (familles_nombreuses.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
+    part_familles_nombreuses = round((Somme_familles_nombreuses / Somme_familles)*100, 2)
+    df_part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = ["France"])
+    return df_part_familles_nombreuses
+
+valeur_part_fam_nombreuses_fr = part_fam_nombreuses_France("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",select_annee)
+
+
+# Comparaison
+def fam_nombreuses_global(annee):
+    df = pd.concat([indice_fam_nombreuses_com,indice_fam_nombreuses_epci, valeurs_fam_nombreuses_dep, valeurs_fam_nombreuses_reg, valeur_part_fam_nombreuses_fr])
+    year = annee
+    return df
+
+fam_nombreuses_fin = fam_nombreuses_global(select_annee)
+st.table(fam_nombreuses_fin)
