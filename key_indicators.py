@@ -1,4 +1,15 @@
 import streamlit as st
+st.set_page_config(
+     page_title="Ex-stream-ly Cool App",
+     page_icon="🧊",
+     layout="wide",
+     initial_sidebar_state="expanded",
+     menu_items={
+         'Get Help': 'https://www.extremelycoolapp.com/help',
+         'Report a bug': "https://www.extremelycoolapp.com/bug",
+         'About': "# This is a header. This is an *extremely* cool app!"
+     }
+ )
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -7,10 +18,23 @@ import requests
 import json # library to handle JSON files
 # from streamlit_folium import folium_static
 import folium # map rendering library
+import streamlit.components.v1 as components
 
-st.set_page_config(layout ="wide")
-json1 = f"lille.geojson"
-
+# bootstrap 4 collapse example
+components.html(
+    """
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <!-- Image and text -->
+    <nav class="navbar navbar-dark bg-dark">
+      <div class="navbar-brand">
+        <img src="https://www.copas.coop/images/navbar/logo_site-bf86e09e.png" width="50" height="30" class="d-inline-block align-top mr-4" alt="">
+        Data de territoire
+      </div>
+    </nav>
+    """
+)
 
 ########################
 #Commune
@@ -1346,7 +1370,7 @@ st.line_chart(df_glob_fam_monop_transposed)
 
 
 st.title("Test carte")
-
+#json1 = f"lille.geojson"
 # data_geo = json.load(open('lille.geojson'))
 # st.write(data_geo)
 
