@@ -94,10 +94,14 @@ def niveau_vie_median_epci(fichier, nom_epci, annee) :
     df_epci = df.loc[df["LIBGEO"]== nom_epci]
     df_epci = df_epci.replace(',','.', regex=True)
     epci = df.loc[df["LIBGEO"]== nom_epci]
-    epci = epci.iloc[0]["LIBGEO"]
-    nvm =df_epci.loc[:, 'Q2'+ year ].to_numpy()
-    df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[epci])
-    return df2
+    if epci.empty:
+      st.write("l'agglo n'est pas répartoriée par l'insee")
+    else:
+      epci = epci.iloc[0]["LIBGEO"]
+      nvm =df_epci.loc[:, 'Q2'+ year ].to_numpy()
+      df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[epci])
+      return df2
+
 nvm_epci =niveau_vie_median_epci("./revenu/revenu_epci/FILO" + select_annee + "_DISP_EPCI.csv",nom_epci, select_annee)
 
 #Département
@@ -265,15 +269,22 @@ df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2
 df_2014 = pd.read_csv("./revenu/revenu_epci/FILO2014_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
 df_2014 = df_2014.replace(',','.', regex=True)
 df_2014 = df_2014.loc[df_2014["LIBGEO"]== nom_epci]
-nvm_2014 =df_2014.loc[:, 'Q214'].to_numpy()
-indice_2014 = nvm_2014[0]
+if df_2014.empty:
+  st.write("L'EPCI n'est pas répertorié pas l'insee pour 2014")
+else:
+  nvm_2014 =df_2014.loc[:, 'Q214'].to_numpy()
+  indice_2014 = nvm_2014[0]
+
 
 #2015
 df_2015 = pd.read_csv("./revenu/revenu_epci/FILO2015_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
 df_2015 = df_2015.replace(',','.', regex=True)
 df_2015 = df_2015.loc[df_2015["LIBGEO"]== nom_epci]
-nvm_2015 =df_2015.loc[:, 'Q215'].to_numpy()
-indice_2015 = nvm_2015[0]
+if df_2015.empty:
+  st.write("L'EPCI n'est pas répertorié pas l'insee pour 2015")
+else:
+  nvm_2015 =df_2015.loc[:, 'Q215'].to_numpy()
+  indice_2015 = nvm_2015[0]
 
 #2016
 df_2016 = pd.read_csv("./revenu/revenu_epci/FILO2016_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
@@ -861,7 +872,7 @@ indice_remplacement_com = part_remplacement_com("./population/base-ic-evol-struc
 
 # EPCI
 def part_remplacement_epci(fichier, epci, annee):
-    epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, encoding= 'unicode_escape', sep = ';')
+    epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
     df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "MODIF_IRIS": str,"COM": str, "LAB_IRIS": str, "DEP": str, "UU2010": str, "GRD_QUART": str}, sep = ';')
     year = annee[-2:]
     df_epci_com = pd.merge(df[['COM', 'P'+ year + '_POP6074', 'P' + year + '_POP75P']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
@@ -922,7 +933,7 @@ else :
 # Région
 #si année de 2014 à 2016 (inclus)
 def part_remplacement_region_M2017(fichier, region, annee):
-    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape', sep = ';')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, sep = ';')
     year = annee[-2:]
     df_regions = df.loc[df["REG"]==str(region), 'P'+ year +'_POP6074' : 'P'+ year + '_POP75P']
     P6074 = df_regions.loc[:, 'P'+ year + '_POP6074']
@@ -939,7 +950,7 @@ def part_remplacement_region_M2017(fichier, region, annee):
 
 #si année de 2017 à ... (inclus)
 def part_remplacement_region_P2017(fichier, region, annee):
-    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str, "REG": str}, encoding= 'unicode_escape', sep = ',')
+    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str, "REG": str}, sep = ',')
     df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
     year = annee[-2:]
     df_regions = pd.merge(df[['COM', 'P' + year +'_POP6074', 'P' + year + '_POP75P']], communes_select[['COM','REG']],  on='COM', how='left')
@@ -957,9 +968,9 @@ def part_remplacement_region_P2017(fichier, region, annee):
     return df_reg
 
 if int(select_annee) < 2017:
-    indice_remplacement_reg = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_region,select_annee)
+    indice_remplacement_reg = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",str(round(code_region)),select_annee)
 else :
-    indice_remplacement_reg = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_region,select_annee)
+    indice_remplacement_reg = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",str(round(code_region)),select_annee)
 
 # France
 def part_remplacement_France(fichier, annee):
@@ -1010,16 +1021,16 @@ df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, 
 
 #RÉGION
 #2014
-valeur_part_remplacement_region_2014 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2014.csv",code_region,'2014')
+valeur_part_remplacement_region_2014 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2014.csv",str(round(code_region)),'2014')
 indice_2014 = valeur_part_remplacement_region_2014['Indice de renouvellement des générations âgées 2014'][0]
 #2015
-valeur_part_remplacement_region_2015 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2015.csv",code_region,'2015')
+valeur_part_remplacement_region_2015 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2015.csv",str(round(code_region)),'2015')
 indice_2015 = valeur_part_remplacement_region_2015['Indice de renouvellement des générations âgées 2015'][0]
 #2016
-valeur_part_remplacement_region_2016 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2016.csv",code_region,'2016')
+valeur_part_remplacement_region_2016 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2016.csv",str(round(code_region)),'2016')
 indice_2016 = valeur_part_remplacement_region_2016['Indice de renouvellement des générations âgées 2016'][0]
 #2017
-valeur_part_remplacement_region_2017 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2017.csv",code_region,'2017')
+valeur_part_remplacement_region_2017 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2017.csv",str(round(code_region)),'2017')
 indice_2017 = valeur_part_remplacement_region_2017['Indice de renouvellement des générations âgées 2017'][0]
 #2018
 #pas disponible au 5 janvier 2022
@@ -1110,10 +1121,10 @@ indice_fam_mono_com = part_fam_mono_com("./famille/base-ic-couples-familles-mena
 
 # EPCI
 def part_fam_mono_epci(fichier, epci, annee):
-    epci_select = pd.read_csv('./EPCI.csv', dtype={"COM": str, "DEP": str, "EPCI":str}, encoding= 'unicode_escape', sep = ';')
+    epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
     df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "MODIF_IRIS": str,"COM": str, "LAB_IRIS": str, "DEP": str, "UU2010": str, "GRD_QUART": str}, encoding= 'unicode_escape', sep = ';')
     year = annee[-2:]
-    df_epci_com = pd.merge(df[['COM', 'C' + year + '_FAM', 'C' + year + '_FAMMONO']], epci_select[['COM','EPCI', 'LIBEPCI']],  on='COM', how='left')
+    df_epci_com = pd.merge(df[['COM', 'C' + year + '_FAM', 'C' + year + '_FAMMONO']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
     df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM','C'+ year +'_FAM' , 'C'+ year + '_FAMMONO']]
     familles = df_epci.loc[:, 'C'+ year + '_FAM']
     familles_mono = df_epci.loc[:, 'C'+ year + '_FAMMONO']
@@ -1206,9 +1217,9 @@ def part_fam_mono_region_P2017(fichier, region, annee):
     return df_Part_familles_mono
 
 if int(select_annee) < 2017:
-    valeurs_fam_mono_reg = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_region,select_annee)
+    valeurs_fam_mono_reg = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",str(round(code_region)),select_annee)
 else :
-    valeurs_fam_mono_reg = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_region,select_annee)
+    valeurs_fam_mono_reg = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",str(round(code_region)),select_annee)
 
 # France
 def part_fam_mono_France(fichier, annee):
@@ -1259,16 +1270,16 @@ df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, 
 
 #RÉGION
 #2014
-valeur_part_fam_mono_region_2014 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",code_region,'2014')
+valeur_part_fam_mono_region_2014 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",str(round(code_region)),'2014')
 indice_2014 = valeur_part_fam_mono_region_2014['Part des familles monoparentales 2014'][0]
 #2015
-valeur_part_fam_mono_region_2015 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",code_region,'2015')
+valeur_part_fam_mono_region_2015 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",str(round(code_region)),'2015')
 indice_2015 = valeur_part_fam_mono_region_2015['Part des familles monoparentales 2015'][0]
 #2016
-valeur_part_fam_mono_region_2016 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",code_region,'2016')
+valeur_part_fam_mono_region_2016 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",str(round(code_region)),'2016')
 indice_2016 = valeur_part_fam_mono_region_2016['Part des familles monoparentales 2016'][0]
 #2017
-valeur_part_fam_mono_region_2017 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",code_region,'2017')
+valeur_part_fam_mono_region_2017 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",str(round(code_region)),'2017')
 indice_2017 = valeur_part_fam_mono_region_2017['Part des familles monoparentales 2017'][0]
 #2018
 #pas disponible au 5 janvier 2022
