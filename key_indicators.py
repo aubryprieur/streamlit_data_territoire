@@ -97,6 +97,21 @@ st.title('II.LE NIVEAU DE VIE MÉDIAN')
 st.markdown("La médiane du revenu disponible correspond au niveau au-dessous duquel se situent 50 % de ces revenus. C'est de manière équivalente le niveau au-dessus duquel se situent 50 % des revenus.")
 st.markdown("Le revenu disponible est le revenu à la disposition du ménage pour consommer et épargner. Il comprend les revenus d'activité (nets des cotisations sociales), indemnités de chômage, retraites et pensions, revenus fonciers, les revenus financiers et les prestations sociales reçues (prestations familiales, minima sociaux et prestations logements). Au total de ces ressources, on déduit les impôts directs (impôt sur le revenu, taxe d'habitation) et les prélèvements sociaux (CSG, CRDS).")
 st.markdown("Le revenu disponible par unité de consommation (UC), également appelé *niveau de vie*, est le revenu disponible par *équivalent adulte*. Il est calculé en rapportant le revenu disponible du ménage au nombre d'unités de consommation qui le composent. Toutes les personnes rattachées au même ménage fiscal ont le même revenu disponible par UC (ou niveau de vie).")
+
+st.header("iris")
+def niveau_vie_median_iris(fichier, nom_ville, annee) :
+    df = pd.read_csv(fichier, dtype={"IRIS": str , "COM": str},sep=";")
+    year = select_annee[-2:]
+    df_ville = df.loc[df["LIBCOM"]==nom_ville]
+    df_ville = df_ville.replace(',','.', regex=True)
+    noms_iris = df.loc[df["LIBCOM"]==nom_ville,'LIBIRIS']
+    nvm =df_ville.loc[:, 'DISP_MED'+ year ].to_numpy()
+    df = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index = noms_iris)
+    return df
+nvm_iris = niveau_vie_median_iris("./revenu/revenu_iris/BASE_TD_FILO_DISP_IRIS_" + select_annee + ".csv",nom_commune, select_annee)
+st.table(nvm_iris)
+
+
 st.header('a.Comparaison entre territoires')
 #Commune
 def niveau_vie_median_commune(fichier, nom_ville, annee) :
@@ -386,6 +401,40 @@ st.title('II.PERSONNES ÂGÉES')
 
 st.header('1.Indice de vieillissement')
 st.caption("L'indice de vieillissement est le rapport de la population des 65 ans et plus sur celle des moins de 20 ans. Un indice autour de 100 indique que les 65 ans et plus et les moins de 20 ans sont présents dans à peu près les mêmes proportions sur le territoire; plus l’indice est faible plus le rapport est favorable aux jeunes, plus il est élevé plus il est favorable aux personnes âgées.")
+
+st.subheader("Iris")
+def indice_vieux_iris(fichier, code_ville, annee) :
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "LAB_IRIS": str,"DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str},sep=";")
+    year = select_annee[-2:]
+    df_ville = df.loc[df["COM"]==code_ville]
+    df_ville = df_ville.replace(',','.', regex=True)
+    noms_iris = df.loc[df["COM"]==code_ville,'IRIS']
+    Plus_de_65 =df_ville.loc[:, 'P'+ year + '_POP65P']
+    Moins_de_65 =df_ville.loc[:, 'P'+ year + '_POP0019']
+    df_ville['indice_de_vieillissement'] = (df_ville['P'+ year + '_POP65P'] / (df_ville['P'+ year + '_POP0019']) * 100)
+    nvm =df_ville.loc[:, 'indice_de_vieillissement' ].to_numpy()
+    df = pd.DataFrame(nvm,  columns = ['indice_de_vieillissement'], index = noms_iris)
+    return df
+nvm_iris =indice_vieux_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
+st.table(nvm_iris)
+
+df = pd.read_csv("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep=";", header=0)
+df_indice = df.loc[df['COM'] == code_commune]
+year = select_annee[-2:]
+df_indice = df_indice[['COM','IRIS', 'P18_POP65P','P18_POP0019' ]]
+df_indice = df_indice.replace(',','.', regex=True)
+df_indice['P18_POP65P'] = df_indice['P18_POP65P'].astype(float).to_numpy()
+df_indice['P18_POP0019'] = df_indice['P18_POP0019'].astype(float).to_numpy()
+df_indice['indice'] = np.where(df_indice['P18_POP0019'] < 1,df_indice['P18_POP0019'], (df_indice['P18_POP65P'] / df_indice['P18_POP0019']*100))
+df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
+communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_POP0019', 'P' + year + '_POP65P','indice']], left_on='CODE_IRIS', right_on="IRIS")
+df_indice_com = df_indice_com[['CODE_IRIS','LIB_IRIS','P' + year +'_POP0019', 'P' + year + '_POP65P','indice']]
+df_indice_com['indice'] = df_indice_com['indice'].apply(np.int64)
+df_indice_com['P' + year +'_POP0019'] = df_indice_com['P' + year +'_POP0019'].apply(np.int64)
+df_indice_com['P' + year +'_POP65P'] = df_indice_com['P' + year +'_POP65P'].apply(np.int64)
+df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP0019':"Moins de 20 ans",'P' + year + '_POP65P':"Plus de 65 ans",'indice':"Indice de vieillissement" })
+st.table(df_indice_com)
 
 st.subheader('a.Comparaison sur une année')
 #comparaison des territoires
