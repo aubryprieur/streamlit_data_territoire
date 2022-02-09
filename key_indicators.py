@@ -127,12 +127,12 @@ def niveau_vie_median_commune(fichier, nom_ville, annee) :
 nvm_ville =niveau_vie_median_commune("./revenu/revenu_commune/FILO" + select_annee + "_DISP_COM.csv",nom_commune, select_annee)
 
 #EPCI
-def niveau_vie_median_epci(fichier, nom_epci, annee) :
+def niveau_vie_median_epci(fichier, cod_epci, annee) :
     df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
     year = select_annee[-2:]
-    df_epci = df.loc[df["LIBGEO"]== nom_epci]
+    df_epci = df.loc[df["CODGEO"]== cod_epci]
     df_epci = df_epci.replace(',','.', regex=True)
-    epci = df.loc[df["LIBGEO"]== nom_epci]
+    epci = df.loc[df["CODGEO"]== cod_epci]
     if epci.empty:
       st.write("l'agglo n'est pas répartoriée par l'insee")
     else:
@@ -141,7 +141,7 @@ def niveau_vie_median_epci(fichier, nom_epci, annee) :
       df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[epci])
       return df2
 
-nvm_epci =niveau_vie_median_epci("./revenu/revenu_epci/FILO" + select_annee + "_DISP_EPCI.csv",nom_epci, select_annee)
+nvm_epci =niveau_vie_median_epci("./revenu/revenu_epci/FILO" + select_annee + "_DISP_EPCI.csv",str(code_epci), select_annee)
 
 #Département
 def niveau_vie_median_departement(fichier, nom_departement, annee) :
@@ -307,7 +307,7 @@ df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2
 #2014
 df_2014 = pd.read_csv("./revenu/revenu_epci/FILO2014_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
 df_2014 = df_2014.replace(',','.', regex=True)
-df_2014 = df_2014.loc[df_2014["LIBGEO"]== nom_epci]
+df_2014 = df_2014.loc[df_2014["CODGEO"]== code_epci]
 if df_2014.empty:
   st.write("L'EPCI n'est pas répertorié pas l'insee pour 2014")
 else:
@@ -318,7 +318,7 @@ else:
 #2015
 df_2015 = pd.read_csv("./revenu/revenu_epci/FILO2015_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
 df_2015 = df_2015.replace(',','.', regex=True)
-df_2015 = df_2015.loc[df_2015["LIBGEO"]== nom_epci]
+df_2015 = df_2015.loc[df_2015["CODGEO"]== code_epci]
 if df_2015.empty:
   st.write("L'EPCI n'est pas répertorié pas l'insee pour 2015")
 else:
@@ -328,21 +328,21 @@ else:
 #2016
 df_2016 = pd.read_csv("./revenu/revenu_epci/FILO2016_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
 df_2016 = df_2016.replace(',','.', regex=True)
-df_2016 = df_2016.loc[df_2016["LIBGEO"]== nom_epci]
+df_2016 = df_2016.loc[df_2016["CODGEO"]== code_epci]
 nvm_2016 =df_2016.loc[:, 'Q216'].to_numpy()
 indice_2016 = nvm_2016[0]
 
 #2017
 df_2017 = pd.read_csv("./revenu/revenu_epci/FILO2017_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
 df_2017 = df_2017.replace(',','.', regex=True)
-df_2017 = df_2017.loc[df_2017["LIBGEO"]== nom_epci]
+df_2017 = df_2017.loc[df_2017["CODGEO"]== code_epci]
 nvm_2017 =df_2017.loc[:, 'Q217'].to_numpy()
 indice_2017 = nvm_2017[0]
 
 #2018
 df_2018 = pd.read_csv("./revenu/revenu_epci/FILO2018_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
 df_2018 = df_2018.replace(',','.', regex=True)
-df_2018 = df_2018.loc[df_2018["LIBGEO"]== nom_epci]
+df_2018 = df_2018.loc[df_2018["CODGEO"]== code_epci]
 nvm_2018 =df_2018.loc[:, 'Q218'].to_numpy()
 indice_2018 = nvm_2018[0]
 
@@ -421,11 +421,11 @@ st.table(nvm_iris)
 df = pd.read_csv("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep=";", header=0)
 df_indice = df.loc[df['COM'] == code_commune]
 year = select_annee[-2:]
-df_indice = df_indice[['COM','IRIS', 'P18_POP65P','P18_POP0019' ]]
+df_indice = df_indice[['COM','IRIS', 'P'+ year + '_POP65P','P' + year +'_POP0019' ]]
 df_indice = df_indice.replace(',','.', regex=True)
-df_indice['P18_POP65P'] = df_indice['P18_POP65P'].astype(float).to_numpy()
-df_indice['P18_POP0019'] = df_indice['P18_POP0019'].astype(float).to_numpy()
-df_indice['indice'] = np.where(df_indice['P18_POP0019'] < 1,df_indice['P18_POP0019'], (df_indice['P18_POP65P'] / df_indice['P18_POP0019']*100))
+df_indice['P'+ year + '_POP65P'] = df_indice['P'+ year + '_POP65P'].astype(float).to_numpy()
+df_indice['P' + year +'_POP0019'] = df_indice['P' + year +'_POP0019'].astype(float).to_numpy()
+df_indice['indice'] = np.where(df_indice['P' + year +'_POP0019'] < 1,df_indice['P' + year +'_POP0019'], (df_indice['P'+ year + '_POP65P'] / df_indice['P' + year +'_POP0019']*100))
 df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
 communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
 df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_POP0019', 'P' + year + '_POP65P','indice']], left_on='CODE_IRIS', right_on="IRIS")
