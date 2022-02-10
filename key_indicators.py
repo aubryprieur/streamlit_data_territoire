@@ -68,7 +68,8 @@ st.sidebar.write('Ma région:', str(round(code_region)), nom_region)
 #Année
 select_annee = st.sidebar.select_slider(
      "Sélection de l'année",
-     options=['2014', '2015', '2016', '2017', '2018'])
+     options=['2014', '2015', '2016', '2017', '2018'],
+     value=('2018'))
 st.sidebar.write('Mon année :', select_annee)
 
 ##########################
@@ -104,13 +105,15 @@ def niveau_vie_median_iris(fichier, nom_ville, annee) :
     year = select_annee[-2:]
     df_ville = df.loc[df["LIBCOM"]==nom_ville]
     df_ville = df_ville.replace(',','.', regex=True)
-    noms_iris = df.loc[df["LIBCOM"]==nom_ville,'LIBIRIS']
-    nvm =df_ville.loc[:, 'DISP_MED'+ year ].to_numpy()
-    df = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index = noms_iris)
-    return df
+    df_ville = df_ville[['IRIS','LIBIRIS','DISP_MED'+ year]]
+    #noms_iris = df.loc[df["LIBCOM"]==nom_ville,'LIBIRIS']
+    df_ville['DISP_MED'+ year ] =df_ville['DISP_MED'+ year ].to_numpy().astype(int)
+    df_ville.reset_index(inplace=True, drop=True)
+    df_ville = df_ville.rename(columns={'IRIS': "Code de l'iris",'LIBIRIS': "Nom de l'iris", 'DISP_MED'+ year:"Niveau de vie " + select_annee + " en €" })
+
+    return df_ville
 nvm_iris = niveau_vie_median_iris("./revenu/revenu_iris/BASE_TD_FILO_DISP_IRIS_" + select_annee + ".csv",nom_commune, select_annee)
 st.table(nvm_iris)
-
 
 st.header('a.Comparaison entre territoires')
 #Commune
@@ -403,38 +406,26 @@ st.header('1.Indice de vieillissement')
 st.caption("L'indice de vieillissement est le rapport de la population des 65 ans et plus sur celle des moins de 20 ans. Un indice autour de 100 indique que les 65 ans et plus et les moins de 20 ans sont présents dans à peu près les mêmes proportions sur le territoire; plus l’indice est faible plus le rapport est favorable aux jeunes, plus il est élevé plus il est favorable aux personnes âgées.")
 
 st.subheader("Iris")
-def indice_vieux_iris(fichier, code_ville, annee) :
-    df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "LAB_IRIS": str,"DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str},sep=";")
-    year = select_annee[-2:]
-    df_ville = df.loc[df["COM"]==code_ville]
-    df_ville = df_ville.replace(',','.', regex=True)
-    noms_iris = df.loc[df["COM"]==code_ville,'IRIS']
-    Plus_de_65 =df_ville.loc[:, 'P'+ year + '_POP65P']
-    Moins_de_65 =df_ville.loc[:, 'P'+ year + '_POP0019']
-    df_ville['indice_de_vieillissement'] = (df_ville['P'+ year + '_POP65P'] / (df_ville['P'+ year + '_POP0019']) * 100)
-    nvm =df_ville.loc[:, 'indice_de_vieillissement' ].to_numpy()
-    df = pd.DataFrame(nvm,  columns = ['indice_de_vieillissement'], index = noms_iris)
-    return df
+def indice_vieux_iris(fichier, code, annee) :
+  df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep=";", header=0)
+  df_indice = df.loc[df['COM'] == code]
+  year = annee[-2:]
+  df_indice = df_indice[['COM','IRIS', 'P'+ year + '_POP65P','P' + year +'_POP0019' ]]
+  df_indice = df_indice.replace(',','.', regex=True)
+  df_indice['P'+ year + '_POP65P'] = df_indice['P'+ year + '_POP65P'].astype(float).to_numpy()
+  df_indice['P' + year +'_POP0019'] = df_indice['P' + year +'_POP0019'].astype(float).to_numpy()
+  df_indice['indice'] = np.where(df_indice['P' + year +'_POP0019'] < 1,df_indice['P' + year +'_POP0019'], (df_indice['P'+ year + '_POP65P'] / df_indice['P' + year +'_POP0019']*100))
+  df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
+  communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+  df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_POP0019', 'P' + year + '_POP65P','indice']], left_on='CODE_IRIS', right_on="IRIS")
+  df_indice_com = df_indice_com[['CODE_IRIS','LIB_IRIS','P' + year +'_POP0019', 'P' + year + '_POP65P','indice']]
+  df_indice_com['indice'] = df_indice_com['indice'].apply(np.int64)
+  df_indice_com['P' + year +'_POP0019'] = df_indice_com['P' + year +'_POP0019'].apply(np.int64)
+  df_indice_com['P' + year +'_POP65P'] = df_indice_com['P' + year +'_POP65P'].apply(np.int64)
+  df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP0019':"Moins de 20 ans (" + select_annee + ")" ,'P' + year + '_POP65P':"Plus de 65 ans (" + select_annee + ")",'indice':"Indice de vieillissement (" + select_annee + ")" })
+  return df_indice_com
 nvm_iris =indice_vieux_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
 st.table(nvm_iris)
-
-df = pd.read_csv("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep=";", header=0)
-df_indice = df.loc[df['COM'] == code_commune]
-year = select_annee[-2:]
-df_indice = df_indice[['COM','IRIS', 'P'+ year + '_POP65P','P' + year +'_POP0019' ]]
-df_indice = df_indice.replace(',','.', regex=True)
-df_indice['P'+ year + '_POP65P'] = df_indice['P'+ year + '_POP65P'].astype(float).to_numpy()
-df_indice['P' + year +'_POP0019'] = df_indice['P' + year +'_POP0019'].astype(float).to_numpy()
-df_indice['indice'] = np.where(df_indice['P' + year +'_POP0019'] < 1,df_indice['P' + year +'_POP0019'], (df_indice['P'+ year + '_POP65P'] / df_indice['P' + year +'_POP0019']*100))
-df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
-communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
-df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_POP0019', 'P' + year + '_POP65P','indice']], left_on='CODE_IRIS', right_on="IRIS")
-df_indice_com = df_indice_com[['CODE_IRIS','LIB_IRIS','P' + year +'_POP0019', 'P' + year + '_POP65P','indice']]
-df_indice_com['indice'] = df_indice_com['indice'].apply(np.int64)
-df_indice_com['P' + year +'_POP0019'] = df_indice_com['P' + year +'_POP0019'].apply(np.int64)
-df_indice_com['P' + year +'_POP65P'] = df_indice_com['P' + year +'_POP65P'].apply(np.int64)
-df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP0019':"Moins de 20 ans",'P' + year + '_POP65P':"Plus de 65 ans",'indice':"Indice de vieillissement" })
-st.table(df_indice_com)
 
 st.subheader('a.Comparaison sur une année')
 #comparaison des territoires
@@ -687,6 +678,30 @@ st.line_chart(df_indice_vieux_transposed)
 
 
 st.header("2.Part des personnes de 80 ans et plus vivant seules")
+
+st.subheader("Iris")
+def part80_seules_iris(fichier, code, annee) :
+  df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, encoding= 'unicode_escape', sep=";", header=0)
+  df_indice = df.loc[df['COM'] == code]
+  year = annee[-2:]
+  df_indice = df_indice[['COM','IRIS', 'P'+ year + '_POP80P','P' + year +'_POP80P_PSEUL' ]]
+  df_indice = df_indice.replace(',','.', regex=True)
+  df_indice['P'+ year + '_POP80P'] = df_indice['P'+ year + '_POP80P'].astype(float).to_numpy()
+  df_indice['P' + year +'_POP80P_PSEUL'] = df_indice['P' + year +'_POP80P_PSEUL'].astype(float).to_numpy()
+  df_indice['indice'] = np.where(df_indice['P' + year +'_POP80P'] < 1,df_indice['P' + year +'_POP80P'], (df_indice['P'+ year + '_POP80P_PSEUL'] / df_indice['P' + year +'_POP80P']*100))
+  df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
+  communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+  df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_POP80P', 'P' + year + '_POP80P_PSEUL','indice']], left_on='CODE_IRIS', right_on="IRIS")
+  df_indice_com = df_indice_com[['CODE_IRIS','LIB_IRIS','P' + year +'_POP80P', 'P' + year + '_POP80P_PSEUL','indice']]
+  df_indice_com['indice'] = df_indice_com['indice'].apply(np.int64)
+  df_indice_com['P' + year +'_POP80P'] = df_indice_com['P' + year +'_POP80P'].apply(np.int64)
+  df_indice_com['P' + year +'_POP80P_PSEUL'] = df_indice_com['P' + year +'_POP80P_PSEUL'].apply(np.int64)
+  df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP80P':"Plus de 80 ans (" + select_annee + ")" ,'P' + year + '_POP80P_PSEUL':"Plus de 80 ans vivant seules (" + select_annee + ")" ,'indice':"Part des personnes de plus de 80 ans vivant seules (" + select_annee + ")" })
+  return df_indice_com
+indice_80_seules_iris =part80_seules_iris("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_commune, select_annee)
+st.table(indice_80_seules_iris)
+
+
 st.subheader("a.Comparaison des territoires sur une année")
 # Commune
 def part80_seules_com(fichier, code_commune, annee):
@@ -1454,15 +1469,9 @@ def part_fam_nombreuses_departement_M2017(fichier, departement, annee):
     df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape',sep = ';')
     year = annee[-2:]
     df_departement = df.loc[df["DEP"]==departement, 'C'+ year +'_FAM' : 'C'+ year + '_NE24F4P']
-    familles = df_departement.loc[:, 'C'+ year + '_FAM']
+    familles = df_departement.loc[:, 'C'+ year + '_FAM'].sum(axis = 0, skipna = True)
     familles_nombreuses = (df_departement.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (df_departement.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
-    df_familles = pd.DataFrame(data=familles)
-    df_familles_nombreuses = pd.DataFrame(data=familles_nombreuses)
-    Somme_familles = df_familles.sum(axis = 0, skipna = True)
-    Somme_familles_nombreuses = df_familles_nombreuses.sum(axis = 0, skipna = True)
-    val_familles = Somme_familles.values[0]
-    val_familles_nombreuses = Somme_familles_nombreuses.values[0]
-    part_familles_nombreuses = round((val_familles_nombreuses / val_familles)*100,2)
+    part_familles_nombreuses = round((familles_nombreuses / familles)*100,2)
     df_Part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_departement])
     return df_Part_familles_nombreuses
 
@@ -1489,17 +1498,11 @@ def part_fam_nombreuses_region_M2017(fichier, region, annee):
     df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape', sep = ';')
     year = annee[-2:]
     df_regions = df.loc[df["REG"]==str(region), 'C'+ year +'_FAM' : 'C'+ year + '_NE24F4P']
-    familles = df_regions.loc[:, 'C'+ year + '_FAM']
+    familles = df_regions.loc[:, 'C'+ year + '_FAM'].sum(axis = 0, skipna = True)
     familles_nombreuses = (df_regions.loc[:, 'C'+ year + '_NE24F3'].astype(float).sum(axis = 0, skipna = True)) + (df_regions.loc[:, 'C'+ year + '_NE24F4P'].astype(float).sum(axis = 0, skipna = True))
-    df_familles = pd.DataFrame(data=familles)
-    df_familles_nombreuses = pd.DataFrame(data=familles_nombreuses)
-    Somme_familles = df_familles.sum(axis = 0, skipna = True)
-    Somme_familles_nombreuses = df_familles_nombreuses.sum(axis = 0, skipna = True)
-    val_familles = Somme_familles.values[0]
-    val_familles_nombreuses = Somme_familles_nombreuses.values[0]
-    part_familles_nombreuses = round((val_familles_nombreuses / val_familles)*100,0)
-    df_Part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_region])
-    return df_Part_familles_nombreuses
+    part_familles_nombreuses = round((familles_nombreuses / familles)*100,0)
+    df_part_familles_nombreuses = pd.DataFrame(data=part_familles_nombreuses, columns = ['Part des familles nombreuses ' + annee], index = [nom_region])
+    return df_part_familles_nombreuses
 
 #si année de 2017 à ... (inclus)
 def part_fam_nombreuses_region_P2017(fichier, region, annee):
@@ -1542,3 +1545,106 @@ def fam_nombreuses_global(annee):
 
 fam_nombreuses_fin = fam_nombreuses_global(select_annee)
 st.table(fam_nombreuses_fin)
+
+st.subheader("b.Evolution")
+#FRANCE
+#2014
+valeur_part_fam_nombreuses_fr_2014 = part_fam_nombreuses_France("./famille/base-ic-couples-familles-menages-2014.csv",'2014')
+indice_2014 = valeur_part_fam_nombreuses_fr_2014['Part des familles nombreuses 2014'][0]
+#2015
+valeur_part_fam_nombreuses_fr_2015 = part_fam_nombreuses_France("./famille/base-ic-couples-familles-menages-2015.csv",'2015')
+indice_2015 = valeur_part_fam_nombreuses_fr_2015['Part des familles nombreuses 2015'][0]
+#2016
+valeur_part_fam_nombreuses_fr_2016 = part_fam_nombreuses_France("./famille/base-ic-couples-familles-menages-2016.csv",'2016')
+indice_2016 = valeur_part_fam_nombreuses_fr_2016['Part des familles nombreuses 2016'][0]
+#2017
+valeur_part_fam_nombreuses_fr_2017 = part_fam_nombreuses_France("./famille/base-ic-couples-familles-menages-2017.csv",'2017')
+indice_2017 = valeur_part_fam_nombreuses_fr_2017['Part des familles nombreuses 2017'][0]
+#2018
+valeur_part_fam_nombreuses_fr_2018 = part_fam_nombreuses_France("./famille/base-ic-couples-familles-menages-2018.csv",'2018')
+indice_2018 = valeur_part_fam_nombreuses_fr_2018['Part des familles nombreuses 2018'][0]
+df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
+
+#RÉGION
+#2014
+valeur_part_fam_nombreuses_region_2014 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",str(round(code_region)),'2014')
+indice_2014 = valeur_part_fam_nombreuses_region_2014['Part des familles nombreuses 2014'][0]
+#2015
+valeur_part_fam_nombreuses_region_2015 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",str(round(code_region)),'2015')
+indice_2015 = valeur_part_fam_nombreuses_region_2015['Part des familles nombreuses 2015'][0]
+#2016
+valeur_part_fam_nombreuses_region_2016 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",str(round(code_region)),'2016')
+indice_2016 = valeur_part_fam_nombreuses_region_2016['Part des familles nombreuses 2016'][0]
+#2017
+valeur_part_fam_nombreuses_region_2017 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",str(round(code_region)),'2017')
+indice_2017 = valeur_part_fam_nombreuses_region_2017['Part des familles nombreuses 2017'][0]
+#2018
+valeur_part_fam_nombreuses_region_2018 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",str(round(code_region)),'2018')
+indice_2018 = valeur_part_fam_nombreuses_region_2018['Part des familles nombreuses 2018'][0]
+df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
+
+#DÉPARTEMENT
+#2014
+valeur_part_fam_nombreuses_departement_2014 = part_fam_nombreuses_departement_M2017("./famille/base-ic-couples-familles-menages-2014.csv",code_departement,'2014')
+indice_2014 = valeur_part_fam_nombreuses_departement_2014['Part des familles nombreuses 2014'][0]
+#2015
+valeur_part_fam_nombreuses_departement_2015 = part_fam_nombreuses_departement_M2017("./famille/base-ic-couples-familles-menages-2015.csv",code_departement,'2015')
+indice_2015 = valeur_part_fam_nombreuses_departement_2015['Part des familles nombreuses 2015'][0]
+#2016
+valeur_part_fam_nombreuses_departement_2016 = part_fam_nombreuses_departement_M2017("./famille/base-ic-couples-familles-menages-2016.csv",code_departement,'2016')
+indice_2016 = valeur_part_fam_nombreuses_departement_2016['Part des familles nombreuses 2016'][0]
+#2017
+valeur_part_fam_nombreuses_departement_2017 = part_fam_nombreuses_departement_P2017("./famille/base-ic-couples-familles-menages-2017.csv",code_departement,'2017')
+indice_2017 = valeur_part_fam_nombreuses_departement_2017['Part des familles nombreuses 2017'][0]
+#2018
+valeur_part_fam_nombreuses_departement_2018 = part_fam_nombreuses_departement_P2017("./famille/base-ic-couples-familles-menages-2018.csv",code_departement,'2018')
+indice_2018 = valeur_part_fam_nombreuses_departement_2018['Part des familles nombreuses 2018'][0]
+
+df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+
+#EPCI
+#2014
+valeur_part_fam_nombreuses_epci_2014 = part_fam_nombreuses_epci("./famille/base-ic-couples-familles-menages-2014.csv",code_epci,'2014')
+indice_2014 = valeur_part_fam_nombreuses_epci_2014['Part des familles nombreuses 2014'][0]
+#2015
+valeur_part_fam_nombreuses_epci_2015 = part_fam_nombreuses_epci("./famille/base-ic-couples-familles-menages-2015.csv",code_epci,'2015')
+indice_2015 = valeur_part_fam_nombreuses_epci_2015['Part des familles nombreuses 2015'][0]
+#2016
+valeur_part_fam_nombreuses_epci_2016 = part_fam_nombreuses_epci("./famille/base-ic-couples-familles-menages-2016.csv",code_epci,'2016')
+indice_2016 = valeur_part_fam_nombreuses_epci_2016['Part des familles nombreuses 2016'][0]
+#2017
+valeur_part_fam_nombreuses_epci_2017 = part_fam_nombreuses_epci("./famille/base-ic-couples-familles-menages-2017.csv",code_epci,'2017')
+indice_2017 = valeur_part_fam_nombreuses_epci_2017['Part des familles nombreuses 2017'][0]
+#2018
+valeur_part_fam_nombreuses_epci_2018 = part_fam_nombreuses_epci("./famille/base-ic-couples-familles-menages-2018.csv",code_epci,'2018')
+indice_2018 = valeur_part_fam_nombreuses_epci_2018['Part des familles nombreuses 2018'][0]
+
+df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+
+#COMMUNE
+#2014
+valeur_part_fam_nombreuses_commune_2014 = part_fam_nombreuses_com("./famille/base-ic-couples-familles-menages-2014.csv",code_commune,'2014')
+indice_2014 = valeur_part_fam_nombreuses_commune_2014['Part des familles nombreuses 2014'][0]
+#2015
+valeur_part_fam_nombreuses_commune_2015 = part_fam_nombreuses_com("./famille/base-ic-couples-familles-menages-2015.csv",code_commune,'2015')
+indice_2015 = valeur_part_fam_nombreuses_commune_2015['Part des familles nombreuses 2015'][0]
+#2016
+valeur_part_fam_nombreuses_commune_2016 = part_fam_nombreuses_com("./famille/base-ic-couples-familles-menages-2016.csv",code_commune,'2016')
+indice_2016 = valeur_part_fam_nombreuses_commune_2016['Part des familles nombreuses 2016'][0]
+#2017
+valeur_part_fam_nombreuses_commune_2017 = part_fam_nombreuses_com("./famille/base-ic-couples-familles-menages-2017.csv",code_commune,'2017')
+indice_2017 = valeur_part_fam_nombreuses_commune_2017['Part des familles nombreuses 2017'][0]
+#2018
+valeur_part_fam_nombreuses_commune_2018 = part_fam_nombreuses_com("./famille/base-ic-couples-familles-menages-2018.csv",code_commune,'2018')
+indice_2018 = valeur_part_fam_nombreuses_commune_2018['Part des familles nombreuses 2018'][0]
+
+df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+
+df_glob_fam_monop = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
+
+st.table(df_glob_fam_monop)
