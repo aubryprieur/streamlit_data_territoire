@@ -1798,4 +1798,4 @@ def part_sans_diplome_iris(fichier, code, annee) :
 indice_part_sans_diplome_iris =part_sans_diplome_iris("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_commune, select_annee)
 st.table(indice_part_sans_diplome_iris)
 
-st.header('2.Répartition des diplomes')
+st.header('2.Répartition des diplômes')
