@@ -1767,6 +1767,15 @@ indice_2018 = valeur_part_fam_nombreuses_commune_2018['Part des familles nombreu
 df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
                    columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
 
-df_glob_fam_monop = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
+df_glob_fam_nombreuses = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
 
-st.table(df_glob_fam_monop)
+st.table(df_glob_fam_nombreuses)
+
+df_glob_fam_nombreuses_transposed = df_glob_fam_nombreuses.T
+st.line_chart(df_glob_fam_nombreuses_transposed)
+
+
+st.title('IV.DIPLOME')
+st.header('1.Sans diplome')
+
+st.header('2.Répartition des diplomes')
