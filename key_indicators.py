@@ -1777,5 +1777,25 @@ st.line_chart(df_glob_fam_nombreuses_transposed)
 
 st.title('IV.DIPLOME')
 st.header('1.Sans diplome')
+st.subheader("Iris")
+def part_sans_diplome_iris(fichier, code, annee) :
+  df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, encoding= 'unicode_escape', sep=";", header=0)
+  df_indice = df.loc[df['COM'] == code]
+  year = annee[-2:]
+  df_indice = df_indice[['COM','IRIS', 'P' + year + '_NSCOL15P_DIPLMIN', 'P' + year + '_NSCOL15P']]
+  df_indice = df_indice.replace(',','.', regex=True)
+  df_indice['P'+ year + '_NSCOL15P_DIPLMIN'] = df_indice['P'+ year + '_NSCOL15P_DIPLMIN'].astype(float).to_numpy()
+  df_indice['P' + year +'_NSCOL15P'] = df_indice['P' + year +'_NSCOL15P'].astype(float).to_numpy()
+  df_indice['indice'] = np.where(df_indice['P' + year +'_NSCOL15P'] < 1,df_indice['P' + year +'_NSCOL15P'], (df_indice['P'+ year + '_NSCOL15P_DIPLMIN']/ df_indice['P' + year +'_NSCOL15P']*100))
+  df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
+  communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+  df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_DIPLMIN','indice']], left_on='CODE_IRIS', right_on="IRIS")
+  df_indice_com = df_indice_com[['CODE_IRIS','LIB_IRIS','P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_DIPLMIN','indice']]
+  df_indice_com['P' + year +'_NSCOL15P'] = df_indice_com['P' + year +'_NSCOL15P'].apply(np.int64)
+  df_indice_com['P' + year +'_NSCOL15P_DIPLMIN'] = df_indice_com['P' + year +'_NSCOL15P_DIPLMIN'].apply(np.int64)
+  df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_NSCOL15P':"Personnes non scolarisées de 15 ans ou plus (" + select_annee + ")", 'P' + year +'_NSCOL15P_DIPLMIN':"Personnes non scolarisées de 15 ans ou plus titulaires d'aucun diplôme ou au plus un CEP (" + select_annee + ")" ,'indice':"Part des personnes non scolarisées sans diplôme (" + select_annee + ") en %" })
+  return df_indice_com
+indice_part_sans_diplome_iris =part_sans_diplome_iris("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_commune, select_annee)
+st.table(indice_part_sans_diplome_iris)
 
 st.header('2.Répartition des diplomes')
