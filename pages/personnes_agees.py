@@ -10,7 +10,6 @@ from streamlit_folium import folium_static
 import folium # map rendering library
 import streamlit.components.v1 as components
 import fiona
-import pyperclip
 
 def app():
   #Commune
