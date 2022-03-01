@@ -17,8 +17,11 @@ import geopandas as gpd
 import requests
 import json # library to handle JSON files
 # from streamlit_folium import folium_static
+from streamlit_folium import folium_static
 import folium # map rendering library
 import streamlit.components.v1 as components
+import fiona
+import pyperclip
 
 # bootstrap 4 collapse example
 components.html(
@@ -44,6 +47,9 @@ st.markdown("[Personnes de 80 ans et + vivant seules](#2-part-des-personnes-de-8
 st.markdown("[Indice d'évolution des générations âgées](#3-indice-d-volution-des-g-n-rations-g-es)", unsafe_allow_html=True)
 st.markdown("[Familles monoparentales](#1-part-des-familles-monoparentales)", unsafe_allow_html=True)
 st.markdown("[Familles nombreuses](#2-part-des-familles-nombreuses)", unsafe_allow_html=True)
+st.markdown("[Sans diplôme](#1-sans-diplome)", unsafe_allow_html=True)
+st.markdown("[Études supérieures](#2-tudes-sup-rieures)", unsafe_allow_html=True)
+
 
 ########################
 #Commune
@@ -82,10 +88,57 @@ select_annee = st.sidebar.select_slider(
 st.sidebar.write('Mon année :', select_annee)
 
 ##########################
+#TEST
+
+#P18_NSCOL15P_SUP2
+#P18_NSCOL15P_SUP34
+#P18_NSCOL15P_SUP5
+#"Part des personnes titulaires d'un diplôme de l'enseignement supérieur "
+
+#if int(annee) >= 2017:
+
+def part_etude_sup_region(fichier, region, annee):
+  if int(annee) >= 2017:
+    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str, "REG": str}, sep = ',')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_regions = pd.merge(df[['COM', 'P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_SUP2', 'P' + year + '_NSCOL15P_SUP34', 'P' + year + '_NSCOL15P_SUP5']], communes_select[['COM','REG']],  on='COM', how='left')
+    df_region = df_regions.loc[df_regions["REG"]==region, ['REG', 'COM','P'+ year +'_NSCOL15P' , 'P'+ year + '_NSCOL15P_SUP2', 'P'+ year + '_NSCOL15P_SUP34', 'P'+ year + '_NSCOL15P_SUP5']]
+    pop_non_scol = df_region.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_bac2 = df_region.loc[:, 'P'+ year + '_NSCOL15P_SUP2'].sum()
+    pop_non_scol_bac34 = df_region.loc[:, 'P'+ year + '_NSCOL15P_SUP34'].sum()
+    pop_non_scol_bac5 = df_region.loc[:, 'P'+ year + '_NSCOL15P_SUP5'].sum()
+    part_pop_non_scol_etude_sup = ((pop_non_scol_bac2 + pop_non_scol_bac34 + pop_non_scol_bac5) / pop_non_scol)*100
+    df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_region])
+    return df_part_pop_non_scol_etude_sup
+  else:
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_regions = df.loc[df["REG"]==region, 'P'+ year +'_NSCOL15P' : 'P'+ year + '_NSCOL15P_SUP']
+    # df_regions['P'+ year + '_NSCOL15P'] = df_regions['P'+ year + '_NSCOL15P'].to_numpy().astype(int)
+    # df_regions['P'+ year + '_NSCOL15P_SUP'] = df_regions['P'+ year + '_NSCOL15P_SUP'].to_numpy().astype(int)
+    pop_non_scol = df_regions.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_etude_sup = df_regions.loc[:, 'P'+ year + '_NSCOL15P_SUP'].sum()
+    part_pop_non_scol_etude_sup = (pop_non_scol_etude_sup / pop_non_scol)*100
+    df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_region])
+    return df_part_pop_non_scol_etude_sup
+
+valeurs_etude_sup_reg = part_etude_sup_region("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(round(code_region)),select_annee)
+valeurs_etude_sup_reg
+
+# Région
+#df = pd.read_csv("./diplome/base-ic-diplomes-formation-2014-test.csv", dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, sep = ';')
+#year = "2014"[-2:]
+#df_regions = df.loc[df["REG"]== str(round(code_region))]
+#pop_non_scol = df_regions.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+#pop_non_scol_etude_sup = df_regions.loc[:, 'P'+ year + '_NSCOL15P_SUP'].sum()
+# part_pop_non_scol_etude_sup = (pop_non_scol_etude_sup / pop_non_scol)*100,0
+# df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"], index = [nom_region])
+#df_regions
+###########################
 
 
 # commande : streamlit run streamlit_test.py
-
 
 st.title('I.POPULATION')
 st.header('1.Evolution de la population')
@@ -94,14 +147,20 @@ st.header('1.Evolution de la population')
 ville = code_commune
 df_pop_hist = pd.read_csv('./population/base-cc-serie-historique-2018.CSV', dtype={"CODGEO": str},sep=";")
 df_pop_hist_ville = df_pop_hist.loc[df_pop_hist["CODGEO"]==code_commune]
+df_pop_hist_ville = df_pop_hist_ville.reset_index()
 df_pop_hist_ville = df_pop_hist_ville.loc[:, 'P18_POP' : 'D68_POP']
 df_pop_hist_ville = df_pop_hist_ville.rename(columns={'P18_POP': '2018','P13_POP': '2013','P08_POP': '2008','D99_POP': '1999','D90_POP': '1990','D82_POP': '1982','D75_POP': '1975','D68_POP': '1968' })
+df_pop_hist_ville.insert(0, 'Commune', nom_commune)
+st.table(df_pop_hist_ville)
 # inverting values
-df1_transposed = df_pop_hist_ville.T
-df_new = df1_transposed.rename(columns={'Lille': '21161'})
-st.table(df1_transposed)
+#df1_transposed = df_pop_hist_ville.T
+#st.table(df1_transposed)
 
-st.line_chart(df1_transposed)
+#st.area_chart(data=df_pop_hist_ville, height=300, use_container_width=True)
+
+#Indicateurs clés
+evol_68_18 = df_pop_hist_ville.iloc[0]["2018"] - df_pop_hist_ville.iloc[0]["1968"]
+st.metric(label="Population 2018", value='{:,.0f}'.format(df_pop_hist_ville.iloc[0]["2018"]).replace(",", " "), delta=str('{:,.0f}'.format(evol_68_18.item()).replace(",", " ")) + " hab. depuis 1968")
 
 st.title('II.LE NIVEAU DE VIE MÉDIAN')
 st.markdown("La médiane du revenu disponible correspond au niveau au-dessous duquel se situent 50 % de ces revenus. C'est de manière équivalente le niveau au-dessus duquel se situent 50 % des revenus.")
@@ -109,6 +168,7 @@ st.markdown("Le revenu disponible est le revenu à la disposition du ménage pou
 st.markdown("Le revenu disponible par unité de consommation (UC), également appelé *niveau de vie*, est le revenu disponible par *équivalent adulte*. Il est calculé en rapportant le revenu disponible du ménage au nombre d'unités de consommation qui le composent. Toutes les personnes rattachées au même ménage fiscal ont le même revenu disponible par UC (ou niveau de vie).")
 
 st.header("iris")
+@st.cache(persist=True)
 def niveau_vie_median_iris(fichier, nom_ville, annee) :
     df = pd.read_csv(fichier, dtype={"IRIS": str , "COM": str},sep=";")
     year = select_annee[-2:]
@@ -122,10 +182,54 @@ def niveau_vie_median_iris(fichier, nom_ville, annee) :
 
     return df_ville
 nvm_iris = niveau_vie_median_iris("./revenu/revenu_iris/BASE_TD_FILO_DISP_IRIS_" + select_annee + ".csv",nom_commune, select_annee)
-st.table(nvm_iris)
+with st.expander("Visualiser le tableau des iris"):
+  st.dataframe(nvm_iris)
+
+
+@st.cache(persist=True)
+def map(geojson):
+  map_df = gpd.read_file(geojson)
+  return map_df
+
+map_df = map('georef-france-iris-millesime.geojson')
+#map_df
+# Selectionner les iris de la carte
+select_map_df = map_df.loc[(map_df['com_code'] == code_commune) & (map_df['year'] == '2020')]
+select_map = select_map_df[['iris_code','iris_name','geometry']]
+result = select_map.merge(nvm_iris, left_on='iris_code', right_on="Code de l'iris")
+#st.write(result)
+
+m = folium.Map()
+folium.GeoJson(data=result["geometry"]).add_to(m)
+
+########################
+#test avec folium
+#m.choropleth(
+#    geo_data=result,
+#    data=result,
+   # columns=['iris_code', 'Niveau de vie 2018 en €'],
+   #  fill_color='YlGnBu',
+   #  fill_opacity=1,
+   #  line_opacity=1,
+   #  legend_name='Births per 1000 inhabitants',
+   #  smooth_factor=0)
+
+folium_static(m, width=800, height=400)
+#########################
+
+st.header('Test map 2')
+##############
+#Test avec https://rsandstroem.github.io/GeoMapsFoliumDemo.html
+
+map = folium.Map(location=[50.531036, 2.63926],
+                   tiles='OpenStreetMap', zoom_start=12)
+map.choropleth(geo_data=select_map['geometry'])
+folium_static(map, width=800, height=400)
+#############
 
 st.header('a.Comparaison entre territoires')
 #Commune
+@st.cache(persist=True)
 def niveau_vie_median_commune(fichier, nom_ville, annee) :
     df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
     year = select_annee[-2:]
@@ -139,6 +243,7 @@ def niveau_vie_median_commune(fichier, nom_ville, annee) :
 nvm_ville =niveau_vie_median_commune("./revenu/revenu_commune/FILO" + select_annee + "_DISP_COM.csv",nom_commune, select_annee)
 
 #EPCI
+@st.cache(persist=True)
 def niveau_vie_median_epci(fichier, cod_epci, annee) :
     df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
     year = select_annee[-2:]
@@ -156,6 +261,7 @@ def niveau_vie_median_epci(fichier, cod_epci, annee) :
 nvm_epci =niveau_vie_median_epci("./revenu/revenu_epci/FILO" + select_annee + "_DISP_EPCI.csv",str(code_epci), select_annee)
 
 #Département
+@st.cache(persist=True)
 def niveau_vie_median_departement(fichier, nom_departement, annee) :
     df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
     year = select_annee[-2:]
@@ -169,6 +275,7 @@ def niveau_vie_median_departement(fichier, nom_departement, annee) :
 nvm_departement =niveau_vie_median_departement("./revenu/revenu_dpt/FILO" + select_annee + "_DISP_DEP.csv",nom_departement, select_annee)
 
 #Région
+@st.cache(persist=True)
 def niveau_vie_median_region(fichier, nom_region, annee) :
     df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
     year = select_annee[-2:]
@@ -182,6 +289,7 @@ def niveau_vie_median_region(fichier, nom_region, annee) :
 nvm_region =niveau_vie_median_region("./revenu/revenu_region/FILO" + select_annee + "_DISP_REG.csv",nom_region, select_annee)
 
 #France
+@st.cache(persist=True)
 def niveau_vie_median_france(fichier, annee) :
     df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
     df = df.replace(',','.', regex=True)
@@ -193,6 +301,7 @@ def niveau_vie_median_france(fichier, annee) :
 nvm_france =niveau_vie_median_france("./revenu/revenu_france/FILO" + select_annee + "_DISP_METROPOLE.csv", select_annee)
 
 #Comparaison
+@st.cache(persist=True)
 def nvm_global(annee) :
     df = pd.concat([nvm_ville, nvm_epci, nvm_departement, nvm_region, nvm_france])
     year = annee
@@ -434,7 +543,8 @@ def indice_vieux_iris(fichier, code, annee) :
   df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP0019':"Moins de 20 ans (" + select_annee + ")" ,'P' + year + '_POP65P':"Plus de 65 ans (" + select_annee + ")",'indice':"Indice de vieillissement (" + select_annee + ")" })
   return df_indice_com
 nvm_iris =indice_vieux_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
-st.table(nvm_iris)
+with st.expander("Visualiser le tableau des iris"):
+  st.table(nvm_iris)
 
 st.subheader('a.Comparaison sur une année')
 #comparaison des territoires
@@ -708,7 +818,8 @@ def part80_seules_iris(fichier, code, annee) :
   df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP80P':"Plus de 80 ans (" + select_annee + ")" ,'P' + year + '_POP80P_PSEUL':"Plus de 80 ans vivant seules (" + select_annee + ")" ,'indice':"Part des personnes de plus de 80 ans vivant seules (" + select_annee + ")" })
   return df_indice_com
 indice_80_seules_iris =part80_seules_iris("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_commune, select_annee)
-st.table(indice_80_seules_iris)
+with st.expander("Visualiser le tableau des iris"):
+  st.table(indice_80_seules_iris)
 
 
 st.subheader("a.Comparaison des territoires sur une année")
@@ -986,7 +1097,8 @@ def indice_remplacement_iris(fichier, code, annee) :
   df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP6074':"60 à 74 ans (" + select_annee + ")" ,'P' + year + '_POP75P':"Plus de 75 ans (" + select_annee + ")",'indice':"Indice d'évolution des générations âgées (" + select_annee + ")" })
   return df_indice_com
 nvm_iris =indice_remplacement_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
-st.table(nvm_iris)
+with st.expander("Visualiser le tableau des iris"):
+  st.table(nvm_iris)
 
 
 
@@ -1276,7 +1388,8 @@ def part_fam_mono_iris(fichier, code, annee) :
   df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'C' + year +'_FAMMONO':"Familles monoparentales (" + select_annee + ")" ,'C' + year + '_FAM':"Familles (" + select_annee + ")" ,'indice':"Part des familles monoparentales (" + select_annee + ")" })
   return df_indice_com
 indice_part_fam_mono_iris =part_fam_mono_iris("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_commune, select_annee)
-st.table(indice_part_fam_mono_iris)
+with st.expander("Visualiser le tableau des iris"):
+  st.table(indice_part_fam_mono_iris)
 
 st.subheader("a.Comparaison sur une année")
 # Commune
@@ -1554,7 +1667,8 @@ def part_fam_nombreuses_iris(fichier, code, annee) :
   df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'C' + year +'_NE24F3':"Familles nombreuses 3 enfants (" + select_annee + ")", 'C' + year +'_NE24F4P':"Familles nombreuses 4 enfants et + (" + select_annee + ")" ,'C' + year + '_FAM':"Familles (" + select_annee + ")" ,'indice':"Part des familles nombreuses (" + select_annee + ") en %" })
   return df_indice_com
 indice_part_fam_nombreuses_iris =part_fam_nombreuses_iris("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_commune, select_annee)
-st.table(indice_part_fam_nombreuses_iris)
+with st.expander("Visualiser le tableau des iris"):
+  st.table(indice_part_fam_nombreuses_iris)
 
 st.subheader("a.Comparaison sur une année")
 st.caption("Une famille est dite nombreuse lorsqu'elle comprend trois enfants ou plus - définition INSEE")
@@ -1777,6 +1891,14 @@ st.line_chart(df_glob_fam_nombreuses_transposed)
 
 st.title('IV.DIPLOME')
 st.header('1.Sans diplome')
+st.caption("La part de non diplômés parmi les individus de 15 ans et plus non scolarisés nous renseigne \
+significativement sur la part des personnes a priori les plus vulnérables sur le marché de l’emploi. En effet, \
+plus le niveau d’étude obtenu est bas plus les risques de chômage et/ou de non emploi sont élevés. Cette \
+part étant par ailleurs très corrélée avec la catégorie sociale des individus, cet indicateur nous renseigne \
+par ailleurs sur le degré de précarité d’une population. \
+Son intérêt réside principalement dans sa prise en compte dans les politiques publiques :\
+ - Politique de l’emploi et d’insertion professionnelle\
+ - Etudes et formation")
 st.subheader("Iris")
 def part_sans_diplome_iris(fichier, code, annee) :
   df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, encoding= 'unicode_escape', sep=";", header=0)
@@ -1795,7 +1917,531 @@ def part_sans_diplome_iris(fichier, code, annee) :
   df_indice_com['P' + year +'_NSCOL15P_DIPLMIN'] = df_indice_com['P' + year +'_NSCOL15P_DIPLMIN'].apply(np.int64)
   df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_NSCOL15P':"Personnes non scolarisées de 15 ans ou plus (" + select_annee + ")", 'P' + year +'_NSCOL15P_DIPLMIN':"Personnes non scolarisées de 15 ans ou plus titulaires d'aucun diplôme ou au plus un CEP (" + select_annee + ")" ,'indice':"Part des personnes non scolarisées sans diplôme (" + select_annee + ") en %" })
   return df_indice_com
-indice_part_sans_diplome_iris =part_sans_diplome_iris("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_commune, select_annee)
-st.table(indice_part_sans_diplome_iris)
+indice_part_sans_diplome_iris =part_sans_diplome_iris("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(code_commune), select_annee)
+with st.expander("Visualiser le tableau des iris"):
+  st.dataframe(indice_part_sans_diplome_iris)
 
-st.header('2.Répartition des diplômes')
+st.subheader('Comparaison')
+
+# Commune
+def part_sans_diplome_com(fichier, code_commune, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_ville = df.loc[df["COM"]==code_commune]
+    pop_non_scol = df_ville.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_sans_diplome = (df_ville.loc[:, 'P'+ year + '_NSCOL15P_DIPLMIN'].sum())
+    part_sans_diplome = round((pop_non_scol_sans_diplome / pop_non_scol)*100,2)
+    df_part_sans_diplome = pd.DataFrame(data=part_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = [nom_commune])
+    return df_part_sans_diplome
+indice_sans_diplome_com = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_commune, select_annee)
+
+# EPCI
+def part_sans_diplome_epci(fichier, epci, annee):
+    epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "MODIF_IRIS": str,"COM": str, "LAB_IRIS": str, "DEP": str, "UU2010": str, "GRD_QUART": str}, encoding= 'unicode_escape', sep = ';')
+    year = annee[-2:]
+    df_epci_com = pd.merge(df[['COM', 'P' + year + '_NSCOL15P', 'P' + year + '_NSCOL15P_DIPLMIN']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
+    df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM','P'+ year +'_NSCOL15P' , 'P'+ year + '_NSCOL15P_DIPLMIN']]
+    pop_non_scol = df_epci.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_sans_diplome = df_epci.loc[:, 'P'+ year + '_NSCOL15P_DIPLMIN'].astype(float).sum()
+    part_pop_non_scol_sans_diplome = round((pop_non_scol_sans_diplome / pop_non_scol)*100,2)
+    df_part_sans_diplome = pd.DataFrame(data=part_pop_non_scol_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = [nom_epci])
+    return df_part_sans_diplome
+indice_sans_diplome_epci = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_epci,select_annee)
+
+
+# Département
+def part_sans_diplome_departement_M2017(fichier, departement, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape',sep = ';')
+    year = annee[-2:]
+    df_departement = df.loc[df["DEP"]==departement, 'P' + year + '_NSCOL15P' : 'P' + year + '_NSCOL15P_DIPLMIN']
+    pop_non_scol = df_departement.loc[:, 'P' + year + '_NSCOL15P'].sum()
+    pop_non_scol_sans_diplome = df_departement.loc[:, 'P'+ year + '_NSCOL15P_DIPLMIN'].astype(float).sum()
+    part_non_scol_sans_diplome = round((pop_non_scol_sans_diplome / pop_non_scol)*100,2)
+    df_part_non_scol_sans_diplome = pd.DataFrame(data=part_non_scol_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = [nom_departement])
+    return df_part_non_scol_sans_diplome
+
+def part_sans_diplome_departement_P2017(fichier, departement, annee):
+    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str}, encoding= 'unicode_escape',sep = ',')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_dpt = pd.merge(df[['COM', 'P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_DIPLMIN']], communes_select[['COM','DEP']],  on='COM', how='left')
+    df_departement = df_dpt.loc[df_dpt["DEP"]==departement, ['DEP', 'COM','P'+ year +'_NSCOL15P' , 'P'+ year + '_NSCOL15P_DIPLMIN']]
+    pop_non_scol = df_departement.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_sans_diplome = df_departement.loc[:, 'P'+ year + '_NSCOL15P_DIPLMIN'].astype(float).sum()
+    part_non_scol_sans_diplome = round((pop_non_scol_sans_diplome / pop_non_scol)*100,2)
+    df_part_non_scol_sans_diplome = pd.DataFrame(data=part_non_scol_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = [nom_departement])
+    return df_part_non_scol_sans_diplome
+
+if int(select_annee) < 2017:
+    valeurs_sans_diplome_dep = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_departement,select_annee)
+else :
+    valeurs_sans_diplome_dep = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_departement,select_annee)
+
+# Région
+#si année de 2014 à 2016 (inclus)
+def part_sans_diplome_region_M2017(fichier, region, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape', sep = ';')
+    year = annee[-2:]
+    df_regions = df.loc[df["REG"]==str(region), 'P'+ year +'_NSCOL15P' : 'P'+ year + '_NSCOL15P_DIPLMIN']
+    pop_non_scol = df_regions.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_sans_diplome = df_regions.loc[:, 'P'+ year + '_NSCOL15P_DIPLMIN'].astype(float).sum()
+    part_pop_non_scol_sans_diplome = round((pop_non_scol_sans_diplome / pop_non_scol)*100,0)
+    df_part_pop_non_scol_sans_diplome = pd.DataFrame(data=part_pop_non_scol_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = [nom_region])
+    return df_part_pop_non_scol_sans_diplome
+
+#si année de 2017 à ... (inclus)
+def part_sans_diplome_region_P2017(fichier, region, annee):
+    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str, "REG": str}, encoding= 'unicode_escape', sep = ',')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_regions = pd.merge(df[['COM', 'P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_DIPLMIN']], communes_select[['COM','REG']],  on='COM', how='left')
+    df_region = df_regions.loc[df_regions["REG"]==str(region), ['REG', 'COM','P'+ year +'_NSCOL15P' , 'P'+ year + '_NSCOL15P_DIPLMIN']]
+    pop_non_scol = df_region.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_sans_diplome = df_region.loc[:, 'P'+ year + '_NSCOL15P_DIPLMIN'].astype(float).sum()
+    part_pop_non_scol_sans_diplome = round((pop_non_scol_sans_diplome / pop_non_scol)*100,2)
+    df_part_pop_non_scol_sans_diplome = pd.DataFrame(data=part_pop_non_scol_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = [nom_region])
+    return df_part_pop_non_scol_sans_diplome
+
+if int(select_annee) < 2017:
+    valeurs_sans_diplome_reg = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(round(code_region)),select_annee)
+else :
+    valeurs_sans_diplome_reg = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(round(code_region)),select_annee)
+
+# France
+def part_sans_diplome_France(fichier, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, encoding= 'unicode_escape', sep = ';')
+    year = annee[-2:]
+    select_pop_non_scol = df.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    select_pop_non_scol_sans_diplome = df.loc[:, 'P'+ year + '_NSCOL15P_DIPLMIN'].astype(float).sum()
+    part_pop_non_scol_sans_diplome = round((select_pop_non_scol_sans_diplome / select_pop_non_scol)*100, 2)
+    df_part_pop_non_scol_sans_diplome = pd.DataFrame(data=part_pop_non_scol_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = ["France"])
+    return df_part_pop_non_scol_sans_diplome
+
+valeur_part_sans_diplome_fr = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",select_annee)
+
+# Comparaison
+def sans_diplome_global(annee):
+    df = pd.concat([indice_sans_diplome_com,indice_sans_diplome_epci, valeurs_sans_diplome_dep, valeurs_sans_diplome_reg, valeur_part_sans_diplome_fr])
+    year = annee
+    return df
+
+part_sans_diplome_fin = sans_diplome_global(select_annee)
+st.table(part_sans_diplome_fin)
+
+st.subheader("b.Evolution")
+
+valeur_part_sans_diplome_fr_2014 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2014-test.csv",'2014')
+valeur_part_sans_diplome_fr_2014.loc['France', 'Part des personnes sans diplôme 2014'].squeeze()
+
+#FRANCE
+#2014
+valeur_part_sans_diplome_fr_2014 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2014-test.csv",'2014')
+indice_2014 = valeur_part_sans_diplome_fr_2014['Part des personnes sans diplôme 2014'][0]
+#2015
+valeur_part_sans_diplome_fr_2015 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2015-test.csv",'2015')
+indice_2015 = valeur_part_sans_diplome_fr_2015['Part des personnes sans diplôme 2015'][0]
+#2016
+valeur_part_sans_diplome_fr_2016 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2016-test.csv",'2016')
+indice_2016 = valeur_part_sans_diplome_fr_2016['Part des personnes sans diplôme 2016'][0]
+#2017
+valeur_part_sans_diplome_fr_2017 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2017-test.csv",'2017')
+indice_2017 = valeur_part_sans_diplome_fr_2017['Part des personnes sans diplôme 2017'][0]
+#2018
+valeur_part_sans_diplome_fr_2018 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2018-test.csv",'2018')
+indice_2018 = valeur_part_sans_diplome_fr_2018['Part des personnes sans diplôme 2018'][0]
+df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
+
+#RÉGION
+#2014
+valeur_part_sans_diplome_region_2014 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2014-test.csv",str(round(code_region)),'2014')
+indice_2014 = valeur_part_sans_diplome_region_2014['Part des personnes sans diplôme 2014'][0]
+#2015
+valeur_part_sans_diplome_region_2015 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2015-test.csv",str(round(code_region)),'2015')
+indice_2015 = valeur_part_sans_diplome_region_2015['Part des personnes sans diplôme 2015'][0]
+#2016
+valeur_part_sans_diplome_region_2016 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2016-test.csv",str(round(code_region)),'2016')
+indice_2016 = valeur_part_sans_diplome_region_2016['Part des personnes sans diplôme 2016'][0]
+#2017
+valeur_part_sans_diplome_region_2017 = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-2017-test.csv",str(round(code_region)),'2017')
+indice_2017 = valeur_part_sans_diplome_region_2017['Part des personnes sans diplôme 2017'][0]
+#2018
+valeur_part_sans_diplome_region_2018 = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-2018-test.csv",str(round(code_region)),'2018')
+indice_2018 = valeur_part_sans_diplome_region_2018['Part des personnes sans diplôme 2018'][0]
+df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
+
+#DÉPARTEMENT
+#2014
+valeur_part_sans_diplome_departement_2014 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2014-test.csv",code_departement,'2014')
+indice_2014 = valeur_part_sans_diplome_departement_2014['Part des personnes sans diplôme 2014'][0]
+#2015
+valeur_part_sans_diplome_departement_2015 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2015-test.csv",code_departement,'2015')
+indice_2015 = valeur_part_sans_diplome_departement_2015['Part des personnes sans diplôme 2015'][0]
+#2016
+valeur_part_sans_diplome_departement_2016 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2016-test.csv",code_departement,'2016')
+indice_2016 = valeur_part_sans_diplome_departement_2016['Part des personnes sans diplôme 2016'][0]
+#2017
+valeur_part_sans_diplome_departement_2017 = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-2017-test.csv",code_departement,'2017')
+indice_2017 = valeur_part_sans_diplome_departement_2017['Part des personnes sans diplôme 2017'][0]
+#2018
+valeur_part_sans_diplome_departement_2018 = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-2018-test.csv",code_departement,'2018')
+indice_2018 = valeur_part_sans_diplome_departement_2018['Part des personnes sans diplôme 2018'][0]
+
+df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+
+#EPCI
+#2014
+valeur_part_sans_diplome_epci_2014 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2014-test.csv",code_epci,'2014')
+indice_2014 = valeur_part_sans_diplome_epci_2014['Part des personnes sans diplôme 2014'][0]
+#2015
+valeur_part_sans_diplome_epci_2015 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2015-test.csv",code_epci,'2015')
+indice_2015 = valeur_part_sans_diplome_epci_2015['Part des personnes sans diplôme 2015'][0]
+#2016
+valeur_part_sans_diplome_epci_2016 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2016-test.csv",code_epci,'2016')
+indice_2016 = valeur_part_sans_diplome_epci_2016['Part des personnes sans diplôme 2016'][0]
+#2017
+valeur_part_sans_diplome_epci_2017 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2017-test.csv",code_epci,'2017')
+indice_2017 = valeur_part_sans_diplome_epci_2017['Part des personnes sans diplôme 2017'][0]
+#2018
+valeur_part_sans_diplome_epci_2018 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2018-test.csv",code_epci,'2018')
+indice_2018 = valeur_part_sans_diplome_epci_2018['Part des personnes sans diplôme 2018'][0]
+
+df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+
+#COMMUNE
+#2014
+valeur_part_sans_diplome_commune_2014 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2014-test.csv",code_commune,'2014')
+indice_2014 = valeur_part_sans_diplome_commune_2014['Part des personnes sans diplôme 2014'][0]
+#2015
+valeur_part_sans_diplome_commune_2015 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2015-test.csv",code_commune,'2015')
+indice_2015 = valeur_part_sans_diplome_commune_2015['Part des personnes sans diplôme 2015'][0]
+#2016
+valeur_part_sans_diplome_commune_2016 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2016-test.csv",code_commune,'2016')
+indice_2016 = valeur_part_sans_diplome_commune_2016['Part des personnes sans diplôme 2016'][0]
+#2017
+valeur_part_sans_diplome_commune_2017 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2017-test.csv",code_commune,'2017')
+indice_2017 = valeur_part_sans_diplome_commune_2017['Part des personnes sans diplôme 2017'][0]
+#2018
+valeur_part_sans_diplome_commune_2018 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2018-test.csv",code_commune,'2018')
+indice_2018 = valeur_part_sans_diplome_commune_2018['Part des personnes sans diplôme 2018'][0]
+
+df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+
+df_glob_sans_diplome= pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
+
+st.table(df_glob_sans_diplome)
+
+df_glob_sans_diplome_transposed = df_glob_sans_diplome.T
+st.line_chart(df_glob_sans_diplome_transposed)
+
+#Indicateurs clés
+evol_14_18 = df_glob_sans_diplome.iloc[4]["2018"] - df_glob_sans_diplome.iloc[4]["2014"]
+col1, col2 = st.columns(2)
+col1.metric(label=nom_commune + " " + select_annee, value=str('{:,.0f}'.format(df_glob_sans_diplome.iloc[4]["2018"]).replace(",", " ") + "%"), delta=str('{:,.0f}'.format(evol_14_18.item()).replace(",", " ")) + " points de % depuis 2014",delta_color="inverse")
+col2.metric(label="France " + select_annee, value=str('{:,.0f}'.format(df_glob_sans_diplome.iloc[0]["2018"]).replace(",", " ") + "%"), delta=str('{:,.0f}'.format(evol_14_18.item()).replace(",", " ")) + " points de % depuis 2014",delta_color="inverse")
+
+##############################################################################
+#P18_NSCOL15P_SUP2
+#P18_NSCOL15P_SUP34
+#P18_NSCOL15P_SUP5
+
+st.header('2.Études supérieures')
+st.subheader("Iris")
+
+@st.cache(persist=True)
+def part_etude_sup_iris(fichier, code, annee) :
+  df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep=";", header=0)
+  year = annee[-2:]
+  df_indice = df.loc[df['COM'] == code]
+  if int(annee) >= 2017:
+    df_indice = df_indice[['COM','IRIS', 'P' + year + '_NSCOL15P_SUP2','P' + year + '_NSCOL15P_SUP34','P' + year + '_NSCOL15P_SUP5', 'P' + year + '_NSCOL15P']]
+    df_indice = df_indice.replace(',','.', regex=True)
+    df_indice['P'+ year + '_NSCOL15P_SUP2'] = df_indice['P'+ year + '_NSCOL15P_SUP2'].astype(float).to_numpy()
+    df_indice['P'+ year + '_NSCOL15P_SUP34'] = df_indice['P'+ year + '_NSCOL15P_SUP34'].astype(float).to_numpy()
+    df_indice['P'+ year + '_NSCOL15P_SUP5'] = df_indice['P'+ year + '_NSCOL15P_SUP5'].astype(float).to_numpy()
+    df_indice['P' + year +'_NSCOL15P'] = df_indice['P' + year +'_NSCOL15P'].astype(float).to_numpy()
+    df_indice['indice'] = np.where(df_indice['P' + year +'_NSCOL15P'] < 1,df_indice['P' + year +'_NSCOL15P'], ((df_indice['P'+ year + '_NSCOL15P_SUP2'] + df_indice['P'+ year + '_NSCOL15P_SUP34'] + df_indice['P'+ year + '_NSCOL15P_SUP5'])/ df_indice['P' + year +'_NSCOL15P']*100))
+    df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
+    communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+    df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_SUP2','P' + year + '_NSCOL15P_SUP34','P' + year + '_NSCOL15P_SUP5','indice']], left_on='CODE_IRIS', right_on="IRIS")
+    df_indice_com = df_indice_com[['CODE_IRIS','LIB_IRIS','P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_SUP2','P' + year + '_NSCOL15P_SUP34','P' + year + '_NSCOL15P_SUP5','indice']]
+    df_indice_com['P' + year +'_NSCOL15P'] = df_indice_com['P' + year +'_NSCOL15P'].apply(np.int64)
+    df_indice_com['P' + year +'_NSCOL15P_SUP2'] = df_indice_com['P' + year +'_NSCOL15P_SUP2'].apply(np.int64)
+    df_indice_com['P' + year +'_NSCOL15P_SUP34'] = df_indice_com['P' + year +'_NSCOL15P_SUP34'].apply(np.int64)
+    df_indice_com['P' + year +'_NSCOL15P_SUP5'] = df_indice_com['P' + year +'_NSCOL15P_SUP5'].apply(np.int64)
+    df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_NSCOL15P':"Personnes non scolarisées de 15 ans ou plus (" + select_annee + ")", 'P' + year +'_NSCOL15P_SUP2':"Titulaire d'un BAC+2 (" + select_annee + ")" ,'P' + year +'_NSCOL15P_SUP34':"Titulaire d'un BAC+3 ou 4 (" + select_annee + ")" ,'P' + year +'_NSCOL15P_SUP5':"Titulaire d'un BAC+5 ou sup (" + select_annee + ")" ,'indice':"Part des personnes non scolarisées titulaires d'un diplôme de l'enseignement supérieur (" + select_annee + ") en %" })
+    return df_indice_com
+  else:
+    df_indice = df.loc[df['COM'] == code]
+    df_indice = df_indice[['IRIS','COM', 'P' + year + '_NSCOL15P_SUP', 'P' + year + '_NSCOL15P']]
+    df_indice = df_indice.replace(',','.', regex=True)
+    df_indice['P'+ year + '_NSCOL15P_SUP'] = df_indice['P'+ year + '_NSCOL15P_SUP'].astype(float).to_numpy()
+    df_indice['P' + year +'_NSCOL15P'] = df_indice['P' + year +'_NSCOL15P'].astype(float).to_numpy()
+    df_indice['indice'] = np.where(df_indice['P' + year +'_NSCOL15P'] < 1,df_indice['P' + year +'_NSCOL15P'], (df_indice['P'+ year + '_NSCOL15P_SUP']/ df_indice['P' + year +'_NSCOL15P']*100))
+    df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
+    communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+    df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_SUP','indice']], left_on='CODE_IRIS', right_on="IRIS")
+    df_indice_com = df_indice_com[['CODE_IRIS','LIB_IRIS','P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_SUP','indice']]
+    df_indice_com['P' + year +'_NSCOL15P'] = df_indice_com['P' + year +'_NSCOL15P'].apply(np.int64)
+    df_indice_com['P' + year +'_NSCOL15P_SUP'] = df_indice_com['P' + year +'_NSCOL15P_SUP'].apply(np.int64)
+    df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_NSCOL15P':"Personnes non scolarisées de 15 ans ou plus (" + select_annee + ")", 'P' + year +'_NSCOL15P_SUP':"Titulaire d'un diplôme de l'enseignement supérieur (" + select_annee + ")" ,'indice':"Part des personnes non scolarisées titulaires d'un diplôme de l'enseignement supérieur (" + select_annee + ") en %" })
+    return df_indice_com
+
+indice_part_etude_sup_iris =part_etude_sup_iris("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_commune, select_annee)
+with st.expander("Visualiser le tableau des iris"):
+  st.dataframe(indice_part_etude_sup_iris)
+
+
+st.subheader('Comparaison')
+
+# Commune
+@st.cache(persist=True)
+def part_etude_sup_com(fichier, code_commune, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    if int(annee) >= 2017:
+      df_ville = df.loc[df["COM"]==code_commune]
+      pop_non_scol = df_ville.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+      pop_non_scol_bac2 = (df_ville.loc[:, 'P'+ year + '_NSCOL15P_SUP2'].sum())
+      pop_non_scol_bac34 = (df_ville.loc[:, 'P'+ year + '_NSCOL15P_SUP34'].sum())
+      pop_non_scol_bac5 = (df_ville.loc[:, 'P'+ year + '_NSCOL15P_SUP5'].sum())
+      part_etude_sup = ((pop_non_scol_bac2 + pop_non_scol_bac34 + pop_non_scol_bac5) / pop_non_scol) * 100
+      df_part_etude_sup = pd.DataFrame(data=part_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_commune])
+      return df_part_etude_sup
+    else:
+      df_ville = df.loc[df["COM"]==code_commune]
+      pop_non_scol = df_ville.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+      pop_non_scol_etude_sup = (df_ville.loc[:, 'P'+ year + '_NSCOL15P_SUP'].sum())
+      part_etude_sup = (pop_non_scol_etude_sup / pop_non_scol) * 100
+      df_part_etude_sup = pd.DataFrame(data=part_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_commune])
+      return df_part_etude_sup
+indice_sans_diplome_com = part_etude_sup_com("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_commune, select_annee)
+
+# EPCI
+@st.cache(persist=True)
+def part_etude_sup_epci(fichier, epci, annee):
+    epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "MODIF_IRIS": str,"COM": str, "LAB_IRIS": str, "DEP": str, "UU2010": str, "GRD_QUART": str}, encoding= 'unicode_escape', sep = ';')
+    year = annee[-2:]
+    if int(annee) >= 2017:
+      df_epci_com = pd.merge(df[['COM', 'P' + year + '_NSCOL15P', 'P' + year + '_NSCOL15P_SUP2', 'P' + year + '_NSCOL15P_SUP34', 'P' + year + '_NSCOL15P_SUP5']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
+      df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM','P'+ year +'_NSCOL15P' , 'P'+ year + '_NSCOL15P_SUP2', 'P'+ year + '_NSCOL15P_SUP34', 'P'+ year + '_NSCOL15P_SUP5']]
+      pop_non_scol = df_epci.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+      pop_bac_sup2 = df_epci.loc[:, 'P'+ year + '_NSCOL15P_SUP2'].sum()
+      pop_bac_sup34 = df_epci.loc[:, 'P'+ year + '_NSCOL15P_SUP34'].sum()
+      pop_bac_sup5 = df_epci.loc[:, 'P'+ year + '_NSCOL15P_SUP5'].sum()
+      part_pop_non_scol_etude_sup = ((pop_bac_sup2 + pop_bac_sup34 + pop_bac_sup5) / pop_non_scol)*100
+      df_part_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_epci])
+      return df_part_etude_sup
+    else:
+      df_epci_com = pd.merge(df[['COM', 'P' + year + '_NSCOL15P', 'P' + year + '_NSCOL15P_SUP']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
+      df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM','P'+ year +'_NSCOL15P' , 'P'+ year + '_NSCOL15P_SUP']]
+      pop_non_scol = df_epci.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+      pop_bac_sup = df_epci.loc[:, 'P'+ year + '_NSCOL15P_SUP'].sum()
+      part_pop_non_scol_etude_sup = (pop_bac_sup / pop_non_scol)*100
+      df_part_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_epci])
+      return df_part_etude_sup
+indice_etude_sup_epci = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_epci,select_annee)
+
+# Département
+@st.cache(persist=True)
+def part_etude_sup_departement(fichier, departement, annee):
+  if int(annee) >= 2017:
+    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str},sep = ',')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_dpt = pd.merge(df[['COM', 'P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_SUP2', 'P' + year + '_NSCOL15P_SUP34', 'P' + year + '_NSCOL15P_SUP5']], communes_select[['COM','DEP']],  on='COM', how='left')
+    df_departement = df_dpt.loc[df_dpt["DEP"]==departement, ['DEP', 'COM','P'+ year +'_NSCOL15P' , 'P'+ year + '_NSCOL15P_SUP2', 'P' + year + '_NSCOL15P_SUP34', 'P' + year + '_NSCOL15P_SUP5']]
+    pop_non_scol = df_departement.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_bac2 = df_departement.loc[:, 'P'+ year + '_NSCOL15P_SUP2'].sum()
+    pop_non_scol_bac34 = df_departement.loc[:, 'P'+ year + '_NSCOL15P_SUP34'].sum()
+    pop_non_scol_bac5P = df_departement.loc[:, 'P'+ year + '_NSCOL15P_SUP5'].sum()
+    part_non_scol_etude_sup = ((pop_non_scol_bac2 + pop_non_scol_bac34 + pop_non_scol_bac5P ) / pop_non_scol)*100
+    df_part_non_scol_etude_sup = pd.DataFrame(data=part_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_departement])
+    return df_part_non_scol_etude_sup
+  else:
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str},sep = ';')
+    year = annee[-2:]
+    df_departement = df.loc[df["DEP"]==departement, 'P' + year + '_NSCOL15P' : 'P' + year + '_NSCOL15P_SUP']
+    pop_non_scol = df_departement.loc[:, 'P' + year + '_NSCOL15P'].sum()
+    pop_non_scol_etude_sup = df_departement.loc[:, 'P'+ year + '_NSCOL15P_SUP'].sum()
+    part_non_scol_etude_sup = (pop_non_scol_etude_sup / pop_non_scol)*100
+    df_part_non_scol_etude_sup = pd.DataFrame(data=part_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_departement])
+    return df_part_non_scol_etude_sup
+
+valeurs_etude_sup_dep = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_departement,select_annee)
+
+# Région
+@st.cache(persist=True)
+def part_etude_sup_region(fichier, region, annee):
+  if int(annee) >= 2017:
+    communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str, "REG": str}, sep = ',')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_regions = pd.merge(df[['COM', 'P' + year +'_NSCOL15P', 'P' + year + '_NSCOL15P_SUP2', 'P' + year + '_NSCOL15P_SUP34', 'P' + year + '_NSCOL15P_SUP5']], communes_select[['COM','REG']],  on='COM', how='left')
+    df_region = df_regions.loc[df_regions["REG"]==region, ['REG', 'COM','P'+ year +'_NSCOL15P' , 'P'+ year + '_NSCOL15P_SUP2', 'P'+ year + '_NSCOL15P_SUP34', 'P'+ year + '_NSCOL15P_SUP5']]
+    pop_non_scol = df_region.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_bac2 = df_region.loc[:, 'P'+ year + '_NSCOL15P_SUP2'].sum()
+    pop_non_scol_bac34 = df_region.loc[:, 'P'+ year + '_NSCOL15P_SUP34'].sum()
+    pop_non_scol_bac5 = df_region.loc[:, 'P'+ year + '_NSCOL15P_SUP5'].sum()
+    part_pop_non_scol_etude_sup = ((pop_non_scol_bac2 + pop_non_scol_bac34 + pop_non_scol_bac5) / pop_non_scol)*100
+    df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_region])
+    return df_part_pop_non_scol_etude_sup
+  else:
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    df_regions = df.loc[df["REG"]==region, 'P'+ year +'_NSCOL15P' : 'P'+ year + '_NSCOL15P_SUP']
+    pop_non_scol = df_regions.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+    pop_non_scol_etude_sup = df_regions.loc[:, 'P'+ year + '_NSCOL15P_SUP'].sum()
+    part_pop_non_scol_etude_sup = (pop_non_scol_etude_sup / pop_non_scol)*100
+    df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_region])
+    return df_part_pop_non_scol_etude_sup
+
+valeurs_etude_sup_reg = part_etude_sup_region("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(round(code_region)),select_annee)
+
+# France
+@st.cache(persist=True)
+def part_etude_sup_France(fichier, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    if int(annee) >= 2017:
+      select_pop_non_scol = df.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+      select_pop_non_scol_bac2 = df.loc[:, 'P'+ year + '_NSCOL15P_SUP2'].sum()
+      select_pop_non_scol_bac34 = df.loc[:, 'P'+ year + '_NSCOL15P_SUP34'].sum()
+      select_pop_non_scol_bac5 = df.loc[:, 'P'+ year + '_NSCOL15P_SUP5'].sum()
+      part_pop_non_scol_etude_sup = ((select_pop_non_scol_bac2 + select_pop_non_scol_bac34 + select_pop_non_scol_bac5) / select_pop_non_scol ) * 100
+      df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = ["France"])
+      return df_part_pop_non_scol_etude_sup
+    else:
+      select_pop_non_scol = df.loc[:, 'P'+ year + '_NSCOL15P'].sum()
+      select_pop_non_scol_etude_sup = df.loc[:, 'P'+ year + '_NSCOL15P_SUP'].sum()
+      part_pop_non_scol_etude_sup = (select_pop_non_scol_etude_sup / select_pop_non_scol ) * 100
+      df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = ["France"])
+      return df_part_pop_non_scol_etude_sup
+
+valeur_part_etude_sup_fr = part_etude_sup_France("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",select_annee)
+
+# Comparaison
+@st.cache(persist=True)
+def etude_sup_global(annee):
+    df = pd.concat([indice_sans_diplome_com,indice_etude_sup_epci, valeurs_etude_sup_dep, valeurs_etude_sup_reg, valeur_part_etude_sup_fr])
+    year = annee
+    return df
+
+part_etude_sup_fin = etude_sup_global(select_annee)
+st.table(part_etude_sup_fin)
+
+st.subheader("b.Evolution")
+
+#FRANCE
+#2014
+valeur_part_etude_sup_fr_2014 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2014-test.csv",'2014')
+indice_2014 = valeur_part_etude_sup_fr_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
+#2015
+valeur_part_etude_sup_fr_2015 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2015-test.csv",'2015')
+indice_2015 = valeur_part_etude_sup_fr_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
+#2016
+valeur_part_etude_sup_fr_2016 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2016-test.csv",'2016')
+indice_2016 = valeur_part_etude_sup_fr_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
+#2017
+valeur_part_etude_sup_fr_2017 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2017-test.csv",'2017')
+indice_2017 = valeur_part_etude_sup_fr_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
+#2018
+valeur_part_etude_sup_fr_2018 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2018-test.csv",'2018')
+indice_2018 = valeur_part_etude_sup_fr_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
+df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
+
+#RÉGION
+#2014
+valeur_part_etude_sup_region_2014 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2014-test.csv",str(round(code_region)),'2014')
+indice_2014 = valeur_part_etude_sup_region_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
+#2015
+valeur_part_etude_sup_region_2015 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2015-test.csv",str(round(code_region)),'2015')
+indice_2015 = valeur_part_etude_sup_region_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
+#2016
+valeur_part_etude_sup_region_2016 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2016-test.csv",str(round(code_region)),'2016')
+indice_2016 = valeur_part_etude_sup_region_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
+#2017
+valeur_part_etude_sup_region_2017 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2017-test.csv",str(round(code_region)),'2017')
+indice_2017 = valeur_part_etude_sup_region_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
+#2018
+valeur_part_etude_sup_region_2018 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2018-test.csv",str(round(code_region)),'2018')
+indice_2018 = valeur_part_etude_sup_region_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
+indice_2018
+df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
+df_region_glob
+
+#DÉPARTEMENT
+#2014
+valeur_part_etude_sup_departement_2014 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2014-test.csv",code_departement,'2014')
+indice_2014 = valeur_part_etude_sup_departement_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
+#2015
+valeur_part_etude_sup_departement_2015 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2015-test.csv",code_departement,'2015')
+indice_2015 = valeur_part_etude_sup_departement_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
+#2016
+valeur_part_etude_sup_departement_2016 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2016-test.csv",code_departement,'2016')
+indice_2016 = valeur_part_etude_sup_departement_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
+#2017
+valeur_part_etude_sup_departement_2017 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2017-test.csv",code_departement,'2017')
+indice_2017 = valeur_part_etude_sup_departement_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
+#2018
+valeur_part_etude_sup_departement_2018 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2018-test.csv",code_departement,'2018')
+indice_2018 = valeur_part_etude_sup_departement_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
+
+df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+
+#EPCI
+#2014
+valeur_part_etude_sup_epci_2014 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2014-test.csv",code_epci,'2014')
+indice_2014 = valeur_part_etude_sup_epci_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
+#2015
+valeur_part_etude_sup_epci_2015 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2015-test.csv",code_epci,'2015')
+indice_2015 = valeur_part_etude_sup_epci_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
+#2016
+valeur_part_etude_sup_epci_2016 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2016-test.csv",code_epci,'2016')
+indice_2016 = valeur_part_etude_sup_epci_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
+#2017
+valeur_part_etude_sup_epci_2017 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2017-test.csv",code_epci,'2017')
+indice_2017 = valeur_part_etude_sup_epci_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
+#2018
+valeur_part_etude_sup_epci_2018 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2018-test.csv",code_epci,'2018')
+indice_2018 = valeur_part_etude_sup_epci_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
+
+df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+
+#COMMUNE
+#2014
+valeur_part_etude_sup_commune_2014 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2014-test.csv",code_commune,'2014')
+indice_2014 = valeur_part_etude_sup_commune_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
+#2015
+valeur_part_etude_sup_commune_2015 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2015-test.csv",code_commune,'2015')
+indice_2015 = valeur_part_etude_sup_commune_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
+#2016
+valeur_part_etude_sup_commune_2016 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2016-test.csv",code_commune,'2016')
+indice_2016 = valeur_part_etude_sup_commune_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
+#2017
+valeur_part_etude_sup_commune_2017 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2017-test.csv",code_commune,'2017')
+indice_2017 = valeur_part_etude_sup_commune_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
+#2018
+valeur_part_etude_sup_commune_2018 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2018-test.csv",code_commune,'2018')
+indice_2018 = valeur_part_etude_sup_commune_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
+
+df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
+                   columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+
+df_glob_sans_diplome= pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
+
+st.table(df_glob_sans_diplome)
+
+df_glob_sans_diplome_transposed = df_glob_sans_diplome.T
+st.line_chart(df_glob_sans_diplome_transposed)
+

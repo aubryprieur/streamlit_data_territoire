@@ -4,5 +4,6 @@ pandas==1.2.3
 streamlit==1.5.0
 altair
 geopandas
+fiona
 requests==2.27.1
 folium==0.12.1
