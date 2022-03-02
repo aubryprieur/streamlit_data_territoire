@@ -60,7 +60,7 @@ def app():
   @st.cache()
   def niveau_vie_median_iris(fichier, nom_ville, annee) :
       df = pd.read_csv(fichier, dtype={"IRIS": str , "COM": str},sep=";")
-      year = select_annee[-2:]
+      year = annee[-2:]
       df_ville = df.loc[df["LIBCOM"]==nom_ville]
       df_ville = df_ville.replace(',','.', regex=True)
       df_ville = df_ville[['IRIS','LIBIRIS','DISP_MED'+ year]]
@@ -80,7 +80,7 @@ def app():
     #Commune
     def niveau_vie_median_commune(fichier, nom_ville, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
-        year = select_annee[-2:]
+        year = annee[-2:]
         df_ville = df.loc[df["LIBGEO"]== nom_ville]
         df_ville = df_ville.replace(',','.', regex=True)
         ville = df.loc[df["LIBGEO"]== nom_ville]
@@ -90,7 +90,7 @@ def app():
     #EPCI
     def niveau_vie_median_epci(fichier, cod_epci, annee) :
       df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
-      year = select_annee[-2:]
+      year = annee[-2:]
       df_epci = df.loc[df["CODGEO"]== cod_epci]
       df_epci = df_epci.replace(',','.', regex=True)
       epci = df.loc[df["CODGEO"]== cod_epci]
@@ -103,7 +103,7 @@ def app():
     #Département
     def niveau_vie_median_departement(fichier, nom_departement, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
-        year = select_annee[-2:]
+        year = annee[-2:]
         df_departement = df.loc[df["LIBGEO"]== nom_departement]
         df_departement = df_departement.replace(',','.', regex=True)
         departement = df.loc[df["LIBGEO"]== nom_departement]
@@ -113,7 +113,7 @@ def app():
     #Région
     def niveau_vie_median_region(fichier, nom_region, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
-        year = select_annee[-2:]
+        year = annee[-2:]
         df_region = df.loc[df["LIBGEO"]== nom_region]
         df_region = df_region.replace(',','.', regex=True)
         region = df.loc[df["LIBGEO"]== nom_region]
@@ -124,7 +124,7 @@ def app():
     def niveau_vie_median_france(fichier, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
         df = df.replace(',','.', regex=True)
-        year = select_annee[-2:]
+        year = annee[-2:]
         nvm = df[[ 'LIBGEO' ,'Q2'+ year]]
         return nvm
     nvm_france =niveau_vie_median_france("./revenu/revenu_france/FILO" + select_annee + "_DISP_METROPOLE.csv", select_annee)
