@@ -50,10 +50,10 @@ def app():
 
   #############################################################################
   st.title("Analyse de mon territoire")
-  st.write("De l'iris en passant par la commune, l'epci, le département, la région et la France. COPAS vous propose de visualiser et comparer XXX indicateurs pour analyser rapidement et facilement votre territoire.")
-  st.write("Grace à notre outil, fini le temps fastidieux de récolte des données et de la création des indicateurs, la conception des graphiques et des cartes statistiques. Vous vous concentrez totalement sur l'analyse de votre territoire.")
+  st.write("De l'iris en passant par la commune, l'epci, le département, la région et la France. COPAS vous propose de visualiser et comparer les principaux indicateurs pour analyser rapidement et facilement votre territoire.")
+  st.write("Grace à notre outil, fini le temps fastidieux de récolte des données, de création des indicateurs, de la conception des graphiques et de la réalisation de cartes statistiques. Vous vous concentrez totalement sur l'analyse de votre territoire.")
   st.write("COPAS vous aide également dans l'analyse en vous fournissant les définitions des indicateurs sélectionnés, l'utilité des indicateurs et leur interprétation.")
-  st.write("A ce jour, l'app compte 12 indicateurs.")
+  st.write("A ce jour, l'app compte 14 indicateurs.")
   st.write("Comment procéder ?")
   st.write("1. Sélectionnez votre commune")
   st.write("2. Sélectionnez votre année de référence")
