@@ -66,6 +66,7 @@ def app():
       df_ville = df_ville[['IRIS','LIBIRIS','DISP_MED'+ year]]
       if year == "14":
         df_ville['DISP_MED' + year] = df_ville['DISP_MED' + year].str.replace(',','.').astype(float)
+      df_ville['DISP_MED' + year] = df_ville['DISP_MED' + year].astype(int)
       df_ville.reset_index(inplace=True, drop=True)
       df_ville = df_ville.rename(columns={'IRIS': "Code de l'iris",'LIBIRIS': "Nom de l'iris", 'DISP_MED'+ year:"Niveau de vie " + select_annee + " en €" })
 
