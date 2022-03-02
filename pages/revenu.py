@@ -77,96 +77,61 @@ def app():
   st.subheader('Comparaison entre territoires sur une année')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #Commune
-    df = pd.read_csv("./revenu/revenu_commune/FILO" + select_annee + "_DISP_COM.csv", dtype={"CODGEO": str},sep=";")
-    year = select_annee[-2:]
-    df_ville = df[['CODGEO','LIBGEO','Q2' + year]]
-    if int(year) <= 15:
-      df_ville['Q2' + year] = df_ville['Q2' + year].str.replace(',', '.').astype(float)
-    df_ville = df_ville.sort_values(by=['Q2' + year], ascending=False)
-    df_ville.reset_index(inplace=True, drop=True)
-    indice = df_ville[df_ville['CODGEO']==code_commune].index.values.item()+1
-    total_indice = len(df_ville['Q2' + year])
-    st.write("La commune de " + nom_commune + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " communes")
-
-    @st.cache()
     def niveau_vie_median_commune(fichier, nom_ville, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
         year = select_annee[-2:]
         df_ville = df.loc[df["LIBGEO"]== nom_ville]
         df_ville = df_ville.replace(',','.', regex=True)
         ville = df.loc[df["LIBGEO"]== nom_ville]
-        ville = ville.iloc[0]["LIBGEO"]
-        nvm =df_ville.loc[:, 'Q2'+ year ].to_numpy()
-        df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[ville])
-        return df2
-    nvm_ville =niveau_vie_median_commune("./revenu/revenu_commune/FILO" + select_annee + "_DISP_COM.csv",nom_commune, select_annee)
-
+        nvm = ville[[ 'LIBGEO' ,'Q2'+ year]]
+        return nvm
+    nvm_ville = niveau_vie_median_commune("./revenu/revenu_commune/FILO" + select_annee + "_DISP_COM.csv",nom_commune, select_annee)
     #EPCI
-    @st.cache()
     def niveau_vie_median_epci(fichier, cod_epci, annee) :
-        df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
-        year = select_annee[-2:]
-        df_epci = df.loc[df["CODGEO"]== cod_epci]
-        df_epci = df_epci.replace(',','.', regex=True)
-        epci = df.loc[df["CODGEO"]== cod_epci]
-        if epci.empty:
-          st.write("l'agglo n'est pas répartoriée par l'insee")
-        else:
-          epci = epci.iloc[0]["LIBGEO"]
-          nvm =df_epci.loc[:, 'Q2'+ year ].to_numpy()
-          df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[epci])
-          return df2
-
+      df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
+      year = select_annee[-2:]
+      df_epci = df.loc[df["CODGEO"]== cod_epci]
+      df_epci = df_epci.replace(',','.', regex=True)
+      epci = df.loc[df["CODGEO"]== cod_epci]
+      if epci.empty:
+        st.write("l'agglo n'est pas répartoriée par l'insee")
+      else:
+        nvm = epci[[ 'LIBGEO' ,'Q2'+ year]]
+        return nvm
     nvm_epci =niveau_vie_median_epci("./revenu/revenu_epci/FILO" + select_annee + "_DISP_EPCI.csv",str(code_epci), select_annee)
-
     #Département
-    @st.cache()
     def niveau_vie_median_departement(fichier, nom_departement, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
         year = select_annee[-2:]
         df_departement = df.loc[df["LIBGEO"]== nom_departement]
         df_departement = df_departement.replace(',','.', regex=True)
         departement = df.loc[df["LIBGEO"]== nom_departement]
-        departement = departement.iloc[0]["LIBGEO"]
-        nvm =df_departement.loc[:, 'Q2'+ year ].to_numpy()
-        df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[departement])
-        return df2
+        nvm = departement[[ 'LIBGEO' ,'Q2'+ year]]
+        return nvm
     nvm_departement =niveau_vie_median_departement("./revenu/revenu_dpt/FILO" + select_annee + "_DISP_DEP.csv",nom_departement, select_annee)
-
     #Région
-    @st.cache()
     def niveau_vie_median_region(fichier, nom_region, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
         year = select_annee[-2:]
         df_region = df.loc[df["LIBGEO"]== nom_region]
         df_region = df_region.replace(',','.', regex=True)
         region = df.loc[df["LIBGEO"]== nom_region]
-        region = region.iloc[0]["LIBGEO"]
-        nvm =df_region.loc[:, 'Q2'+ year ].to_numpy()
-        df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[region])
-        return df2
+        nvm = region[[ 'LIBGEO' ,'Q2'+ year]]
+        return nvm
     nvm_region =niveau_vie_median_region("./revenu/revenu_region/FILO" + select_annee + "_DISP_REG.csv",nom_region, select_annee)
-
     #France
-    @st.cache()
     def niveau_vie_median_france(fichier, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
         df = df.replace(',','.', regex=True)
         year = select_annee[-2:]
-        france = "France"
-        nvm =df.loc[:, 'Q2'+ year ].to_numpy()
-        df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[france])
-        return df2
+        nvm = df[[ 'LIBGEO' ,'Q2'+ year]]
+        return nvm
     nvm_france =niveau_vie_median_france("./revenu/revenu_france/FILO" + select_annee + "_DISP_METROPOLE.csv", select_annee)
-
-    #Comparaison
-    @st.cache()
-    def nvm_global(annee) :
-        df = pd.concat([nvm_ville, nvm_epci, nvm_departement, nvm_region, nvm_france])
-        year = annee
-        return df
-    revenu_global = nvm_global(select_annee)
-    st.table(revenu_global)
+    #Global
+    test_tab = pd.concat([nvm_ville, nvm_epci, nvm_departement, nvm_region, nvm_france])
+    test_tab = test_tab.reset_index(drop=True)
+    test_tab = test_tab.rename(columns={'LIBGEO': "Territoire",'Q2' + select_annee[-2:] : "Niveau de vie " + select_annee})
+    st.write(test_tab)
 ##################################
   st.subheader("Évolution sur 5 années")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -390,3 +355,4 @@ def app():
     with st.expander("Visualiser le tableau des iris"):
       st.dataframe(taux_pauvrete_iris)
 ########################
+

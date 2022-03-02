@@ -60,4 +60,71 @@ def app():
   st.write("3. Naviguez parmi les nombreuses thématiques disponibles")
 
   #############################################################################
+  def niveau_vie_median_commune(fichier, nom_ville, annee) :
+      df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
+      year = select_annee[-2:]
+      df_ville = df.loc[df["LIBGEO"]== nom_ville]
+      df_ville = df_ville.replace(',','.', regex=True)
+      ville = df.loc[df["LIBGEO"]== nom_ville]
+      nvm = ville[[ 'LIBGEO' ,'Q2'+ year]]
+      return nvm
+  nvm_ville = niveau_vie_median_commune("./revenu/revenu_commune/FILO" + select_annee + "_DISP_COM.csv",nom_commune, select_annee)
+  ######
+  def niveau_vie_median_epci(fichier, cod_epci, annee) :
+    df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
+    year = select_annee[-2:]
+    df_epci = df.loc[df["CODGEO"]== cod_epci]
+    df_epci = df_epci.replace(',','.', regex=True)
+    epci = df.loc[df["CODGEO"]== cod_epci]
+    if epci.empty:
+      st.write("l'agglo n'est pas répartoriée par l'insee")
+    else:
+      nvm = epci[[ 'LIBGEO' ,'Q2'+ year]]
+      #epci = epci.iloc[0]["LIBGEO"]
+      #nvm =df_epci.loc[:, 'Q2'+ year ].to_numpy()
+      #df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[epci])
+      return nvm
+
+  nvm_epci =niveau_vie_median_epci("./revenu/revenu_epci/FILO" + select_annee + "_DISP_EPCI.csv",str(code_epci), select_annee)
+#####
+  def niveau_vie_median_departement(fichier, nom_departement, annee) :
+      df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
+      year = select_annee[-2:]
+      df_departement = df.loc[df["LIBGEO"]== nom_departement]
+      df_departement = df_departement.replace(',','.', regex=True)
+      departement = df.loc[df["LIBGEO"]== nom_departement]
+      nvm = departement[[ 'LIBGEO' ,'Q2'+ year]]
+      #departement = departement.iloc[0]["LIBGEO"]
+      #nvm =df_departement.loc[:, 'Q2'+ year ].to_numpy()
+      #df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[departement])
+      return nvm
+  nvm_departement =niveau_vie_median_departement("./revenu/revenu_dpt/FILO" + select_annee + "_DISP_DEP.csv",nom_departement, select_annee)
+#####
+  def niveau_vie_median_region(fichier, nom_region, annee) :
+      df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
+      year = select_annee[-2:]
+      df_region = df.loc[df["LIBGEO"]== nom_region]
+      df_region = df_region.replace(',','.', regex=True)
+      region = df.loc[df["LIBGEO"]== nom_region]
+      #region = region.iloc[0]["LIBGEO"]
+      #nvm =df_region.loc[:, 'Q2'+ year ].to_numpy()
+      #df2 = pd.DataFrame(nvm,  columns = ['Niveau de vie médian en ' + select_annee], index=[region])
+      nvm = region[[ 'LIBGEO' ,'Q2'+ year]]
+      return nvm
+  nvm_region =niveau_vie_median_region("./revenu/revenu_region/FILO" + select_annee + "_DISP_REG.csv",nom_region, select_annee)
+#####
+
+  def niveau_vie_median_france(fichier, annee) :
+      df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
+      df = df.replace(',','.', regex=True)
+      year = select_annee[-2:]
+      nvm = df[[ 'LIBGEO' ,'Q2'+ year]]
+      return nvm
+  nvm_france =niveau_vie_median_france("./revenu/revenu_france/FILO" + select_annee + "_DISP_METROPOLE.csv", select_annee)
+
+  test_tab = pd.concat([nvm_ville, nvm_epci, nvm_departement, nvm_region, nvm_france])
+  test_tab = test_tab.reset_index(drop=True)
+  st.write(test_tab)
+
+
 
