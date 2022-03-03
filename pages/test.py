@@ -82,7 +82,7 @@ def app():
         nvm = region[[ 'LIBGEO' ,'Q2'+ year]]
         nvm = nvm.reset_index(drop=True)
         return nvm
-##########################################@@@
+##########################################
 
     #France
     indice_2014 = niveau_vie_median_france("./revenu/revenu_france/FILO2014_DISP_METROPOLE.csv", "2014").loc[:,"Q214"][0]
@@ -110,4 +110,4 @@ def app():
     data_df = data_df.reset_index(drop=True)
 
     st.write(data_df)
-
+################################################
