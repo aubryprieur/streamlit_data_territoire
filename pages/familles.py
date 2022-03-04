@@ -574,3 +574,19 @@ def app():
 
     df_glob_fam_nombreuses_transposed = df_glob_fam_nombreuses.T
     st.line_chart(df_glob_fam_nombreuses_transposed)
+
+    ########################################################################
+    st.subheader('Taille moyenne des ménages')
+    def taille_moyen_menages_iris(fichier, ville, annee) :
+      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep=";")
+      df = df.loc[df['COM'] == ville]
+      year = annee[-2:]
+      df = df[['COM','IRIS', 'P'+ year + '_NPER_RP', 'P'+ year + '_RP' ]]
+      communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+      df_nb_pers_resid = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df[['IRIS','P'+ year + '_NPER_RP','P'+ year + '_RP']], left_on='CODE_IRIS', right_on="IRIS")
+      df_nb_pers_resid['indice'] = df_nb_pers_resid['P'+ year + '_NPER_RP'] / df_nb_pers_resid['P'+ year + '_RP']
+      df_nb_pers_resid = df_nb_pers_resid[['CODE_IRIS', 'LIB_IRIS', 'P'+ year + '_NPER_RP', 'P'+ year + '_RP', 'indice' ]]
+      df_nb_pers_resid = df_nb_pers_resid.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_RP':"Résidences principales (" + select_annee + ")" ,'P' + year + '_NPER_RP':"Nombre de personnes des résidences principales (" + select_annee + ")" ,'indice':"Taille moyenne des ménages (" + select_annee + ")" })
+      return df_nb_pers_resid
+    taille_menages = taille_moyen_menages_iris("./logement/base-ic-logement-" + select_annee + ".csv", code_commune, select_annee )
+    st.write(taille_menages)
