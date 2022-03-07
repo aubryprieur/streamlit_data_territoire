@@ -10,6 +10,7 @@ from streamlit_folium import folium_static
 import folium # map rendering library
 import streamlit.components.v1 as components
 import fiona
+import plotly.express as px
 
 def app():
   #Commune
@@ -82,6 +83,35 @@ def app():
   st.metric(label="Population 2018", value='{:,.0f}'.format(df_pop_hist_ville.iloc[0]["2018"]).replace(",", " "), delta=str('{:,.0f}'.format(evol_68_18.item()).replace(",", " ")) + " hab. depuis 1968")
 
   ##########################################################################
+  st.header("Répartition de la population par tranches d'âge")
+  #P18_POP0014 P18_POP1529 P18_POP3044 P18_POP4559 P18_POP6074 P18_POP75P
+  df = pd.read_csv("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", dtype={"IRIS": str , "COM": str},sep=";")
+  year = select_annee[-2:]
+  df_tranche_age = df.loc[df["COM"] == code_commune]
+  df_tranche_age = df_tranche_age[["IRIS","P" + year +"_POP","P" + year +"_POP0014", "P" + year +"_POP1529", "P" + year +"_POP3044", "P" + year +"_POP4559", "P" + year +"_POP6074", "P" + year +"_POP75P"]]
+  df_tranche_age["part_pop0014"] = df_tranche_age["P" + year +"_POP0014"] / df_tranche_age["P" + year +"_POP"] * 100
+  df_tranche_age["part_pop1529"] = df_tranche_age["P" + year +"_POP1529"] / df_tranche_age["P" + year +"_POP"] * 100
+  df_tranche_age["part_pop3044"] = df_tranche_age["P" + year +"_POP3044"] / df_tranche_age["P" + year +"_POP"] * 100
+  df_tranche_age["part_pop4559"] = df_tranche_age["P" + year +"_POP4559"] / df_tranche_age["P" + year +"_POP"] * 100
+  df_tranche_age["part_pop6074"] = df_tranche_age["P" + year +"_POP6074"] / df_tranche_age["P" + year +"_POP"] * 100
+  df_tranche_age["part_pop75P"] = df_tranche_age["P" + year +"_POP75P"] / df_tranche_age["P" + year +"_POP"] * 100
+  df_tranche_age = df_tranche_age[["IRIS","part_pop0014","part_pop1529", "part_pop3044", "part_pop4559" ,"part_pop6074" , "part_pop75P"]]
+  communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+  df_tranche_age_iris = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_tranche_age[["IRIS","part_pop0014","part_pop1529", "part_pop3044", "part_pop4559" ,"part_pop6074" , "part_pop75P"]], left_on='CODE_IRIS', right_on="IRIS")
+  df_tranche_age_iris = df_tranche_age_iris[["IRIS","LIB_IRIS","part_pop0014","part_pop1529", "part_pop3044", "part_pop4559" ,"part_pop6074" , "part_pop75P"]]
+  df_tranche_age_iris = df_tranche_age_iris.reset_index(drop=True)
+  df_tranche_age_iris = df_tranche_age_iris.rename(columns={'LIB_IRIS': "Nom de l'iris",'IRIS': "Code de l'iris", "part_pop0014" : '00-14 ans' , "part_pop1529" : '15-29 ans' , "part_pop3044" : "30-44 ans", "part_pop4559" : "45-59 ans", "part_pop6074" : "60-74 ans", "part_pop75P" : "Plus de 75 ans"})
+
+  st.write(df_tranche_age_iris)
+
+  fig = px.bar(df_tranche_age_iris, x="Nom de l'iris", y=["00-14 ans","15-29 ans", "30-44 ans", "45-59 ans" ,"60-74 ans" , "Plus de 75 ans"], title="Répartition de la population", height=600, width=800)
+  st.plotly_chart(fig, use_container_width=False)
+
+
+
+
+
+  ###########################################################################
   st.header('2.Personnes immigrées')
   st.caption("Selon la définition adoptée par le Haut Conseil à l’Intégration, un immigré est une personne née étrangère à l’étranger et résidant en France. Les personnes nées françaises à l’étranger et vivant en France ne sont donc pas comptabilisées. À l’inverse, certains immigrés ont pu devenir français, les autres restant étrangers. Les populations étrangère et immigrée ne se confondent pas totalement : un immigré n’est pas nécessairement étranger et réciproquement, certains étrangers sont nés en France (essentiellement des mineurs). La qualité d’immigré est permanente : un individu continue à appartenir à la population immigrée même s’il devient français par acquisition. C’est le pays de naissance, et non la nationalité à la naissance, qui définit l'origine géographique d’un immigré.")
   @st.cache()
