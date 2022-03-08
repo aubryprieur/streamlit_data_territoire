@@ -83,7 +83,8 @@ def app():
   st.metric(label="Population 2018", value='{:,.0f}'.format(df_pop_hist_ville.iloc[0]["2018"]).replace(",", " "), delta=str('{:,.0f}'.format(evol_68_18.item()).replace(",", " ")) + " hab. depuis 1968")
 
   ##########################################################################
-  st.header("Répartition de la population par tranches d'âge")
+  st.header("2.Répartition de la population par tranches d'âge")
+  st.subheader('Comparaison entre iris')
   #P18_POP0014 P18_POP1529 P18_POP3044 P18_POP4559 P18_POP6074 P18_POP75P
   df = pd.read_csv("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", dtype={"IRIS": str , "COM": str},sep=";")
   year = select_annee[-2:]
@@ -108,47 +109,124 @@ def app():
   st.plotly_chart(fig, use_container_width=False)
 
   #################
+  st.subheader('Comparaison entre territoires')
   #Commune
-  st.write("Commune")
   def tranche_age_com(fichier, commune, annee):
     df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str}, sep = ';')
     year = annee[-2:]
     df = df.loc[df["COM"] == commune]
     df = df[["IRIS","P" + year +"_POP","P" + year +"_POP0014", "P" + year +"_POP1529", "P" + year +"_POP3044", "P" + year +"_POP4559", "P" + year +"_POP6074", "P" + year +"_POP75P"]]
-    pop0014 = df.loc[:, "P" + year +"_POP0014"].sum()
-    pop1529 = df.loc[:, "P" + year +"_POP1529"].sum()
-    pop3044 = df.loc[:, "P" + year +"_POP3044"].sum()
-    pop4559 = df.loc[:, "P" + year +"_POP4559"].sum()
-    pop6074 = df.loc[:, "P" + year +"_POP6074"].sum()
-    pop75P = df.loc[:, "P" + year +"_POP75P"].sum()
-    df_tranches_age_com = pd.DataFrame(data=[[pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"], index = [nom_commune])
+    pop0014 = (df.loc[:, "P" + year +"_POP0014"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop1529 = (df.loc[:, "P" + year +"_POP1529"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop3044 = (df.loc[:, "P" + year +"_POP3044"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop4559 = (df.loc[:, "P" + year +"_POP4559"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop6074 = (df.loc[:, "P" + year +"_POP6074"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop75P = (df.loc[:, "P" + year +"_POP75P"].sum() / df["P" + year +"_POP"].sum()) * 100
+    df_tranches_age_com = pd.DataFrame(data=[[nom_commune,pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
     return df_tranches_age_com
   tranches_age_com = tranche_age_com("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", code_commune, select_annee)
-  st.write(tranches_age_com)
 
   #EPCI
-  st.write("EPCI")
   def tranche_age_epci(fichier, epci, annee):
     epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
     df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str}, sep = ';')
     year = annee[-2:]
     df_epci = pd.merge(df, epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
-    df_epci = df_epci.loc[df_epci["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM',"P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
-    pop0014 = df_epci.loc[:, "P" + year +"_POP0014"].sum()
-    pop1529 = df_epci.loc[:, "P" + year +"_POP1529"].sum()
-    pop3044 = df_epci.loc[:, "P" + year +"_POP3044"].sum()
-    pop4559 = df_epci.loc[:, "P" + year +"_POP4559"].sum()
-    pop6074 = df_epci.loc[:, "P" + year +"_POP6074"].sum()
-    pop75P = df_epci.loc[:, "P" + year +"_POP75P"].sum()
-    df_tranches_age_epci = pd.DataFrame(data=[[pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"], index = [nom_epci])
+    df_epci = df_epci.loc[df_epci["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM',"P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
+    pop0014 = (df_epci.loc[:, "P" + year +"_POP0014"].sum() / df_epci["P" + year +"_POP"].sum()) * 100
+    pop1529 = (df_epci.loc[:, "P" + year +"_POP1529"].sum() / df_epci["P" + year +"_POP"].sum()) * 100
+    pop3044 = (df_epci.loc[:, "P" + year +"_POP3044"].sum() / df_epci["P" + year +"_POP"].sum()) * 100
+    pop4559 = (df_epci.loc[:, "P" + year +"_POP4559"].sum() / df_epci["P" + year +"_POP"].sum()) * 100
+    pop6074 = (df_epci.loc[:, "P" + year +"_POP6074"].sum() / df_epci["P" + year +"_POP"].sum()) * 100
+    pop75P = (df_epci.loc[:, "P" + year +"_POP75P"].sum() / df_epci["P" + year +"_POP"].sum()) * 100
+    df_tranches_age_epci = pd.DataFrame(data=[[nom_epci,pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
     return df_tranches_age_epci
   tranches_age_epci = tranche_age_epci("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", code_epci, select_annee)
-  st.write(tranches_age_epci)
 
+  #Dpt
+  def tranche_age_departement(fichier, departement, annee):
+    if int(annee) >= 2017:
+      communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str},sep = ',')
+      df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+      year = annee[-2:]
+      df_dpt = pd.merge(df, communes_select[['COM','DEP']],  on='COM', how='left')
+      df_departement = df_dpt.loc[df_dpt["DEP"]==departement, ['DEP', 'COM',"P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
+      pop0014 = (df_departement.loc[:, "P" + year +"_POP0014"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop1529 = (df_departement.loc[:, "P" + year +"_POP1529"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop3044 = (df_departement.loc[:, "P" + year +"_POP3044"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop4559 = (df_departement.loc[:, "P" + year +"_POP4559"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop6074 = (df_departement.loc[:, "P" + year +"_POP6074"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop75P = (df_departement.loc[:, "P" + year +"_POP75P"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      df_tranches_age_dpt = pd.DataFrame(data=[[nom_departement,pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
+      return df_tranches_age_dpt
+    else:
+      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str},sep = ';')
+      year = annee[-2:]
+      df_departement = df.loc[df["DEP"]==departement, ["P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
+      pop0014 = (df_departement.loc[:, "P" + year +"_POP0014"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop1529 = (df_departement.loc[:, "P" + year +"_POP1529"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop3044 = (df_departement.loc[:, "P" + year +"_POP3044"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop4559 = (df_departement.loc[:, "P" + year +"_POP4559"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop6074 = (df_departement.loc[:, "P" + year +"_POP6074"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      pop75P = (df_departement.loc[:, "P" + year +"_POP75P"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
+      df_tranches_age_dpt = pd.DataFrame(data=[[nom_departement,pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
+      return df_tranches_age_dpt
+  tranche_age_departement = tranche_age_departement("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_departement, select_annee)
 
+  #Région
+  def tranche_age_region(fichier, region, annee):
+    if int(annee) >= 2017:
+      communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str},sep = ',')
+      df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+      year = annee[-2:]
+      df_region = pd.merge(df, communes_select[['COM','REG']],  on='COM', how='left')
+      df_region = df_region.loc[df_region["REG"]== region, ['REG', 'COM',"P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
+      pop0014 = (df_region.loc[:, "P" + year +"_POP0014"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop1529 = (df_region.loc[:, "P" + year +"_POP1529"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop3044 = (df_region.loc[:, "P" + year +"_POP3044"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop4559 = (df_region.loc[:, "P" + year +"_POP4559"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop6074 = (df_region.loc[:, "P" + year +"_POP6074"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop75P = (df_region.loc[:, "P" + year +"_POP75P"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      df_tranches_age_region = pd.DataFrame(data=[[nom_region,pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
+      return df_tranches_age_region
+    else:
+      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str},sep = ';')
+      year = annee[-2:]
+      df_region = df.loc[df["REG"]== region, ["P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
+      pop0014 = (df_region.loc[:, "P" + year +"_POP0014"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop1529 = (df_region.loc[:, "P" + year +"_POP1529"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop3044 = (df_region.loc[:, "P" + year +"_POP3044"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop4559 = (df_region.loc[:, "P" + year +"_POP4559"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop6074 = (df_region.loc[:, "P" + year +"_POP6074"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      pop75P = (df_region.loc[:, "P" + year +"_POP75P"].sum() / df_region["P" + year +"_POP"].sum()) * 100
+      df_tranches_age_region = pd.DataFrame(data=[[nom_region,pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
+      return df_tranches_age_region
+  tranche_age_region = tranche_age_region("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_region, select_annee)
 
+  # France
+  def tranche_age_france(fichier, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, sep = ';')
+    year = annee[-2:]
+    pop0014 = (df.loc[:, "P" + year +"_POP0014"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop1529 = (df.loc[:, "P" + year +"_POP1529"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop3044 = (df.loc[:, "P" + year +"_POP3044"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop4559 = (df.loc[:, "P" + year +"_POP4559"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop6074 = (df.loc[:, "P" + year +"_POP6074"].sum() / df["P" + year +"_POP"].sum()) * 100
+    pop75P = (df.loc[:, "P" + year +"_POP75P"].sum() / df["P" + year +"_POP"].sum()) * 100
+    df_tranches_age_france = pd.DataFrame(data=[["France",pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
+    return df_tranches_age_france
+  tranche_age_france = tranche_age_france("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", select_annee)
+
+  df_glob_tranches_age = pd.concat([tranches_age_com, tranches_age_epci, tranche_age_departement, tranche_age_region, tranche_age_france])
+  df_glob_tranches_age = df_glob_tranches_age.rename(columns={'territoire': "Territoires",'pop0014': "00-14 ans", "pop1529" : '15-29 ans' , "pop3044" : '30-44 ans' , "pop4559" : "45-59 ans", "pop6074" : "60-74 ans", "pop75P" : "Plus de 75 ans"})
+  df_glob_tranches_age = df_glob_tranches_age.reset_index(drop=True)
+  st.write('Tableau')
+  st.write(df_glob_tranches_age)
+
+  fig = px.bar(df_glob_tranches_age, x="Territoires", y=["00-14 ans","15-29 ans", "30-44 ans", "45-59 ans" ,"60-74 ans" , "Plus de 75 ans"], title="Graphique", height=600, width=800)
+  st.plotly_chart(fig, use_container_width=False)
   ###########################################################################
-  st.header('2.Personnes immigrées')
+  st.header('3.Personnes immigrées')
   st.caption("Selon la définition adoptée par le Haut Conseil à l’Intégration, un immigré est une personne née étrangère à l’étranger et résidant en France. Les personnes nées françaises à l’étranger et vivant en France ne sont donc pas comptabilisées. À l’inverse, certains immigrés ont pu devenir français, les autres restant étrangers. Les populations étrangère et immigrée ne se confondent pas totalement : un immigré n’est pas nécessairement étranger et réciproquement, certains étrangers sont nés en France (essentiellement des mineurs). La qualité d’immigré est permanente : un individu continue à appartenir à la population immigrée même s’il devient français par acquisition. C’est le pays de naissance, et non la nationalité à la naissance, qui définit l'origine géographique d’un immigré.")
   @st.cache()
   def part_pers_imm_iris(fichier, ville, annee) :
@@ -169,7 +247,7 @@ def app():
     st.dataframe(indice_imm_iris)
 
   ##########################################################################
-  st.header('2.Personnes étrangères')
+  st.header('4.Personnes étrangères')
   st.caption("Un étranger est une personne qui réside en France et ne possède pas la nationalité française, soit qu'elle possède une autre nationalité (à titre exclusif), soit qu'elle n'en ait aucune (c'est le cas des personnes apatrides). Les personnes de nationalité française possédant une autre nationalité (ou plusieurs) sont considérées en France comme françaises. Un étranger n'est pas forcément immigré, il peut être né en France (les mineurs notamment).")
   @st.cache()
   def part_pers_etr_iris(fichier, ville, annee) :
