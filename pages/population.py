@@ -107,7 +107,43 @@ def app():
   fig = px.bar(df_tranche_age_iris, x="Nom de l'iris", y=["00-14 ans","15-29 ans", "30-44 ans", "45-59 ans" ,"60-74 ans" , "Plus de 75 ans"], title="Répartition de la population", height=600, width=800)
   st.plotly_chart(fig, use_container_width=False)
 
+  #################
+  #Commune
+  st.write("Commune")
+  def tranche_age_com(fichier, commune, annee):
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str}, sep = ';')
+    year = annee[-2:]
+    df = df.loc[df["COM"] == commune]
+    df = df[["IRIS","P" + year +"_POP","P" + year +"_POP0014", "P" + year +"_POP1529", "P" + year +"_POP3044", "P" + year +"_POP4559", "P" + year +"_POP6074", "P" + year +"_POP75P"]]
+    pop0014 = df.loc[:, "P" + year +"_POP0014"].sum()
+    pop1529 = df.loc[:, "P" + year +"_POP1529"].sum()
+    pop3044 = df.loc[:, "P" + year +"_POP3044"].sum()
+    pop4559 = df.loc[:, "P" + year +"_POP4559"].sum()
+    pop6074 = df.loc[:, "P" + year +"_POP6074"].sum()
+    pop75P = df.loc[:, "P" + year +"_POP75P"].sum()
+    df_tranches_age_com = pd.DataFrame(data=[[pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"], index = [nom_commune])
+    return df_tranches_age_com
+  tranches_age_com = tranche_age_com("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", code_commune, select_annee)
+  st.write(tranches_age_com)
 
+  #EPCI
+  st.write("EPCI")
+  def tranche_age_epci(fichier, epci, annee):
+    epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str}, sep = ';')
+    year = annee[-2:]
+    df_epci = pd.merge(df, epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
+    df_epci = df_epci.loc[df_epci["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM',"P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
+    pop0014 = df_epci.loc[:, "P" + year +"_POP0014"].sum()
+    pop1529 = df_epci.loc[:, "P" + year +"_POP1529"].sum()
+    pop3044 = df_epci.loc[:, "P" + year +"_POP3044"].sum()
+    pop4559 = df_epci.loc[:, "P" + year +"_POP4559"].sum()
+    pop6074 = df_epci.loc[:, "P" + year +"_POP6074"].sum()
+    pop75P = df_epci.loc[:, "P" + year +"_POP75P"].sum()
+    df_tranches_age_epci = pd.DataFrame(data=[[pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"], index = [nom_epci])
+    return df_tranches_age_epci
+  tranches_age_epci = tranche_age_epci("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", code_epci, select_annee)
+  st.write(tranches_age_epci)
 
 
 
