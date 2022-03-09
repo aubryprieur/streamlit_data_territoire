@@ -77,6 +77,18 @@ def app():
 ############################
   st.subheader('Comparaison entre territoires sur une année')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
+    #Position de la commune
+    df = pd.read_csv("./revenu/revenu_commune/FILO" + select_annee + "_DISP_COM.csv", dtype={"CODGEO": str},sep=";")
+    year = select_annee[-2:]
+    df_ville = df[['CODGEO','LIBGEO','Q2' + year]]
+    if int(year) <= 15:
+      df_ville['Q2' + year] = df_ville['Q2' + year].str.replace(',', '.').astype(float)
+    df_ville = df_ville.sort_values(by=['Q2' + year], ascending=False)
+    df_ville.reset_index(inplace=True, drop=True)
+    indice = df_ville[df_ville['CODGEO']==code_commune].index.values.item()+1
+    total_indice = len(df_ville['Q2' + year])
+    st.write("La commune de " + nom_commune + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " communes")
+
     #Commune
     def niveau_vie_median_commune(fichier, nom_ville, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
@@ -355,5 +367,7 @@ def app():
     taux_pauvrete_iris = pauvrete_60_iris("./revenu/revenu_iris/BASE_TD_FILO_DISP_IRIS_" + select_annee + ".csv",code_commune, select_annee)
     with st.expander("Visualiser le tableau des iris"):
       st.dataframe(taux_pauvrete_iris)
-########################
+############################################################################
+  st.header("Taux de couverture des assurés sociaux - CMUC")
+
 

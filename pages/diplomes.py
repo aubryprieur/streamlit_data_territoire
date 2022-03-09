@@ -49,6 +49,11 @@ def app():
 
   #############################################################################
   st.title('DIPLÔME')
+
+  st.header("Taux de scolarisation des 16-24 ans")
+
+
+
   st.header('1.Sans diplome')
   st.caption("La part de non diplômés parmi les individus de 15 ans et plus non scolarisés nous renseigne \
   significativement sur la part des personnes a priori les plus vulnérables sur le marché de l’emploi. En effet, \

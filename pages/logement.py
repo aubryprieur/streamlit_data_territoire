@@ -63,7 +63,9 @@ def app():
   #DEP
   #COM
   #LIBIRIS
-
+  st.header("Statut d'occupation des logements [proprio/locataire/...]")
+  st.header("Répartition des logements selon le nombre de pièces")
+  st.header("Répartition des logements selon l'ancienneté")
 
   st.header('1.Part des logements HLM')
 

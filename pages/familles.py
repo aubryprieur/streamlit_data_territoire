@@ -590,3 +590,6 @@ def app():
       return df_nb_pers_resid
     taille_menages = taille_moyen_menages_iris("./logement/base-ic-logement-" + select_annee + ".csv", code_commune, select_annee )
     st.write(taille_menages)
+
+    ########################################################################
+    st.subheader("Les ménages d'une personne")
