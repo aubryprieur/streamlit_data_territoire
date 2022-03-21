@@ -385,6 +385,24 @@ def app():
     taux_pauvrete_iris = pauvrete_60_iris("./revenu/revenu_iris/BASE_TD_FILO_DISP_IRIS_" + select_annee + ".csv",code_commune, select_annee)
     with st.expander("Visualiser le tableau des iris"):
       st.dataframe(taux_pauvrete_iris)
+############################
+  st.caption("Zoom sur les QPV")
+  # Preparation carto QPV
+  def niveau_vie_median_qpv(fichier, nom_ville, annee) :
+    fp_qpv = "./qpv.geojson"
+    map_qpv_df = gpd.read_file(fp_qpv)
+    year = annee[-2:]
+    df = pd.read_csv(fichier, dtype={"CODGEO": str}, sep=";")
+    map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
+    map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'DISP_TP60_A' + year[-2:] ]]
+    map_qpv_df_code_insee_extract
+    df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+    df_qpv = df_qpv.reset_index(drop=True)
+    df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp','DISP_TP60_A' + year]]
+    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", "DISP_TP60_A" + year : "Taux de pauvreté " + select_annee})
+    return df_qpv
+  revenu_disp_qpv = niveau_vie_median_qpv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', nom_commune, select_annee)
+  st.table(revenu_disp_qpv)
 ############################################################################
   st.header("Taux de couverture des assurés sociaux - CMUC")
 

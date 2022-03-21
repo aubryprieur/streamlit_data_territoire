@@ -83,6 +83,8 @@ def app():
   st.metric(label="Population 2018", value='{:,.0f}'.format(df_pop_hist_ville.iloc[0]["2018"]).replace(",", " "), delta=str('{:,.0f}'.format(evol_68_18.item()).replace(",", " ")) + " hab. depuis 1968")
 
   ##########################################################################
+
+  ############################################################################
   st.header("2.Répartition de la population par tranches d'âge")
   st.subheader('Comparaison entre iris')
   #P18_POP0014 P18_POP1529 P18_POP3044 P18_POP4559 P18_POP6074 P18_POP75P
@@ -266,6 +268,24 @@ def app():
   indice_etr_iris = part_pers_etr_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_etr_iris)
-
+############################
+  st.caption("Zoom sur les QPV")
+  # Preparation carto QPV
+  def part_etrangers_qpv(fichier, nom_ville, annee) :
+    fp_qpv = "./qpv.geojson"
+    map_qpv_df = gpd.read_file(fp_qpv)
+    year = annee[-2:]
+    df = pd.read_csv(fichier, dtype={"CODGEO": str}, sep=";")
+    map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
+    map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', "TX_TOT_ET" ]]
+    map_qpv_df_code_insee_extract
+    df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+    df_qpv = df_qpv.reset_index(drop=True)
+    df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp','TX_TOT_ET']]
+    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", "TX_TOT_ET" : "Part des étrangers " + select_annee})
+    return df_qpv
+  part_etrangers_qpv = part_etrangers_qpv('./population/qpv/data_DEMO_' + select_annee + '_V1_QP.csv', nom_commune, select_annee)
+  st.table(part_etrangers_qpv)
+############################################################################
 
 
