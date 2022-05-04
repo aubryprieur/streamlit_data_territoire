@@ -85,6 +85,20 @@ def app():
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_part_sans_diplome_iris)
 
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(indice_part_sans_diplome_iris)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='sans_diplome.csv',
+    mime='text/csv',
+  )
+
   st.subheader('Comparaison')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     # Commune
@@ -192,6 +206,20 @@ def app():
 
     part_sans_diplome_fin = sans_diplome_global(select_annee)
     st.table(part_sans_diplome_fin)
+
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(part_sans_diplome_fin)
+
+    st.download_button(
+      label="💾 Télécharger les données",
+      data=csv,
+      file_name='sans_diplome_comparaison.csv',
+      mime='text/csv',
+    )
 
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -362,6 +390,19 @@ def app():
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_part_etude_sup_iris)
 
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(indice_part_etude_sup_iris)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='etude_sup_iris.csv',
+    mime='text/csv',
+  )
 
   st.subheader('Comparaison')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -501,6 +542,20 @@ def app():
 
     part_etude_sup_fin = etude_sup_global(select_annee)
     st.table(part_etude_sup_fin)
+
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(part_etude_sup_fin)
+
+    st.download_button(
+      label="💾 Télécharger les données",
+      data=csv,
+      file_name='etude_sup_comparaison.csv',
+      mime='text/csv',
+    )
 
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):

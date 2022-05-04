@@ -74,6 +74,20 @@ def app():
   with st.expander("Visualiser le tableau des iris"):
     st.table(indice_part_fam_mono_iris)
 
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(indice_part_fam_mono_iris)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='fam_monop_iris.csv',
+    mime='text/csv',
+  )
+
   st.subheader("a.Comparaison sur une année")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     # Commune
@@ -218,6 +232,19 @@ def app():
     fam_mono_fin = fam_mono_global(select_annee)
     st.table(fam_mono_fin)
 
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(fam_mono_fin)
+
+    st.download_button(
+      label="💾 Télécharger les données",
+      data=csv,
+      file_name='fam_monop_comparaison.csv',
+      mime='text/csv',
+    )
 
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -355,6 +382,20 @@ def app():
   with st.expander("Visualiser le tableau des iris"):
     st.table(indice_part_fam_nombreuses_iris)
 
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(indice_part_fam_nombreuses_iris)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='fam_nombreuses_iris.csv',
+    mime='text/csv',
+  )
+
   st.subheader("a.Comparaison sur une année")
   st.caption("Une famille est dite nombreuse lorsqu'elle comprend trois enfants ou plus - définition INSEE")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -467,6 +508,20 @@ def app():
 
     fam_nombreuses_fin = fam_nombreuses_global(select_annee)
     st.table(fam_nombreuses_fin)
+
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(fam_nombreuses_fin)
+
+    st.download_button(
+      label="💾 Télécharger les données",
+      data=csv,
+      file_name='fam_nombreuses_comparaison.csv',
+      mime='text/csv',
+    )
 
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):

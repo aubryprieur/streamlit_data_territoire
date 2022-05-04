@@ -74,6 +74,20 @@ def app():
   nvm_iris = niveau_vie_median_iris("./revenu/revenu_iris/BASE_TD_FILO_DISP_IRIS_" + select_annee + ".csv",nom_commune, select_annee)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(nvm_iris)
+
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(nvm_iris)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='niveau_de_vie_iris.csv',
+    mime='text/csv',
+  )
 ############################
   st.caption("Zoom sur les QPV")
   # Preparation carto QPV
@@ -92,6 +106,20 @@ def app():
     return df_qpv
   revenu_disp_qpv = niveau_vie_median_qpv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', nom_commune, select_annee)
   st.table(revenu_disp_qpv)
+
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(revenu_disp_qpv)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='niveau_de_vie_qpv.csv',
+    mime='text/csv',
+  )
 ##################################
   st.subheader('Comparaison entre territoires sur une année')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -163,6 +191,20 @@ def app():
     test_tab = test_tab.reset_index(drop=True)
     test_tab = test_tab.rename(columns={'LIBGEO': "Territoire",'Q2' + select_annee[-2:] : "Niveau de vie " + select_annee})
     st.write(test_tab)
+
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(test_tab)
+
+    st.download_button(
+      label="💾 Télécharger les données",
+      data=csv,
+      file_name='niveau_de_vie_comparaison.csv',
+      mime='text/csv',
+    )
 ##################################
   st.subheader("Évolution sur 5 années")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):

@@ -107,6 +107,20 @@ def app():
 
   st.write(df_tranche_age_iris)
 
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(df_tranche_age_iris)
+
+  st.download_button(
+       label="💾 Télécharger les données",
+       data=csv,
+       file_name='tranches_ages.csv',
+       mime='text/csv',
+      )
+
   fig = px.bar(df_tranche_age_iris, x="Nom de l'iris", y=["00-14 ans","15-29 ans", "30-44 ans", "45-59 ans" ,"60-74 ans" , "Plus de 75 ans"], title="Répartition de la population", height=600, width=800)
   st.plotly_chart(fig, use_container_width=False)
 
@@ -224,6 +238,20 @@ def app():
   df_glob_tranches_age = df_glob_tranches_age.reset_index(drop=True)
   st.write('Tableau')
   st.write(df_glob_tranches_age)
+
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(df_glob_tranches_age)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='tranches_ages_comparaison.csv',
+    mime='text/csv',
+  )
 
   fig = px.bar(df_glob_tranches_age, x="Territoires", y=["00-14 ans","15-29 ans", "30-44 ans", "45-59 ans" ,"60-74 ans" , "Plus de 75 ans"], title="Graphique", height=600, width=800)
   st.plotly_chart(fig, use_container_width=False)
