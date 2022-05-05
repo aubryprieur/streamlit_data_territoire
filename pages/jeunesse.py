@@ -252,7 +252,8 @@ def app():
     )
 
   ##################################
-  st.subheader('Les NEET')
+  st.subheader('2. Les NEET')
+  st.caption("Un NEET (neither in employment nor in education or training) est une personne entre 16 et 25 ans qui n’est ni en emploi, ni en études, ni en formation (formelle ou non formelle).")
 
   #Commune
   def neet_commune(fichier, nom_ville, annee) :
@@ -297,3 +298,17 @@ def app():
   #Global
   result = pd.concat([neet_ville,neet_epci, neet_dpt, neet_reg, neet_france])
   st.write(result)
+
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(result)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='neet_comparaison.csv',
+    mime='text/csv',
+  )
