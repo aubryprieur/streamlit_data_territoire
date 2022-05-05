@@ -250,3 +250,50 @@ def app():
       file_name='ind_jeunesse_comparaison.csv',
       mime='text/csv',
     )
+
+  ##################################
+  st.subheader('Les NEET')
+
+  #Commune
+  def neet_commune(fichier, nom_ville, annee) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_ville = df.loc[df["libgeo"] == nom_ville]
+    df_ville = df_ville.loc[df_ville["an"] == annee]
+    return df_ville
+  neet_ville = neet_commune("./jeunesse/neet/neet_communes_" + select_annee + ".csv",nom_commune, select_annee)
+
+  #EPCI
+  def neet_epci(fichier, epci, annee) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_epci = df.loc[df["codgeo"] == epci]
+    df_epci = df_epci.loc[df_epci["an"] == annee]
+    return df_epci
+  neet_epci = neet_epci("./jeunesse/neet/neet_epci_" + select_annee + ".csv",code_epci, select_annee)
+
+  #Département
+  def neet_departement(fichier, departement, annee) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_departement = df.loc[df["codgeo"] == departement]
+    df_departement = df_departement.loc[df_departement["an"] == annee]
+    return df_departement
+  neet_dpt = neet_departement("./jeunesse/neet/neet_dpt_" + select_annee + ".csv",code_departement, select_annee)
+
+  #Région
+  def neet_region(fichier, region, annee) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_region = df.loc[df["codgeo"] == region]
+    df_region = df_region.loc[df_region["an"] == annee]
+    return df_region
+  neet_reg = neet_region("./jeunesse/neet/neet_region_" + select_annee + ".csv",str(round(code_region)), select_annee)
+
+  #France
+  data = {'codgeo':['1'],
+          'libgeo':['France'],
+          'an':['2018'],
+          'part_non_inseres':['16,30']
+          }
+  neet_france = pd.DataFrame(data)
+
+  #Global
+  result = pd.concat([neet_ville,neet_epci, neet_dpt, neet_reg, neet_france])
+  st.write(result)
