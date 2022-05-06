@@ -1,0 +1,182 @@
+﻿codgeo;libgeo;an;tx_morta
+01;Guadeloupe;1968-1975;8,80
+01;Guadeloupe;1975-1982;6,60
+01;Guadeloupe;1982-1990;6,40
+01;Guadeloupe;1990-1999;6,00
+01;Guadeloupe;1999-2007;6,60
+01;Guadeloupe;1999-2008;6,60
+01;Guadeloupe;2007-2012;7,00
+01;Guadeloupe;2008-2013;7,10
+01;Guadeloupe;2012-2017;7,70
+01;Guadeloupe;2013-2018;7,80
+02;Martinique;1968-1975;7,30
+02;Martinique;1975-1982;7,40
+02;Martinique;1982-1990;6,10
+02;Martinique;1990-1999;6,10
+02;Martinique;1999-2007;6,80
+02;Martinique;1999-2008;6,90
+02;Martinique;2007-2012;7,10
+02;Martinique;2008-2013;7,10
+02;Martinique;2012-2017;8,10
+02;Martinique;2013-2018;8,40
+03;Guyane;1968-1975;8,40
+03;Guyane;1975-1982;6,70
+03;Guyane;1982-1990;5,20
+03;Guyane;1990-1999;4,30
+03;Guyane;1999-2007;3,70
+03;Guyane;1999-2008;3,60
+03;Guyane;2007-2012;3,20
+03;Guyane;2008-2013;3,20
+03;Guyane;2012-2017;3,20
+03;Guyane;2013-2018;3,30
+04;La Réunion;1968-1975;7,90
+04;La Réunion;1975-1982;5,70
+04;La Réunion;1982-1990;5,60
+04;La Réunion;1990-1999;5,10
+04;La Réunion;1999-2007;5,30
+04;La Réunion;1999-2008;5,20
+04;La Réunion;2007-2012;5,00
+04;La Réunion;2008-2013;5,00
+04;La Réunion;2012-2017;5,20
+04;La Réunion;2013-2018;5,30
+06;Mayotte;1968-1975;
+06;Mayotte;1975-1982;
+06;Mayotte;1982-1990;
+06;Mayotte;1990-1999;
+06;Mayotte;1999-2007;
+06;Mayotte;1999-2008;
+06;Mayotte;2007-2012;
+06;Mayotte;2008-2013;
+06;Mayotte;2012-2017;
+06;Mayotte;2013-2018;
+11;Île-de-France;1968-1975;9,00
+11;Île-de-France;1975-1982;8,50
+11;Île-de-France;1982-1990;7,90
+11;Île-de-France;1990-1999;7,10
+11;Île-de-France;1999-2007;6,40
+11;Île-de-France;1999-2008;6,40
+11;Île-de-France;2007-2012;6,00
+11;Île-de-France;2008-2013;6,00
+11;Île-de-France;2012-2017;6,10
+11;Île-de-France;2013-2018;6,10
+24;Centre-Val de Loire;1968-1975;11,50
+24;Centre-Val de Loire;1975-1982;10,90
+24;Centre-Val de Loire;1982-1990;10,30
+24;Centre-Val de Loire;1990-1999;9,80
+24;Centre-Val de Loire;1999-2007;9,80
+24;Centre-Val de Loire;1999-2008;9,80
+24;Centre-Val de Loire;2007-2012;9,50
+24;Centre-Val de Loire;2008-2013;9,60
+24;Centre-Val de Loire;2012-2017;9,90
+24;Centre-Val de Loire;2013-2018;10,10
+27;Bourgogne-Franche-Comté;1968-1975;11,50
+27;Bourgogne-Franche-Comté;1975-1982;10,90
+27;Bourgogne-Franche-Comté;1982-1990;10,40
+27;Bourgogne-Franche-Comté;1990-1999;10,10
+27;Bourgogne-Franche-Comté;1999-2007;9,90
+27;Bourgogne-Franche-Comté;1999-2008;9,90
+27;Bourgogne-Franche-Comté;2007-2012;9,70
+27;Bourgogne-Franche-Comté;2008-2013;9,80
+27;Bourgogne-Franche-Comté;2012-2017;10,20
+27;Bourgogne-Franche-Comté;2013-2018;10,30
+28;Normandie;1968-1975;10,10
+28;Normandie;1975-1982;9,70
+28;Normandie;1982-1990;9,40
+28;Normandie;1990-1999;9,00
+28;Normandie;1999-2007;9,00
+28;Normandie;1999-2008;9,00
+28;Normandie;2007-2012;9,20
+28;Normandie;2008-2013;9,30
+28;Normandie;2012-2017;9,70
+28;Normandie;2013-2018;9,80
+32;Hauts-de-France;1968-1975;11,00
+32;Hauts-de-France;1975-1982;10,70
+32;Hauts-de-France;1982-1990;9,90
+32;Hauts-de-France;1990-1999;9,10
+32;Hauts-de-France;1999-2007;9,00
+32;Hauts-de-France;1999-2008;8,90
+32;Hauts-de-France;2007-2012;8,90
+32;Hauts-de-France;2008-2013;8,90
+32;Hauts-de-France;2012-2017;9,10
+32;Hauts-de-France;2013-2018;9,10
+44;Grand Est;1968-1975;10,50
+44;Grand Est;1975-1982;10,10
+44;Grand Est;1982-1990;9,50
+44;Grand Est;1990-1999;8,90
+44;Grand Est;1999-2007;8,70
+44;Grand Est;1999-2008;8,70
+44;Grand Est;2007-2012;8,60
+44;Grand Est;2008-2013;8,70
+44;Grand Est;2012-2017;9,10
+44;Grand Est;2013-2018;9,20
+52;Pays de la Loire;1968-1975;10,30
+52;Pays de la Loire;1975-1982;9,80
+52;Pays de la Loire;1982-1990;9,10
+52;Pays de la Loire;1990-1999;8,80
+52;Pays de la Loire;1999-2007;8,60
+52;Pays de la Loire;1999-2008;8,60
+52;Pays de la Loire;2007-2012;8,40
+52;Pays de la Loire;2008-2013;8,40
+52;Pays de la Loire;2012-2017;8,80
+52;Pays de la Loire;2013-2018;8,90
+53;Bretagne;1968-1975;11,90
+53;Bretagne;1975-1982;11,50
+53;Bretagne;1982-1990;10,90
+53;Bretagne;1990-1999;10,30
+53;Bretagne;1999-2007;9,90
+53;Bretagne;1999-2008;9,90
+53;Bretagne;2007-2012;9,70
+53;Bretagne;2008-2013;9,80
+53;Bretagne;2012-2017;10,10
+53;Bretagne;2013-2018;10,20
+75;Nouvelle-Aquitaine;1968-1975;12,20
+75;Nouvelle-Aquitaine;1975-1982;11,80
+75;Nouvelle-Aquitaine;1982-1990;11,30
+75;Nouvelle-Aquitaine;1990-1999;10,90
+75;Nouvelle-Aquitaine;1999-2007;10,50
+75;Nouvelle-Aquitaine;1999-2008;10,40
+75;Nouvelle-Aquitaine;2007-2012;10,10
+75;Nouvelle-Aquitaine;2008-2013;10,20
+75;Nouvelle-Aquitaine;2012-2017;10,50
+75;Nouvelle-Aquitaine;2013-2018;10,50
+76;Occitanie;1968-1975;12,00
+76;Occitanie;1975-1982;11,60
+76;Occitanie;1982-1990;11,00
+76;Occitanie;1990-1999;10,40
+76;Occitanie;1999-2007;9,90
+76;Occitanie;1999-2008;9,80
+76;Occitanie;2007-2012;9,40
+76;Occitanie;2008-2013;9,50
+76;Occitanie;2012-2017;9,70
+76;Occitanie;2013-2018;9,80
+84;Auvergne-Rhône-Alpes;1968-1975;10,80
+84;Auvergne-Rhône-Alpes;1975-1982;10,10
+84;Auvergne-Rhône-Alpes;1982-1990;9,40
+84;Auvergne-Rhône-Alpes;1990-1999;8,80
+84;Auvergne-Rhône-Alpes;1999-2007;8,40
+84;Auvergne-Rhône-Alpes;1999-2008;8,40
+84;Auvergne-Rhône-Alpes;2007-2012;8,10
+84;Auvergne-Rhône-Alpes;2008-2013;8,20
+84;Auvergne-Rhône-Alpes;2012-2017;8,30
+84;Auvergne-Rhône-Alpes;2013-2018;8,40
+93;Provence-Alpes-Côte d'Azur;1968-1975;11,00
+93;Provence-Alpes-Côte d'Azur;1975-1982;10,90
+93;Provence-Alpes-Côte d'Azur;1982-1990;10,60
+93;Provence-Alpes-Côte d'Azur;1990-1999;10,20
+93;Provence-Alpes-Côte d'Azur;1999-2007;9,60
+93;Provence-Alpes-Côte d'Azur;1999-2008;9,60
+93;Provence-Alpes-Côte d'Azur;2007-2012;9,30
+93;Provence-Alpes-Côte d'Azur;2008-2013;9,40
+93;Provence-Alpes-Côte d'Azur;2012-2017;9,70
+93;Provence-Alpes-Côte d'Azur;2013-2018;9,80
+94;Corse;1968-1975;11,50
+94;Corse;1975-1982;11,30
+94;Corse;1982-1990;11,10
+94;Corse;1990-1999;10,70
+94;Corse;1999-2007;9,80
+94;Corse;1999-2008;9,70
+94;Corse;2007-2012;9,30
+94;Corse;2008-2013;9,30
+94;Corse;2012-2017;9,30
+94;Corse;2013-2018;9,40
+;;;
