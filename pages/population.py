@@ -53,11 +53,11 @@ def app():
   st.header('1.Evolution de la population')
 
   ville = code_commune
-  df_pop_hist = pd.read_csv('./population/base-cc-serie-historique-2018.CSV', dtype={"CODGEO": str},sep=";")
+  df_pop_hist = pd.read_csv('./population/base-cc-serie-historique-2019.csv', dtype={"CODGEO": str},sep=";")
   df_pop_hist_ville = df_pop_hist.loc[df_pop_hist["CODGEO"]==code_commune]
   df_pop_hist_ville = df_pop_hist_ville.reset_index()
-  df_pop_hist_ville = df_pop_hist_ville.loc[:, 'P18_POP' : 'D68_POP']
-  df_pop_hist_ville = df_pop_hist_ville.rename(columns={'P18_POP': '2018','P13_POP': '2013','P08_POP': '2008','D99_POP': '1999','D90_POP': '1990','D82_POP': '1982','D75_POP': '1975','D68_POP': '1968' })
+  df_pop_hist_ville = df_pop_hist_ville.loc[:, 'P19_POP' : 'D68_POP']
+  df_pop_hist_ville = df_pop_hist_ville.rename(columns={'P19_POP': '2019','P13_POP': '2013','P08_POP': '2008','D99_POP': '1999','D90_POP': '1990','D82_POP': '1982','D75_POP': '1975','D68_POP': '1968' })
   dt_test = df_pop_hist_ville.T
   df_pop_hist_ville.insert(0, 'Commune', nom_commune)
   st.table(df_pop_hist_ville)
@@ -79,8 +79,8 @@ def app():
   st.area_chart(data=dt_test, height=300, use_container_width=True)
 
   #Indicateurs clés
-  evol_68_18 = df_pop_hist_ville.iloc[0]["2018"] - df_pop_hist_ville.iloc[0]["1968"]
-  st.metric(label="Population 2018", value='{:,.0f}'.format(df_pop_hist_ville.iloc[0]["2018"]).replace(",", " "), delta=str('{:,.0f}'.format(evol_68_18.item()).replace(",", " ")) + " hab. depuis 1968")
+  evol_68_19 = df_pop_hist_ville.iloc[0]["2019"] - df_pop_hist_ville.iloc[0]["1968"]
+  st.metric(label="Population 2019", value='{:,.0f}'.format(df_pop_hist_ville.iloc[0]["2019"]).replace(",", " "), delta=str('{:,.0f}'.format(evol_68_19.item()).replace(",", " ")) + " hab. depuis 1968")
 
   ##########################################################################
 
@@ -128,7 +128,7 @@ def app():
   st.subheader('Comparaison entre territoires')
   #Commune
   def tranche_age_com(fichier, commune, annee):
-    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str}, sep = ';')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "MODIF_IRIS" : str, "LAB_IRIS" : str}, sep = ';')
     year = annee[-2:]
     df = df.loc[df["COM"] == commune]
     df = df[["IRIS","P" + year +"_POP","P" + year +"_POP0014", "P" + year +"_POP1529", "P" + year +"_POP3044", "P" + year +"_POP4559", "P" + year +"_POP6074", "P" + year +"_POP75P"]]
@@ -145,7 +145,7 @@ def app():
   #EPCI
   def tranche_age_epci(fichier, epci, annee):
     epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
-    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str}, sep = ';')
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "MODIF_IRIS" : str, "LAB_IRIS" : str}, sep = ';')
     year = annee[-2:]
     df_epci = pd.merge(df, epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
     df_epci = df_epci.loc[df_epci["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM',"P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]

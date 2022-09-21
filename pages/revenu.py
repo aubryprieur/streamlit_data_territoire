@@ -44,8 +44,8 @@ def app():
   #Année
   select_annee = st.sidebar.select_slider(
        "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018'],
-       value=('2018'))
+       options=['2014', '2015', '2016', '2017', '2018', '2019'],
+       value=('2019'))
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
@@ -57,6 +57,7 @@ def app():
   st.caption("Le revenu disponible par unité de consommation (UC), également appelé *niveau de vie*, est le revenu disponible par *équivalent adulte*. Il est calculé en rapportant le revenu disponible du ménage au nombre d'unités de consommation qui le composent. Toutes les personnes rattachées au même ménage fiscal ont le même revenu disponible par UC (ou niveau de vie).")
   st.subheader("Pourquoi suivre cet indicateur ?")
   st.header("Comparaison des iris de la commune")
+
   @st.cache()
   def niveau_vie_median_iris(fichier, nom_ville, annee) :
       df = pd.read_csv(fichier, dtype={"IRIS": str , "COM": str},sep=";")
@@ -107,6 +108,35 @@ def app():
   revenu_disp_qpv = niveau_vie_median_qpv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', nom_commune, select_annee)
   st.table(revenu_disp_qpv)
 
+  # texte
+  def part_quartier_pauvre(indice, total_indice):
+    if ((indice/total_indice)*100) > 90:
+      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 10% des quartiers QPV les plus pauvres")
+    elif ((indice/total_indice)*100) > 75 and ((indice/total_indice)*100) <= 90:
+      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 25% des quartiers QPV les plus pauvres")
+    elif ((indice/total_indice)*100) > 50 and ((indice/total_indice)*100) <= 75:
+      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 50% des quartiers QPV les plus pauvres")
+    elif ((indice/total_indice)*100) > 25 and ((indice/total_indice)*100) <= 50:
+      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 50% des quartiers QPV les plus riches")
+    elif ((indice/total_indice)*100) > 10 and ((indice/total_indice)*100) <= 25:
+      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 25% des quartiers QPV les plus riches")
+    elif ((indice/total_indice)*100) > 0 and ((indice/total_indice)*100) <= 10 :
+      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 10% des quartiers QPV les plus riches")
+
+  #Position d'un QPV
+  df_qpv_lenght = len(revenu_disp_qpv.index)
+  df = pd.read_csv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', dtype={"CODGEO": str},sep=";")
+  year = select_annee[-2:]
+  df_qpv = df[['CODGEO','DISP_MED_A' + year]]
+  df_qpv = df_qpv.sort_values(by=['DISP_MED_A' + year], ascending=False)
+  df_qpv.reset_index(inplace=True, drop=True)
+  i = 0
+  while i < df_qpv_lenght:
+    indice = df_qpv[df_qpv['CODGEO']== revenu_disp_qpv["Code du quartier"].iloc[i]].index.values.item()+1
+    total_indice = len(df_qpv['DISP_MED_A' + year])
+    part_quartier_pauvre(indice, total_indice)
+    i += 1
+
   @st.cache
   def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
@@ -121,7 +151,7 @@ def app():
     mime='text/csv',
   )
 ##################################
-  st.subheader('Comparaison entre territoires sur une année')
+  st.subheader('Comparaison entre territoires la dernière année')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #Position de la commune
     df = pd.read_csv("./revenu/revenu_commune/FILO" + select_annee + "_DISP_COM.csv", dtype={"CODGEO": str},sep=";")
@@ -206,7 +236,7 @@ def app():
       mime='text/csv',
     )
 ##################################
-  st.subheader("Évolution sur 5 années")
+  st.subheader("Évolution sur les 6 dernières années disponibles")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #France
     #2014
@@ -239,8 +269,14 @@ def app():
     nvm_2018 =df_2018.loc[:, 'Q218'].to_numpy().astype(float)
     indice_2018 = nvm_2018[0]
 
-    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
+    #2019
+    df_2019 = pd.read_csv("./revenu/revenu_france/FILO2019_DISP_METROPOLE.csv", dtype={"CODGEO": str},sep=";")
+    df_2019 = df_2019.replace(',','.', regex=True)
+    nvm_2019 =df_2019.loc[:, 'Q219'].to_numpy().astype(float)
+    indice_2019 = nvm_2019[0]
+
+    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=['France'])
 
     #Région
     #2014
@@ -278,8 +314,15 @@ def app():
     nvm_2018 =df_2018.loc[:, 'Q218'].to_numpy().astype(float)
     indice_2018 = nvm_2018[0]
 
-    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
+    #2019
+    df_2019 = pd.read_csv("./revenu/revenu_region/FILO2019_DISP_REG.csv", dtype={"CODGEO": str},sep=";")
+    df_2019 = df_2019.replace(',','.', regex=True)
+    df_2019 = df_2019.loc[df_2019["LIBGEO"]== nom_region]
+    nvm_2019 =df_2019.loc[:, 'Q219'].to_numpy().astype(float)
+    indice_2019 = nvm_2019[0]
+
+    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_region])
 
     #Departement
     #2014
@@ -317,8 +360,15 @@ def app():
     nvm_2018 =df_2018.loc[:, 'Q218'].to_numpy().astype(float)
     indice_2018 = nvm_2018[0]
 
-    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+    #2019
+    df_2019 = pd.read_csv("./revenu/revenu_dpt/FILO2019_DISP_DEP.csv", dtype={"CODGEO": str},sep=";")
+    df_2019 = df_2019.replace(',','.', regex=True)
+    df_2019 = df_2019.loc[df_2019["LIBGEO"]== nom_departement]
+    nvm_2019 =df_2019.loc[:, 'Q219'].to_numpy().astype(float)
+    indice_2019 = nvm_2019[0]
+
+    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_departement])
 
     # EPCI
     #2014
@@ -330,7 +380,6 @@ def app():
     else:
       nvm_2014 =df_2014.loc[:, 'Q214'].to_numpy().astype(float)
       indice_2014 = nvm_2014[0]
-
 
     #2015
     df_2015 = pd.read_csv("./revenu/revenu_epci/FILO2015_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
@@ -363,8 +412,15 @@ def app():
     nvm_2018 =df_2018.loc[:, 'Q218'].to_numpy().astype(float)
     indice_2018 = nvm_2018[0]
 
-    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+    #2019
+    df_2019 = pd.read_csv("./revenu/revenu_epci/FILO2019_DISP_EPCI.csv", dtype={"CODGEO": str},sep=";")
+    df_2019 = df_2019.replace(',','.', regex=True)
+    df_2019 = df_2019.loc[df_2019["CODGEO"]== code_epci]
+    nvm_2019 =df_2019.loc[:, 'Q219'].to_numpy().astype(float)
+    indice_2019 = nvm_2019[0]
+
+    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_epci])
 
     #commune
     #2014
@@ -402,8 +458,15 @@ def app():
     nvm_2018 =df_2018.loc[:, 'Q218'].to_numpy().astype(float)
     indice_2018 = nvm_2018[0]
 
-    df_ville_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+    #2019
+    df_2019 = pd.read_csv("./revenu/revenu_commune/FILO2019_DISP_COM.csv", dtype={"CODGEO": str},sep=";")
+    df_2019 = df_2019.replace(',','.', regex=True)
+    df_2019 = df_2019.loc[df_2019["LIBGEO"]== nom_commune]
+    nvm_2019 =df_2019.loc[:, 'Q219'].to_numpy().astype(float)
+    indice_2019 = nvm_2019[0]
+
+    df_ville_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_commune])
 
     df_glob = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_ville_glob])
 
