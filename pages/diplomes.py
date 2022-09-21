@@ -50,10 +50,55 @@ def app():
   #############################################################################
   st.title('DIPLÔME')
 
-  st.header("Taux de scolarisation des 16-24 ans")
+  ####################
+  # st.subheader("Mobilité scolaire")
+  # df = pd.read_csv("./diplome/FD_MOBSCO_2018.csv", dtype={"COMMUNE": str}, sep = ';')
+  # df_commune = df.loc[df["COMMUNE"] == code_commune]
+  # iletud = df_commune.groupby(by="ILETUD").agg('count')
+  # st.write(iletud)
 
+  # st.caption("1 Dans la commune de résidence actuelle / 2 Dans une autre commune du département de résidence / 3 Dans un autre département de la région de résidence / 4 Hors de la région de résidence actuelle : en métropole / 5 Hors de la région de résidence actuelle : dans un DOM / 6 Hors de la région de résidence actuelle : dans une COM / 7 À l'étranger / Z Sans objet (pas d'inscription dans un établissement d'enseignement)")
 
+  ####################
+  # st.subheader("Taux de scolarisée des 2/17 ans")
+  # #IRIS
+  # df = pd.read_csv("./diplome/base-ic-diplomes-formation-2018-test.csv", dtype={"IRIS": str, "COM": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep = ';')
+  # df_commune = df.loc[df["COM"] == code_commune]
+  # df_commune['P18_POP0217'] = df_commune['P18_POP0205'] + df_commune['P18_POP0610'] + df_commune['P18_POP1114'] + df_commune['P18_POP1517']
+  # df_commune['P18_SCOL0217'] = df_commune['P18_SCOL0205'] + df_commune['P18_SCOL0610'] + df_commune['P18_SCOL1114'] + df_commune['P18_SCOL1517']
+  # df_commune['PART_SCOL0217'] = df_commune['P18_SCOL0217'] / df_commune['P18_POP0217'] * 100
+  # df_commune = df_commune[['P18_SCOL0217','P18_POP0217','PART_SCOL0217']]
+  # st.write(df_commune)
 
+  # # Commune
+  # def part_scol0217_com(fichier, code_commune, annee):
+  #     df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "CODGEO": str,"LAB_IRIS": str}, sep = ';')
+  #     year = annee[-2:]
+  #     df_ville = df.loc[df["CODGEO"] == code_commune]
+  #     df_ville['P18_POP0217'] = df_ville['P18_POP0205'] + df_ville['P18_POP0610'] + df_ville['P18_POP1114'] + df_ville['P18_POP1517']
+  #     df_ville['P18_SCOL0217'] = df_ville['P18_SCOL0205'] + df_ville['P18_SCOL0610'] + df_ville['P18_SCOL1114'] + df_ville['P18_SCOL1517']
+  #     part_scol0217 = (df_ville['P18_SCOL0217'] / df_ville['P18_POP0217']) * 100
+  #     df_part_scol0217 = pd.DataFrame(data=part_scol0217.iloc[0], columns = ['Part de la population 02/17 ans scolarisée ' + annee], index = [nom_commune])
+  #     return df_part_scol0217
+  # indice_pop_scol0217_com = part_scol0217_com("./diplome/base-cc-diplomes-formation-" + select_annee + ".csv",code_commune, select_annee)
+  # st.write(indice_pop_scol0217_com)
+
+  # # Département
+  # def part_scol0217_dpt(fichier, code_dpt, annee):
+  #     df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "CODGEO": str,"LAB_IRIS": str}, sep = ';')
+  #     year = annee[-2:]
+  #     df_dpt = df.loc[df["DEP"] == code_dpt]
+  #     df_dpt['P18_POP0217'] = df_dpt['P18_POP0205'] + df_dpt['P18_POP0610'] + df_dpt['P18_POP1114'] + df_dpt['P18_POP1517']
+  #     df_dpt['P18_SCOL0217'] =  df_dpt['P18_SCOL0205'] + df_dpt['P18_SCOL0610'] + df_dpt['P18_SCOL1114'] + df_dpt['P18_SCOL1517']
+  #     pop_scol0217 = df_dpt.loc[:, 'P18_SCOL0217'].sum()
+  #     pop0217 = df_dpt.loc[:, 'P18_POP0217'].sum()
+  #     part_scol0217 = (pop_scol0217  / pop0217) * 100
+  #     df_part_scol0217 = pd.DataFrame(data=part_scol0217, columns = ['Part de la population 02/17 ans scolarisée ' + annee], index = [nom_departement])
+  #     return df_part_scol0217
+  # indice_pop_scol0217_dpt = part_scol0217_dpt("./diplome/base-cc-diplomes-formation-" + select_annee + ".csv",code_departement, select_annee)
+  # st.write(indice_pop_scol0217_dpt)
+
+  ###############
   st.header('1.Sans diplome')
   st.caption("La part de non diplômés parmi les individus de 15 ans et plus non scolarisés nous renseigne \
   significativement sur la part des personnes a priori les plus vulnérables sur le marché de l’emploi. En effet, \
@@ -665,5 +710,8 @@ def app():
 
     df_glob_sans_diplome_transposed = df_glob_sans_diplome.T
     st.line_chart(df_glob_sans_diplome_transposed)
+
+
+
 
 

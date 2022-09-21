@@ -114,6 +114,3 @@ def app():
     file_name='tx_mortalite_comparaison.csv',
     mime='text/csv',
   )
-
-  ###############################
-  st.header('2.Licenciés sportifs')

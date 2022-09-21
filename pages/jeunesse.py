@@ -312,3 +312,123 @@ def app():
     file_name='neet_comparaison.csv',
     mime='text/csv',
   )
+
+  ###########
+  st.header('2.Part des licenciés sportifs 0/14 ans')
+
+  #Commune
+  def tx_licence_sport_0_14_commune(fichier, nom_ville) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_ville = df.loc[df["libgeo"] == nom_ville]
+    return df_ville
+  tx_lic_sport_0_14_ville = tx_licence_sport_0_14_commune("./sante/sport/licsport_communes_2018.csv",nom_commune)
+
+  #EPCI
+  def tx_licence_sport_0_14_epci(fichier, epci) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_epci = df.loc[df["codgeo"] == epci]
+    return df_epci
+  tx_lic_sport_0_14_epci = tx_licence_sport_0_14_epci("./sante/sport/licsport_epci_2018.csv",code_epci)
+
+  #Département
+  def tx_licence_sport_0_14_departement(fichier, departement) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_departement = df.loc[df["codgeo"] == departement]
+    df_departement = df_departement.loc[df_departement["an"] == "2018"]
+    return df_departement
+  tx_lic_sport_0_14_dpt = tx_licence_sport_0_14_departement("./sante/sport/licsport_departement_2018.csv",code_departement)
+
+  #Région
+  def tx_licence_sport_0_14_region(fichier, region) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_region = df.loc[df["codgeo"] == region]
+    df_region = df_region.loc[df_region["an"] == "2018"]
+    return df_region
+  tx_lic_sport_0_14_reg = tx_licence_sport_0_14_region("./sante/sport/licsport_region_2018.csv",str(round(code_region)))
+
+  #France
+  data = {'codgeo':['1'],
+          'libgeo':['France'],
+          'an':['2018'],
+          'p_licsport014':['47,6']
+          }
+  tx_lic_sport_0_14_france = pd.DataFrame(data)
+
+  #Global
+  result = pd.concat([tx_lic_sport_0_14_ville,tx_lic_sport_0_14_epci, tx_lic_sport_0_14_dpt, tx_lic_sport_0_14_reg, tx_lic_sport_0_14_france])
+  st.write(result)
+
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(result)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='tx_licencie_sport_014_comparaison.csv',
+    mime='text/csv',
+  )
+
+
+  ###############################
+  st.header('3.Part des filles parmi les licenciés sportifs de 0-14 ans')
+
+  #Commune
+  def tx_licence_sport_0_14_filles_commune(fichier, nom_ville) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_ville = df.loc[df["libgeo"] == nom_ville]
+    return df_ville
+  tx_lic_sport_0_14_filles_ville = tx_licence_sport_0_14_filles_commune("./sante/sport/sport_014_filles/licsport_014_filles_commune.csv",nom_commune)
+
+  #EPCI
+  def tx_licence_sport_0_14_filles_epci(fichier, epci) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_epci = df.loc[df["codgeo"] == epci]
+    return df_epci
+  tx_lic_sport_0_14_filles_epci = tx_licence_sport_0_14_filles_epci("./sante/sport/sport_014_filles/licsport_014_filles_epci.csv",code_epci)
+
+  #Département
+  def tx_licence_sport_0_14_filles_departement(fichier, departement) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_departement = df.loc[df["codgeo"] == departement]
+    df_departement = df_departement.loc[df_departement["an"] == "2018"]
+    return df_departement
+  tx_lic_sport_0_14_filles_dpt = tx_licence_sport_0_14_filles_departement("./sante/sport/sport_014_filles/licsport_014_filles_departement.csv",code_departement)
+
+  #Région
+  def tx_licence_sport_0_14_filles_region(fichier, region) :
+    df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
+    df_region = df.loc[df["codgeo"] == region]
+    df_region = df_region.loc[df_region["an"] == "2018"]
+    return df_region
+  tx_lic_sport_0_14_filles_reg = tx_licence_sport_0_14_filles_region("./sante/sport/sport_014_filles/licsport_014_filles_region.csv",str(round(code_region)))
+
+  #France
+  data = {'codgeo':['1'],
+          'libgeo':['France'],
+          'an':['2018'],
+          'p_licsport014_f':['39,8']
+          }
+  tx_lic_sport_0_14_filles_france = pd.DataFrame(data)
+
+  #Global
+  result = pd.concat([tx_lic_sport_0_14_filles_ville,tx_lic_sport_0_14_filles_epci, tx_lic_sport_0_14_filles_dpt, tx_lic_sport_0_14_filles_reg, tx_lic_sport_0_14_filles_france])
+  st.write(result)
+
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(result)
+
+  st.download_button(
+    label="💾 Télécharger les données",
+    data=csv,
+    file_name='tx_licencie_sport_014_filles_comparaison.csv',
+    mime='text/csv',
+  )
+
