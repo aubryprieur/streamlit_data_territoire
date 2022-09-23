@@ -48,7 +48,7 @@ def app():
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
-  st.title("FAMILLES")
+  st.title("👨‍👩‍👧‍👦 FAMILLES")
   st.header('1.Part des familles monoparentales')
 
   st.subheader("Iris")

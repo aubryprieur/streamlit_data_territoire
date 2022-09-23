@@ -49,7 +49,7 @@ def app():
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
-  st.title("Logement")
+  st.title("🏘 Logement")
 
   #variables
   #P17_RP : nombre de résidences principales

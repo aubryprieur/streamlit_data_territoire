@@ -49,7 +49,7 @@ def app():
 
   #############################################################################
 
-  st.title('ACTIVITÉ ET EMPLOI')
+  st.title('🧑‍🍳👷‍♂️👩‍🔧👨‍⚕️ ACTIVITÉ ET EMPLOI')
 
   st.header("Taux d'emploi des 15-64 ans")
   st.subheader("Zoom QPV")
@@ -71,7 +71,7 @@ def app():
   tx_emploi_qpv = tx_emploi_qpv('./activite/insertion-pro-qpv/IPRO_' + select_annee + '.csv', nom_commune, select_annee)
   st.table(tx_emploi_qpv)
 
-  st.header("Part des emplois à durée limitée parmi les emplois")
+  st.header("Part des emplois à durée limitée parmi les emplois (ou emplois précaires")
   st.subheader("Zoom QPV")
 
   def tx_emploi_limit_qpv(fichier, nom_ville, annee) :
@@ -98,6 +98,8 @@ def app():
 
   tx_emploi_limit_qpv = tx_emploi_limit_qpv('./activite/insertion-pro-qpv/IPRO_' + select_annee + '.csv', nom_commune, select_annee)
   st.table(tx_emploi_limit_qpv)
+
+  st.caption("Emploi à durée limitée : contrat d'apprentissage, Placés par une agence d'intérim, Emplois-jeunes, CES, contrats de qualification, stagiaires rémunérés en entreprise, autres emplois à durée limitée")
 
   st.header("Part des salariés en emploi précaires")
   st.header("Demandeurs de longue durée (2 ans ou plus)")

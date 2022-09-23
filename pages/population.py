@@ -49,7 +49,7 @@ def app():
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
-  st.title("POPULATION")
+  st.title("👵👧👨‍👩‍👧‍👦👨 POPULATION")
   st.header('1.Evolution de la population')
 
   ville = code_commune
@@ -298,7 +298,14 @@ def app():
     st.dataframe(indice_etr_iris)
 ############################
   st.caption("Zoom sur les QPV")
-  # Preparation carto QPV
+
+  #Année
+  select_annee_pop_etr = st.select_slider(
+       "Sélection de l'année",
+       options=['2017', '2018', '2019', '2020', '2021', '2022'],
+       value=('2022'))
+  st.write('Mon année :', select_annee_pop_etr)
+
   def part_etrangers_qpv(fichier, nom_ville, annee) :
     fp_qpv = "./qpv.geojson"
     map_qpv_df = gpd.read_file(fp_qpv)
@@ -310,9 +317,9 @@ def app():
     df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
     df_qpv = df_qpv.reset_index(drop=True)
     df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp','TX_TOT_ET']]
-    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", "TX_TOT_ET" : "Part des étrangers " + select_annee})
+    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", "TX_TOT_ET" : "Part des étrangers " + select_annee_pop_etr})
     return df_qpv
-  part_etrangers_qpv = part_etrangers_qpv('./population/qpv/data_DEMO_' + select_annee + '_V1_QP.csv', nom_commune, select_annee)
+  part_etrangers_qpv = part_etrangers_qpv('./population/demographie_qpv/DEMO_' + select_annee_pop_etr + '.csv', nom_commune, select_annee_pop_etr)
   st.table(part_etrangers_qpv)
 ############################################################################
 

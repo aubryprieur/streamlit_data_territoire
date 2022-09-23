@@ -49,7 +49,7 @@ def app():
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
-  st.title("RESSOURCES")
+  st.title("💶 RESSOURCES")
   st.header('1.Le niveau de vie médian')
   st.subheader("Définition")
   st.caption("La médiane du revenu disponible correspond au niveau au-dessous duquel se situent 50 % de ces revenus. C'est de manière équivalente le niveau au-dessus duquel se situent 50 % des revenus.")
@@ -91,65 +91,95 @@ def app():
   )
 ############################
   st.caption("Zoom sur les QPV")
-  # Preparation carto QPV
-  def niveau_vie_median_qpv(fichier, nom_ville, annee) :
+
+  st.subheader("Zoom QPV")
+
+  #Année
+  select_annee_med_revenu = st.select_slider(
+       "Sélection de l'année",
+       options=['2017', '2018', '2019', '2020', '2021', '2022'],
+       value=('2022'),
+       key = 'med_revenu')
+  st.write('Mon année :', select_annee_med_revenu)
+
+  def med_disp_qpv(fichier, nom_ville, annee) :
     fp_qpv = "./qpv.geojson"
     map_qpv_df = gpd.read_file(fp_qpv)
     year = annee[-2:]
     df = pd.read_csv(fichier, dtype={"CODGEO": str}, sep=";")
     map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
-    map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'DISP_MED_A' + year[-2:] ]]
+    map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'DISP_Q2' ]]
     map_qpv_df_code_insee_extract
     df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
     df_qpv = df_qpv.reset_index(drop=True)
-    df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp','DISP_MED_A' + year]]
-    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", "DISP_MED_A" + year : "Niveau de vie " + select_annee})
+    df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp', 'DISP_Q2']]
+    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", 'DISP_Q2' : "Mediane des revenus disponibles " + select_annee_med_revenu})
     return df_qpv
-  revenu_disp_qpv = niveau_vie_median_qpv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', nom_commune, select_annee)
-  st.table(revenu_disp_qpv)
+
+  med_disp_qpv = med_disp_qpv('./revenu/revenu_qpv/REVN_' + select_annee_med_revenu + '.csv', nom_commune, select_annee_med_revenu)
+  st.table(med_disp_qpv)
+
+
+
+  # Preparation carto QPV
+  # def niveau_vie_median_qpv(fichier, nom_ville, annee) :
+  #   fp_qpv = "./qpv.geojson"
+  #   map_qpv_df = gpd.read_file(fp_qpv)
+  #   year = annee[-2:]
+  #   df = pd.read_csv(fichier, dtype={"CODGEO": str}, sep=";")
+  #   map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
+  #   map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'DISP_MED_A' + year[-2:] ]]
+  #   map_qpv_df_code_insee_extract
+  #   df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+  #   df_qpv = df_qpv.reset_index(drop=True)
+  #   df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp','DISP_MED_A' + year]]
+  #   df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", "DISP_MED_A" + year : "Niveau de vie " + select_annee})
+  #   return df_qpv
+  # revenu_disp_qpv = niveau_vie_median_qpv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', nom_commune, select_annee)
+  # st.table(revenu_disp_qpv)
 
   # texte
-  def part_quartier_pauvre(indice, total_indice):
-    if ((indice/total_indice)*100) > 90:
-      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 10% des quartiers QPV les plus pauvres")
-    elif ((indice/total_indice)*100) > 75 and ((indice/total_indice)*100) <= 90:
-      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 25% des quartiers QPV les plus pauvres")
-    elif ((indice/total_indice)*100) > 50 and ((indice/total_indice)*100) <= 75:
-      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 50% des quartiers QPV les plus pauvres")
-    elif ((indice/total_indice)*100) > 25 and ((indice/total_indice)*100) <= 50:
-      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 50% des quartiers QPV les plus riches")
-    elif ((indice/total_indice)*100) > 10 and ((indice/total_indice)*100) <= 25:
-      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 25% des quartiers QPV les plus riches")
-    elif ((indice/total_indice)*100) > 0 and ((indice/total_indice)*100) <= 10 :
-      st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 10% des quartiers QPV les plus riches")
+  # def part_quartier_pauvre(indice, total_indice):
+  #   if ((indice/total_indice)*100) > 90:
+  #     st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 10% des quartiers QPV les plus pauvres")
+  #   elif ((indice/total_indice)*100) > 75 and ((indice/total_indice)*100) <= 90:
+  #     st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 25% des quartiers QPV les plus pauvres")
+  #   elif ((indice/total_indice)*100) > 50 and ((indice/total_indice)*100) <= 75:
+  #     st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 50% des quartiers QPV les plus pauvres")
+  #   elif ((indice/total_indice)*100) > 25 and ((indice/total_indice)*100) <= 50:
+  #     st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 50% des quartiers QPV les plus riches")
+  #   elif ((indice/total_indice)*100) > 10 and ((indice/total_indice)*100) <= 25:
+  #     st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 25% des quartiers QPV les plus riches")
+  #   elif ((indice/total_indice)*100) > 0 and ((indice/total_indice)*100) <= 10 :
+  #     st.caption("Le QPV de " + revenu_disp_qpv["Nom du quartier"].iloc[i] + " se situe en " + str(indice) + "eme position sur " + str(total_indice) + " QPV, soit dans les 10% des quartiers QPV les plus riches")
 
-  #Position d'un QPV
-  df_qpv_lenght = len(revenu_disp_qpv.index)
-  df = pd.read_csv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', dtype={"CODGEO": str},sep=";")
-  year = select_annee[-2:]
-  df_qpv = df[['CODGEO','DISP_MED_A' + year]]
-  df_qpv = df_qpv.sort_values(by=['DISP_MED_A' + year], ascending=False)
-  df_qpv.reset_index(inplace=True, drop=True)
-  i = 0
-  while i < df_qpv_lenght:
-    indice = df_qpv[df_qpv['CODGEO']== revenu_disp_qpv["Code du quartier"].iloc[i]].index.values.item()+1
-    total_indice = len(df_qpv['DISP_MED_A' + year])
-    part_quartier_pauvre(indice, total_indice)
-    i += 1
+  # #Position d'un QPV
+  # df_qpv_lenght = len(revenu_disp_qpv.index)
+  # df = pd.read_csv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', dtype={"CODGEO": str},sep=";")
+  # year = select_annee[-2:]
+  # df_qpv = df[['CODGEO','DISP_MED_A' + year]]
+  # df_qpv = df_qpv.sort_values(by=['DISP_MED_A' + year], ascending=False)
+  # df_qpv.reset_index(inplace=True, drop=True)
+  # i = 0
+  # while i < df_qpv_lenght:
+  #   indice = df_qpv[df_qpv['CODGEO']== revenu_disp_qpv["Code du quartier"].iloc[i]].index.values.item()+1
+  #   total_indice = len(df_qpv['DISP_MED_A' + year])
+  #   part_quartier_pauvre(indice, total_indice)
+  #   i += 1
 
-  @st.cache
-  def convert_df(df):
-    # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv().encode('utf-8')
+  # @st.cache
+  # def convert_df(df):
+  #   # IMPORTANT: Cache the conversion to prevent computation on every rerun
+  #   return df.to_csv().encode('utf-8')
 
-  csv = convert_df(revenu_disp_qpv)
+  # csv = convert_df(revenu_disp_qpv)
 
-  st.download_button(
-    label="💾 Télécharger les données",
-    data=csv,
-    file_name='niveau_de_vie_qpv.csv',
-    mime='text/csv',
-  )
+  # st.download_button(
+  #   label="💾 Télécharger les données",
+  #   data=csv,
+  #   file_name='niveau_de_vie_qpv.csv',
+  #   mime='text/csv',
+  # )
 ##################################
   st.subheader('Comparaison entre territoires la dernière année')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -491,23 +521,32 @@ def app():
     with st.expander("Visualiser le tableau des iris"):
       st.dataframe(taux_pauvrete_iris)
 ############################
-  st.caption("Zoom sur les QPV")
-  # Preparation carto QPV
-  def niveau_vie_median_qpv(fichier, nom_ville, annee) :
+  st.subheader("Zoom QPV")
+
+  #Année
+  select_annee_tp60 = st.select_slider(
+       "Sélection de l'année",
+       options=['2017', '2018', '2019', '2020', '2021', '2022'],
+       value=('2022'),
+       key = 'tp60')
+  st.write('Mon année :', select_annee_tp60)
+
+  def tp60_qpv(fichier, nom_ville, annee) :
     fp_qpv = "./qpv.geojson"
     map_qpv_df = gpd.read_file(fp_qpv)
     year = annee[-2:]
     df = pd.read_csv(fichier, dtype={"CODGEO": str}, sep=";")
     map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
-    map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'DISP_TP60_A' + year[-2:] ]]
+    map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'TP60' ]]
     map_qpv_df_code_insee_extract
     df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
     df_qpv = df_qpv.reset_index(drop=True)
-    df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp','DISP_TP60_A' + year]]
-    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", "DISP_TP60_A" + year : "Taux de pauvreté " + select_annee})
+    df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp', 'TP60']]
+    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", 'TP60' : "Taux de pauvreté à 60% " + select_annee_tp60})
     return df_qpv
-  revenu_disp_qpv = niveau_vie_median_qpv('./revenu/revenu_qpv/data_filo' + select_annee[-2:] + '_qp_revdis.csv', nom_commune, select_annee)
-  st.table(revenu_disp_qpv)
+
+  tp60_qpv = tp60_qpv('./revenu/revenu_qpv/REVN_' + select_annee_tp60 + '.csv', nom_commune, select_annee_tp60)
+  st.table(tp60_qpv)
 ############################################################################
   st.header("Taux de couverture des assurés sociaux - CMUC")
 

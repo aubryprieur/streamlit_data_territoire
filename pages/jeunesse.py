@@ -49,7 +49,7 @@ def app():
 
   #############################################################################
 
-  st.title("JEUNESSE")
+  st.title("👦👧 JEUNESSE")
   st.header('1.Indice de jeunesse')
   st.caption("L'indice de jeunesse est le rapport de la population des moins de 20 ans sur celle des 65 ans et plus. Un indice autour de 100 indique que les 65 ans et plus et les moins de 20 ans sont présents dans à peu près les mêmes proportions sur le territoire; plus l’indice est faible plus le rapport est favorable aux personnes âgées, plus il est élevé plus il est favorable à la jeunesse.")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -90,6 +90,36 @@ def app():
     mime='text/csv',
   )
 
+  #################################
+  st.header("Indice de jeunesse")
+  st.subheader("Zoom QPV")
+
+  #Année
+  select_annee_0024 = st.select_slider(
+       "Sélection de l'année",
+       options=['2017', '2018', '2019', '2020', '2021', '2022'],
+       value=('2022'))
+  st.write('Mon année :', select_annee_0024)
+
+  def indice_jeunesse_qpv(fichier, nom_ville, annee) :
+    fp_qpv = "./qpv.geojson"
+    map_qpv_df = gpd.read_file(fp_qpv)
+    year = annee[-2:]
+    df = pd.read_csv(fichier, dtype={"CODGEO": str}, sep=";")
+    map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
+    map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'IND_JEUNE' ]]
+    map_qpv_df_code_insee_extract
+    df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+    df_qpv = df_qpv.reset_index(drop=True)
+    df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp', 'IND_JEUNE']]
+    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", 'IND_JEUNE' : "Indice de jeunesse " + select_annee_0024})
+    return df_qpv
+
+  ind_jeunesse_qpv = indice_jeunesse_qpv('./population/demographie_qpv/DEMO_' + select_annee_0024 + '.csv', nom_commune, select_annee_0024)
+  st.table(ind_jeunesse_qpv)
+
+  st.caption("Attention, calcul de l'indice jeunesse pour les QPV : population de 0 à 19 ans / population de 60 ans et plus")
+  ########################
 
   st.subheader('a.Comparaison sur une année')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -250,6 +280,35 @@ def app():
       file_name='ind_jeunesse_comparaison.csv',
       mime='text/csv',
     )
+
+
+  #################################
+  st.header("Taux de 00-24 ans")
+  st.subheader("Zoom QPV")
+
+  #Année
+  select_annee_0024 = st.select_slider(
+       "Sélection de l'année",
+       options=['2017', '2018', '2019', '2020', '2021', '2022'],
+       value=('2022'))
+  st.write('Mon année :', select_annee_0024)
+
+  def tx_0024_qpv(fichier, nom_ville, annee) :
+    fp_qpv = "./qpv.geojson"
+    map_qpv_df = gpd.read_file(fp_qpv)
+    year = annee[-2:]
+    df = pd.read_csv(fichier, dtype={"CODGEO": str}, sep=";")
+    map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
+    map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'TX_TOT_0A24' ]]
+    map_qpv_df_code_insee_extract
+    df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+    df_qpv = df_qpv.reset_index(drop=True)
+    df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp', 'TX_TOT_0A24']]
+    df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", 'TX_TOT_0A24' : "Taux des 00/24 ans " + select_annee_0024})
+    return df_qpv
+
+  tx_0024_qpv = tx_0024_qpv('./population/demographie_qpv/DEMO_' + select_annee_0024 + '.csv', nom_commune, select_annee_0024)
+  st.table(tx_0024_qpv)
 
   ##################################
   st.subheader('2. Les NEET')

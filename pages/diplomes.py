@@ -48,7 +48,7 @@ def app():
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
-  st.title('DIPLÔME')
+  st.title('🧑‍🎓👨‍🎓 DIPLÔME')
 
   ####################
   # st.subheader("Mobilité scolaire")

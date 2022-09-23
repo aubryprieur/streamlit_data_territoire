@@ -48,7 +48,7 @@ def app():
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
-  st.title("PERSONNES ÂGÉES")
+  st.title("👴👵 PERSONNES ÂGÉES")
   st.header('1.Indice de vieillissement')
   st.caption("L'indice de vieillissement est le rapport de la population des 65 ans et plus sur celle des moins de 20 ans. Un indice autour de 100 indique que les 65 ans et plus et les moins de 20 ans sont présents dans à peu près les mêmes proportions sur le territoire; plus l’indice est faible plus le rapport est favorable aux jeunes, plus il est élevé plus il est favorable aux personnes âgées.")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -888,3 +888,32 @@ def app():
 
     df_glob_remplacement_transposed = df_glob_remplacement.T
     st.line_chart(df_glob_remplacement_transposed)
+
+
+    #################################
+    st.header("Part des personnes de 60 ans ou plus parmi la population")
+    st.subheader("Zoom QPV")
+
+    #Année
+    select_annee_60plus = st.select_slider(
+         "Sélection de l'année",
+         options=['2017', '2018', '2019', '2020', '2021', '2022'],
+         value=('2022'))
+    st.write('Mon année :', select_annee_60plus)
+
+    def part_60plus_qpv(fichier, nom_ville, annee) :
+      fp_qpv = "./qpv.geojson"
+      map_qpv_df = gpd.read_file(fp_qpv)
+      year = annee[-2:]
+      df = pd.read_csv(fichier, dtype={"CODGEO": str}, sep=";")
+      map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
+      map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'TX_TOT_60ETPLUS' ]]
+      map_qpv_df_code_insee_extract
+      df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+      df_qpv = df_qpv.reset_index(drop=True)
+      df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp', 'TX_TOT_60ETPLUS']]
+      df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", 'TX_TOT_60ETPLUS' : "Part des 60 ans ou plus " + select_annee_60plus})
+      return df_qpv
+
+    part_60plus_qpv = part_60plus_qpv('./population/demographie_qpv/DEMO_' + select_annee_60plus + '.csv', nom_commune, select_annee_60plus)
+    st.table(part_60plus_qpv)

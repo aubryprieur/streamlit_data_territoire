@@ -49,7 +49,7 @@ def app():
 
   #############################################################################
 
-  st.title("SANTÉ")
+  st.title("🩺 SANTÉ")
   st.header('1.Taux de mortalité')
   st.caption("Le taux de mortalité est ici un taux annuel moyen sur la dernière période intercensitaire. \
               C’est le rapport entre les décès de la période et la moyenne des populations entre les deux recensements. \
