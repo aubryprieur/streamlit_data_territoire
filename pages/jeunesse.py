@@ -49,6 +49,23 @@ def app():
 
   #############################################################################
 
+  st.header("Indice de position sociale des élèves des écoles")
+  df = pd.read_csv('./jeunesse/EN/fr-en-ips_ecoles_2022.csv', dtype={"Rentrée scolaire": str , "Code du département": str, "Code INSEE de la commune": str}, sep=";")
+  df = df.loc[df["Code INSEE de la commune"] == code_commune ]
+  df = df.reset_index(drop=True)
+  df = df[["Rentrée scolaire", "Nom de la commune","Nom de l'établissment", "Secteur", "IPS"]]
+  st.write(df)
+  st.caption("IPS : outil de mesure quantitatif de la situation sociale des élèves face aux apprentissages dans les établissements scolaires français. Plus l'indice est élevé, plus l'élève évolue dans un contexte familial favorable aux apprentissages. Cet indice est construit à partir des professions et catégories socioprofessionnelles (PCS) des représentants légaux des élèves.")
+
+  st.header("Indice de position sociale des élèves des collèges")
+  df = pd.read_csv('./jeunesse/EN/fr-en-ips_colleges_2022.csv', dtype={"Rentrée scolaire": str , "Code du département": str, "Code INSEE de la commune": str}, sep=";")
+  df = df.loc[df["Code INSEE de la commune"] == code_commune ]
+  df = df.reset_index(drop=True)
+  df = df[["Rentrée scolaire", "Nom de la commune","Nom de l'établissment", "Secteur", "IPS"]]
+  st.write(df)
+  ##################
+
+
   st.title("👦👧 JEUNESSE")
   st.header('1.Indice de jeunesse')
   st.caption("L'indice de jeunesse est le rapport de la population des moins de 20 ans sur celle des 65 ans et plus. Un indice autour de 100 indique que les 65 ans et plus et les moins de 20 ans sont présents dans à peu près les mêmes proportions sur le territoire; plus l’indice est faible plus le rapport est favorable aux personnes âgées, plus il est élevé plus il est favorable à la jeunesse.")
@@ -290,7 +307,8 @@ def app():
   select_annee_0024 = st.select_slider(
        "Sélection de l'année",
        options=['2017', '2018', '2019', '2020', '2021', '2022'],
-       value=('2022'))
+       value=('2022'),
+       key="tx_0024_qpv")
   st.write('Mon année :', select_annee_0024)
 
   def tx_0024_qpv(fichier, nom_ville, annee) :
