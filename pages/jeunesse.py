@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import plotly_express as px
 import numpy as np
 import altair as alt
 import geopandas as gpd
@@ -55,7 +57,14 @@ def app():
   df = df.reset_index(drop=True)
   df = df[["Rentrée scolaire", "Nom de la commune","Nom de l'établissment", "Secteur", "IPS"]]
   st.write(df)
+  st.caption("2022, 1ere année de mise à disposition")
   st.caption("IPS : outil de mesure quantitatif de la situation sociale des élèves face aux apprentissages dans les établissements scolaires français. Plus l'indice est élevé, plus l'élève évolue dans un contexte familial favorable aux apprentissages. Cet indice est construit à partir des professions et catégories socioprofessionnelles (PCS) des représentants légaux des élèves.")
+
+  st.subheader("Analyse nationale pour les écoles")
+  df = pd.read_csv('./jeunesse/EN/fr-en-ips_ecoles_2022.csv', dtype={"Rentrée scolaire": str , "Code du département": str, "Code INSEE de la commune": str}, sep=";")
+  fig = px.box(df, x='Secteur', y='IPS')
+  boxplot_chart = st.plotly_chart(fig)
+  boxplot_chart
 
   st.header("Indice de position sociale des élèves des collèges")
   df = pd.read_csv('./jeunesse/EN/fr-en-ips_colleges_2022.csv', dtype={"Rentrée scolaire": str , "Code du département": str, "Code INSEE de la commune": str}, sep=";")
@@ -63,6 +72,13 @@ def app():
   df = df.reset_index(drop=True)
   df = df[["Rentrée scolaire", "Nom de la commune","Nom de l'établissment", "Secteur", "IPS"]]
   st.write(df)
+
+  st.subheader("Analyse nationale pour les collèges")
+  df = pd.read_csv('./jeunesse/EN/fr-en-ips_colleges_2022.csv', dtype={"Rentrée scolaire": str , "Code du département": str, "Code INSEE de la commune": str}, sep=";")
+  fig = px.box(df, x='Secteur', y='IPS')
+  boxplot_chart = st.plotly_chart(fig)
+  boxplot_chart
+
   ##################
 
 
