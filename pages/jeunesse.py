@@ -50,6 +50,38 @@ def app():
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
+  st.header("Réussite au brevet")
+  df_filt = pd.read_csv('./jeunesse/EN/fr-en-dnb-par-etablissement.csv', dtype={"Session": str , "Commune": str, "Code département": str, "Code académie": str, "Code région": str}, sep=";")
+  df_filt = df_filt.loc[df_filt["Commune"] == code_commune ]
+  feature_1_val = df_filt["Patronyme"].unique()
+  new_arr = np.insert(feature_1_val, 0, "")
+  feature_1ed = st.selectbox('Sélectionner un collège', new_arr)
+  st.write('Votre collège:', feature_1ed)
+
+  df = pd.read_csv('./jeunesse/EN/fr-en-dnb-par-etablissement.csv', dtype={"Session": str, "Commune": str, "Code département": str, "Code académie": str, "Code région": str}, sep=";")
+  df = df.loc[df["Commune"] == code_commune ]
+  df = df.replace(',','.', regex=True)
+  df = df.replace('%','', regex=True)
+  df['Taux de réussite'] = pd.to_numeric(df['Taux de réussite'])
+  if feature_1ed != "":
+    df = df.loc[df["Patronyme"] == feature_1ed ]
+  df = df.reset_index(drop=True)
+  df = df[["Session", "Patronyme","Secteur d'enseignement", "Libellé commune", "Taux de réussite"]]
+  df = df.sort_values(by=['Patronyme','Session'], ascending=False)
+  st.write(df)
+
+
+  line_chart = alt.Chart(df).mark_line(interpolate='basis').encode(
+      alt.X('Session', title='Année'),
+      alt.Y('Taux de réussite:Q', title='Tx de réussite', scale=alt.Scale(domain=[df["Taux de réussite"].min(), df["Taux de réussite"].max()])),
+      color='Patronyme:N',
+      strokeDash='Patronyme'
+  ).properties(
+      title='Résultat au Brevet',
+      width=800,
+      height=300
+  )
+  st.altair_chart(line_chart, use_container_width=True)
 
   st.header("Indice de position sociale des élèves des écoles")
   df = pd.read_csv('./jeunesse/EN/fr-en-ips_ecoles_2022.csv', dtype={"Rentrée scolaire": str , "Code du département": str, "Code INSEE de la commune": str}, sep=";")
