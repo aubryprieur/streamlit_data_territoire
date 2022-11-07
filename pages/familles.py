@@ -43,8 +43,8 @@ def app():
   #Année
   select_annee = st.sidebar.select_slider(
        "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018'],
-       value=('2018'))
+       options=['2014', '2015', '2016', '2017', '2018', '2019'],
+       value=('2019'))
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
@@ -264,9 +264,11 @@ def app():
     #2018
     valeur_part_fam_mono_fr_2018 = part_fam_mono_France("./famille/base-ic-couples-familles-menages-2018.csv",'2018')
     indice_2018 = valeur_part_fam_mono_fr_2018['Part des familles monoparentales 2018'][0]
-
-    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
+    #2019
+    valeur_part_fam_mono_fr_2019 = part_fam_mono_France("./famille/base-ic-couples-familles-menages-2019.csv",'2019')
+    indice_2019 = valeur_part_fam_mono_fr_2019['Part des familles monoparentales 2019'][0]
+    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=['France'])
 
     #RÉGION
     #2014
@@ -284,9 +286,11 @@ def app():
     #2018
     valeur_part_fam_mono_region_2018 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",str(round(code_region)),'2018')
     indice_2018 = valeur_part_fam_mono_region_2018['Part des familles monoparentales 2018'][0]
-
-    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
+    #2019
+    valeur_part_fam_mono_region_2019 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",str(round(code_region)),'2019')
+    indice_2019 = valeur_part_fam_mono_region_2019['Part des familles monoparentales 2019'][0]
+    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018','2019'], index=[nom_region])
 
     #DÉPARTEMENT
     #2014
@@ -303,10 +307,13 @@ def app():
     indice_2017 = valeur_part_fam_mono_departement_2017['Part des familles monoparentales 2017'][0]
     #2018
     valeur_part_fam_mono_departement_2018 = part_fam_mono_departement_P2017("./famille/base-ic-couples-familles-menages-2018.csv",code_departement,'2018')
-    indice_2017 = valeur_part_fam_mono_departement_2018['Part des familles monoparentales 2018'][0]
+    indice_2018 = valeur_part_fam_mono_departement_2018['Part des familles monoparentales 2018'][0]
+    #2019
+    valeur_part_fam_mono_departement_2019 = part_fam_mono_departement_P2017("./famille/base-ic-couples-familles-menages-2019.csv",code_departement,'2019')
+    indice_2019 = valeur_part_fam_mono_departement_2019['Part des familles monoparentales 2019'][0]
 
-    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_departement])
 
     #EPCI
     #2014
@@ -324,9 +331,12 @@ def app():
     #2018
     valeur_part_fam_mono_epci_2018 = part_fam_mono_epci("./famille/base-ic-couples-familles-menages-2018.csv",code_epci,'2018')
     indice_2018 = valeur_part_fam_mono_epci_2018['Part des familles monoparentales 2018'][0]
+    #2019
+    valeur_part_fam_mono_epci_2019 = part_fam_mono_epci("./famille/base-ic-couples-familles-menages-2019.csv",code_epci,'2019')
+    indice_2019 = valeur_part_fam_mono_epci_2019['Part des familles monoparentales 2019'][0]
 
-    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_epci])
 
     #COMMUNE
     #2014
@@ -344,9 +354,12 @@ def app():
     #2018
     valeur_part_fam_mono_commune_2018 = part_fam_mono_com("./famille/base-ic-couples-familles-menages-2018.csv",code_commune,'2018')
     indice_2018 = valeur_part_fam_mono_commune_2018['Part des familles monoparentales 2018'][0]
+    #2019
+    valeur_part_fam_mono_commune_2019 = part_fam_mono_com("./famille/base-ic-couples-familles-menages-2019.csv",code_commune,'2019')
+    indice_2019 = valeur_part_fam_mono_commune_2019['Part des familles monoparentales 2019'][0]
 
-    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_commune])
 
     df_glob_fam_monop = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
 
@@ -541,8 +554,11 @@ def app():
     #2018
     valeur_part_fam_nombreuses_fr_2018 = part_fam_nombreuses_France("./famille/base-ic-couples-familles-menages-2018.csv",'2018')
     indice_2018 = valeur_part_fam_nombreuses_fr_2018['Part des familles nombreuses 2018'][0]
-    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
+    #2019
+    valeur_part_fam_nombreuses_fr_2019 = part_fam_nombreuses_France("./famille/base-ic-couples-familles-menages-2019.csv",'2019')
+    indice_2019 = valeur_part_fam_nombreuses_fr_2019['Part des familles nombreuses 2019'][0]
+    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=['France'])
 
     #RÉGION
     #2014
@@ -560,8 +576,11 @@ def app():
     #2018
     valeur_part_fam_nombreuses_region_2018 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",str(round(code_region)),'2018')
     indice_2018 = valeur_part_fam_nombreuses_region_2018['Part des familles nombreuses 2018'][0]
-    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
+    #2019
+    valeur_part_fam_nombreuses_region_2019 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",str(round(code_region)),'2019')
+    indice_2019 = valeur_part_fam_nombreuses_region_2019['Part des familles nombreuses 2019'][0]
+    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_region])
 
     #DÉPARTEMENT
     #2014
@@ -579,9 +598,12 @@ def app():
     #2018
     valeur_part_fam_nombreuses_departement_2018 = part_fam_nombreuses_departement_P2017("./famille/base-ic-couples-familles-menages-2018.csv",code_departement,'2018')
     indice_2018 = valeur_part_fam_nombreuses_departement_2018['Part des familles nombreuses 2018'][0]
+    #2019
+    valeur_part_fam_nombreuses_departement_2019 = part_fam_nombreuses_departement_P2017("./famille/base-ic-couples-familles-menages-2019.csv",code_departement,'2019')
+    indice_2019 = valeur_part_fam_nombreuses_departement_2019['Part des familles nombreuses 2019'][0]
 
-    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_departement])
 
     #EPCI
     #2014
@@ -599,9 +621,12 @@ def app():
     #2018
     valeur_part_fam_nombreuses_epci_2018 = part_fam_nombreuses_epci("./famille/base-ic-couples-familles-menages-2018.csv",code_epci,'2018')
     indice_2018 = valeur_part_fam_nombreuses_epci_2018['Part des familles nombreuses 2018'][0]
+    #2019
+    valeur_part_fam_nombreuses_epci_2019 = part_fam_nombreuses_epci("./famille/base-ic-couples-familles-menages-2019.csv",code_epci,'2019')
+    indice_2019 = valeur_part_fam_nombreuses_epci_2019['Part des familles nombreuses 2019'][0]
 
-    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_epci])
 
     #COMMUNE
     #2014
@@ -619,9 +644,12 @@ def app():
     #2018
     valeur_part_fam_nombreuses_commune_2018 = part_fam_nombreuses_com("./famille/base-ic-couples-familles-menages-2018.csv",code_commune,'2018')
     indice_2018 = valeur_part_fam_nombreuses_commune_2018['Part des familles nombreuses 2018'][0]
+    #2019
+    valeur_part_fam_nombreuses_commune_2019 = part_fam_nombreuses_com("./famille/base-ic-couples-familles-menages-2019.csv",code_commune,'2019')
+    indice_2019 = valeur_part_fam_nombreuses_commune_2019['Part des familles nombreuses 2019'][0]
 
-    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_commune])
 
     df_glob_fam_nombreuses = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
 
