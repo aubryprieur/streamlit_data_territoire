@@ -9,4 +9,4 @@ requests==2.27.1
 folium==0.12.1
 streamlit-folium
 plotly.express
-protobuf==3.20.*
+protobuf~=3.19.0
