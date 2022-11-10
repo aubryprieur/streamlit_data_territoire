@@ -44,8 +44,8 @@ def app():
   #Année
   select_annee = st.sidebar.select_slider(
        "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018'],
-       value=('2018'))
+       options=['2014', '2015', '2016', '2017', '2018', '2019'],
+       value=('2019'))
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################

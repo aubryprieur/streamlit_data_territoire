@@ -44,8 +44,8 @@ def app():
   #Année
   select_annee = st.sidebar.select_slider(
        "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018'],
-       value=('2018'))
+       options=['2014', '2015', '2016', '2017', '2018', '2019'],
+       value=('2019'))
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
@@ -166,7 +166,7 @@ def app():
       df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
       year = annee[-2:]
       df_dpt = pd.merge(df, communes_select[['COM','DEP']],  on='COM', how='left')
-      df_departement = df_dpt.loc[df_dpt["DEP"]==departement, ['DEP', 'COM',"P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
+      df_departement = df_dpt.loc[df_dpt["DEP"] == departement, ['DEP', 'COM',"P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
       pop0014 = (df_departement.loc[:, "P" + year +"_POP0014"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
       pop1529 = (df_departement.loc[:, "P" + year +"_POP1529"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
       pop3044 = (df_departement.loc[:, "P" + year +"_POP3044"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
@@ -178,7 +178,7 @@ def app():
     else:
       df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str},sep = ';')
       year = annee[-2:]
-      df_departement = df.loc[df["DEP"]==departement, ["P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
+      df_departement = df.loc[df["DEP"] == departement, ["P" + year +"_POP", "P" + year +"_POP0014" , "P" + year +"_POP1529","P" + year +"_POP3044", "P" + year +"_POP4559","P" + year +"_POP6074","P" + year +"_POP75P"]]
       pop0014 = (df_departement.loc[:, "P" + year +"_POP0014"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
       pop1529 = (df_departement.loc[:, "P" + year +"_POP1529"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
       pop3044 = (df_departement.loc[:, "P" + year +"_POP3044"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
@@ -187,7 +187,7 @@ def app():
       pop75P = (df_departement.loc[:, "P" + year +"_POP75P"].sum() / df_departement["P" + year +"_POP"].sum()) * 100
       df_tranches_age_dpt = pd.DataFrame(data=[[nom_departement,pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
       return df_tranches_age_dpt
-  tranche_age_departement = tranche_age_departement("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_departement, select_annee)
+  tranche_age_departement = tranche_age_departement("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", code_departement, select_annee)
 
   #Région
   def tranche_age_region(fichier, region, annee):

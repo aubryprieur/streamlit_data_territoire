@@ -45,8 +45,8 @@ def app():
   #Année
   select_annee = st.sidebar.select_slider(
        "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018'],
-       value=('2018'))
+       options=['2014', '2015', '2016', '2017', '2018', '2019'],
+       value=('2019'))
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
@@ -380,13 +380,17 @@ def app():
   st.subheader('2. Les NEET')
   st.caption("Un NEET (neither in employment nor in education or training) est une personne entre 16 et 25 ans qui n’est ni en emploi, ni en études, ni en formation (formelle ou non formelle).")
 
+  #Année
+  select_annee_neet = "2018"
+  st.write('Mon année :', select_annee_neet)
+
   #Commune
   def neet_commune(fichier, nom_ville, annee) :
     df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
     df_ville = df.loc[df["libgeo"] == nom_ville]
     df_ville = df_ville.loc[df_ville["an"] == annee]
     return df_ville
-  neet_ville = neet_commune("./jeunesse/neet/neet_communes_" + select_annee + ".csv",nom_commune, select_annee)
+  neet_ville = neet_commune("./jeunesse/neet/neet_communes_" + select_annee_neet + ".csv",nom_commune, select_annee_neet)
 
   #EPCI
   def neet_epci(fichier, epci, annee) :
@@ -394,7 +398,7 @@ def app():
     df_epci = df.loc[df["codgeo"] == epci]
     df_epci = df_epci.loc[df_epci["an"] == annee]
     return df_epci
-  neet_epci = neet_epci("./jeunesse/neet/neet_epci_" + select_annee + ".csv",code_epci, select_annee)
+  neet_epci = neet_epci("./jeunesse/neet/neet_epci_" + select_annee_neet + ".csv",code_epci, select_annee_neet)
 
   #Département
   def neet_departement(fichier, departement, annee) :
@@ -402,7 +406,7 @@ def app():
     df_departement = df.loc[df["codgeo"] == departement]
     df_departement = df_departement.loc[df_departement["an"] == annee]
     return df_departement
-  neet_dpt = neet_departement("./jeunesse/neet/neet_dpt_" + select_annee + ".csv",code_departement, select_annee)
+  neet_dpt = neet_departement("./jeunesse/neet/neet_dpt_" + select_annee_neet + ".csv",code_departement, select_annee_neet)
 
   #Région
   def neet_region(fichier, region, annee) :
@@ -410,7 +414,7 @@ def app():
     df_region = df.loc[df["codgeo"] == region]
     df_region = df_region.loc[df_region["an"] == annee]
     return df_region
-  neet_reg = neet_region("./jeunesse/neet/neet_region_" + select_annee + ".csv",str(round(code_region)), select_annee)
+  neet_reg = neet_region("./jeunesse/neet/neet_region_" + select_annee_neet + ".csv",str(round(code_region)), select_annee_neet)
 
   #France
   data = {'codgeo':['1'],

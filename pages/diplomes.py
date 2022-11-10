@@ -43,8 +43,8 @@ def app():
   #Année
   select_annee = st.sidebar.select_slider(
        "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018'],
-       value=('2018'))
+       options=['2014', '2015', '2016', '2017', '2018', '2019'],
+       value=('2019'))
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
@@ -126,7 +126,7 @@ def app():
     df_indice_com['P' + year +'_NSCOL15P_DIPLMIN'] = df_indice_com['P' + year +'_NSCOL15P_DIPLMIN'].apply(np.int64)
     df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_NSCOL15P':"Personnes non scolarisées de 15 ans ou plus (" + select_annee + ")", 'P' + year +'_NSCOL15P_DIPLMIN':"Personnes non scolarisées de 15 ans ou plus titulaires d'aucun diplôme ou au plus un CEP (" + select_annee + ")" ,'indice':"Part des personnes non scolarisées sans diplôme (" + select_annee + ") en %" })
     return df_indice_com
-  indice_part_sans_diplome_iris =part_sans_diplome_iris("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(code_commune), select_annee)
+  indice_part_sans_diplome_iris =part_sans_diplome_iris("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",str(code_commune), select_annee)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_part_sans_diplome_iris)
 
@@ -156,7 +156,7 @@ def app():
         part_sans_diplome = round((pop_non_scol_sans_diplome / pop_non_scol)*100,2)
         df_part_sans_diplome = pd.DataFrame(data=part_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = [nom_commune])
         return df_part_sans_diplome
-    indice_sans_diplome_com = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_commune, select_annee)
+    indice_sans_diplome_com = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_commune, select_annee)
 
     # EPCI
     def part_sans_diplome_epci(fichier, epci, annee):
@@ -170,7 +170,7 @@ def app():
         part_pop_non_scol_sans_diplome = round((pop_non_scol_sans_diplome / pop_non_scol)*100,2)
         df_part_sans_diplome = pd.DataFrame(data=part_pop_non_scol_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = [nom_epci])
         return df_part_sans_diplome
-    indice_sans_diplome_epci = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_epci,select_annee)
+    indice_sans_diplome_epci = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_epci,select_annee)
 
 
     # Département
@@ -197,9 +197,9 @@ def app():
         return df_part_non_scol_sans_diplome
 
     if int(select_annee) < 2017:
-        valeurs_sans_diplome_dep = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_departement,select_annee)
+        valeurs_sans_diplome_dep = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_departement,select_annee)
     else :
-        valeurs_sans_diplome_dep = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_departement,select_annee)
+        valeurs_sans_diplome_dep = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_departement,select_annee)
 
     # Région
     #si année de 2014 à 2016 (inclus)
@@ -227,9 +227,9 @@ def app():
         return df_part_pop_non_scol_sans_diplome
 
     if int(select_annee) < 2017:
-        valeurs_sans_diplome_reg = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(round(code_region)),select_annee)
+        valeurs_sans_diplome_reg = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",str(round(code_region)),select_annee)
     else :
-        valeurs_sans_diplome_reg = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(round(code_region)),select_annee)
+        valeurs_sans_diplome_reg = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",str(round(code_region)),select_annee)
 
     # France
     def part_sans_diplome_France(fichier, annee):
@@ -241,7 +241,7 @@ def app():
         df_part_pop_non_scol_sans_diplome = pd.DataFrame(data=part_pop_non_scol_sans_diplome, columns = ['Part des personnes sans diplôme ' + annee], index = ["France"])
         return df_part_pop_non_scol_sans_diplome
 
-    valeur_part_sans_diplome_fr = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",select_annee)
+    valeur_part_sans_diplome_fr = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",select_annee)
 
     # Comparaison
     def sans_diplome_global(annee):
@@ -268,62 +268,62 @@ def app():
 
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
-    valeur_part_sans_diplome_fr_2014 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2014-test.csv",'2014')
+    valeur_part_sans_diplome_fr_2014 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2014.csv",'2014')
     valeur_part_sans_diplome_fr_2014.loc['France', 'Part des personnes sans diplôme 2014'].squeeze()
 
     #FRANCE
     #2014
-    valeur_part_sans_diplome_fr_2014 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2014-test.csv",'2014')
+    valeur_part_sans_diplome_fr_2014 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2014.csv",'2014')
     indice_2014 = valeur_part_sans_diplome_fr_2014['Part des personnes sans diplôme 2014'][0]
     #2015
-    valeur_part_sans_diplome_fr_2015 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2015-test.csv",'2015')
+    valeur_part_sans_diplome_fr_2015 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2015.csv",'2015')
     indice_2015 = valeur_part_sans_diplome_fr_2015['Part des personnes sans diplôme 2015'][0]
     #2016
-    valeur_part_sans_diplome_fr_2016 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2016-test.csv",'2016')
+    valeur_part_sans_diplome_fr_2016 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2016.csv",'2016')
     indice_2016 = valeur_part_sans_diplome_fr_2016['Part des personnes sans diplôme 2016'][0]
     #2017
-    valeur_part_sans_diplome_fr_2017 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2017-test.csv",'2017')
+    valeur_part_sans_diplome_fr_2017 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2017.csv",'2017')
     indice_2017 = valeur_part_sans_diplome_fr_2017['Part des personnes sans diplôme 2017'][0]
     #2018
-    valeur_part_sans_diplome_fr_2018 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2018-test.csv",'2018')
+    valeur_part_sans_diplome_fr_2018 = part_sans_diplome_France("./diplome/base-ic-diplomes-formation-2018.csv",'2018')
     indice_2018 = valeur_part_sans_diplome_fr_2018['Part des personnes sans diplôme 2018'][0]
     df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
                        columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
 
     #RÉGION
     #2014
-    valeur_part_sans_diplome_region_2014 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2014-test.csv",str(round(code_region)),'2014')
+    valeur_part_sans_diplome_region_2014 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2014.csv",str(round(code_region)),'2014')
     indice_2014 = valeur_part_sans_diplome_region_2014['Part des personnes sans diplôme 2014'][0]
     #2015
-    valeur_part_sans_diplome_region_2015 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2015-test.csv",str(round(code_region)),'2015')
+    valeur_part_sans_diplome_region_2015 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2015.csv",str(round(code_region)),'2015')
     indice_2015 = valeur_part_sans_diplome_region_2015['Part des personnes sans diplôme 2015'][0]
     #2016
-    valeur_part_sans_diplome_region_2016 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2016-test.csv",str(round(code_region)),'2016')
+    valeur_part_sans_diplome_region_2016 = part_sans_diplome_region_M2017("./diplome/base-ic-diplomes-formation-2016.csv",str(round(code_region)),'2016')
     indice_2016 = valeur_part_sans_diplome_region_2016['Part des personnes sans diplôme 2016'][0]
     #2017
-    valeur_part_sans_diplome_region_2017 = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-2017-test.csv",str(round(code_region)),'2017')
+    valeur_part_sans_diplome_region_2017 = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-2017.csv",str(round(code_region)),'2017')
     indice_2017 = valeur_part_sans_diplome_region_2017['Part des personnes sans diplôme 2017'][0]
     #2018
-    valeur_part_sans_diplome_region_2018 = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-2018-test.csv",str(round(code_region)),'2018')
+    valeur_part_sans_diplome_region_2018 = part_sans_diplome_region_P2017("./diplome/base-ic-diplomes-formation-2018.csv",str(round(code_region)),'2018')
     indice_2018 = valeur_part_sans_diplome_region_2018['Part des personnes sans diplôme 2018'][0]
     df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
                        columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
 
     #DÉPARTEMENT
     #2014
-    valeur_part_sans_diplome_departement_2014 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2014-test.csv",code_departement,'2014')
+    valeur_part_sans_diplome_departement_2014 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2014.csv",code_departement,'2014')
     indice_2014 = valeur_part_sans_diplome_departement_2014['Part des personnes sans diplôme 2014'][0]
     #2015
-    valeur_part_sans_diplome_departement_2015 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2015-test.csv",code_departement,'2015')
+    valeur_part_sans_diplome_departement_2015 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2015.csv",code_departement,'2015')
     indice_2015 = valeur_part_sans_diplome_departement_2015['Part des personnes sans diplôme 2015'][0]
     #2016
-    valeur_part_sans_diplome_departement_2016 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2016-test.csv",code_departement,'2016')
+    valeur_part_sans_diplome_departement_2016 = part_sans_diplome_departement_M2017("./diplome/base-ic-diplomes-formation-2016.csv",code_departement,'2016')
     indice_2016 = valeur_part_sans_diplome_departement_2016['Part des personnes sans diplôme 2016'][0]
     #2017
-    valeur_part_sans_diplome_departement_2017 = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-2017-test.csv",code_departement,'2017')
+    valeur_part_sans_diplome_departement_2017 = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-2017.csv",code_departement,'2017')
     indice_2017 = valeur_part_sans_diplome_departement_2017['Part des personnes sans diplôme 2017'][0]
     #2018
-    valeur_part_sans_diplome_departement_2018 = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-2018-test.csv",code_departement,'2018')
+    valeur_part_sans_diplome_departement_2018 = part_sans_diplome_departement_P2017("./diplome/base-ic-diplomes-formation-2018.csv",code_departement,'2018')
     indice_2018 = valeur_part_sans_diplome_departement_2018['Part des personnes sans diplôme 2018'][0]
 
     df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
@@ -331,19 +331,19 @@ def app():
 
     #EPCI
     #2014
-    valeur_part_sans_diplome_epci_2014 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2014-test.csv",code_epci,'2014')
+    valeur_part_sans_diplome_epci_2014 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2014.csv",code_epci,'2014')
     indice_2014 = valeur_part_sans_diplome_epci_2014['Part des personnes sans diplôme 2014'][0]
     #2015
-    valeur_part_sans_diplome_epci_2015 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2015-test.csv",code_epci,'2015')
+    valeur_part_sans_diplome_epci_2015 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2015.csv",code_epci,'2015')
     indice_2015 = valeur_part_sans_diplome_epci_2015['Part des personnes sans diplôme 2015'][0]
     #2016
-    valeur_part_sans_diplome_epci_2016 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2016-test.csv",code_epci,'2016')
+    valeur_part_sans_diplome_epci_2016 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2016.csv",code_epci,'2016')
     indice_2016 = valeur_part_sans_diplome_epci_2016['Part des personnes sans diplôme 2016'][0]
     #2017
-    valeur_part_sans_diplome_epci_2017 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2017-test.csv",code_epci,'2017')
+    valeur_part_sans_diplome_epci_2017 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2017.csv",code_epci,'2017')
     indice_2017 = valeur_part_sans_diplome_epci_2017['Part des personnes sans diplôme 2017'][0]
     #2018
-    valeur_part_sans_diplome_epci_2018 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2018-test.csv",code_epci,'2018')
+    valeur_part_sans_diplome_epci_2018 = part_sans_diplome_epci("./diplome/base-ic-diplomes-formation-2018.csv",code_epci,'2018')
     indice_2018 = valeur_part_sans_diplome_epci_2018['Part des personnes sans diplôme 2018'][0]
 
     df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
@@ -351,19 +351,19 @@ def app():
 
     #COMMUNE
     #2014
-    valeur_part_sans_diplome_commune_2014 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2014-test.csv",code_commune,'2014')
+    valeur_part_sans_diplome_commune_2014 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2014.csv",code_commune,'2014')
     indice_2014 = valeur_part_sans_diplome_commune_2014['Part des personnes sans diplôme 2014'][0]
     #2015
-    valeur_part_sans_diplome_commune_2015 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2015-test.csv",code_commune,'2015')
+    valeur_part_sans_diplome_commune_2015 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2015.csv",code_commune,'2015')
     indice_2015 = valeur_part_sans_diplome_commune_2015['Part des personnes sans diplôme 2015'][0]
     #2016
-    valeur_part_sans_diplome_commune_2016 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2016-test.csv",code_commune,'2016')
+    valeur_part_sans_diplome_commune_2016 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2016.csv",code_commune,'2016')
     indice_2016 = valeur_part_sans_diplome_commune_2016['Part des personnes sans diplôme 2016'][0]
     #2017
-    valeur_part_sans_diplome_commune_2017 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2017-test.csv",code_commune,'2017')
+    valeur_part_sans_diplome_commune_2017 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2017.csv",code_commune,'2017')
     indice_2017 = valeur_part_sans_diplome_commune_2017['Part des personnes sans diplôme 2017'][0]
     #2018
-    valeur_part_sans_diplome_commune_2018 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2018-test.csv",code_commune,'2018')
+    valeur_part_sans_diplome_commune_2018 = part_sans_diplome_com("./diplome/base-ic-diplomes-formation-2018.csv",code_commune,'2018')
     indice_2018 = valeur_part_sans_diplome_commune_2018['Part des personnes sans diplôme 2018'][0]
 
     df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
@@ -431,7 +431,7 @@ def app():
       df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_NSCOL15P':"Personnes non scolarisées de 15 ans ou plus (" + select_annee + ")", 'P' + year +'_NSCOL15P_SUP':"Titulaire d'un diplôme de l'enseignement supérieur (" + select_annee + ")" ,'indice':"Part des personnes non scolarisées titulaires d'un diplôme de l'enseignement supérieur (" + select_annee + ") en %" })
       return df_indice_com
 
-  indice_part_etude_sup_iris =part_etude_sup_iris("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_commune, select_annee)
+  indice_part_etude_sup_iris =part_etude_sup_iris("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_commune, select_annee)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_part_etude_sup_iris)
 
@@ -472,7 +472,7 @@ def app():
           part_etude_sup = (pop_non_scol_etude_sup / pop_non_scol) * 100
           df_part_etude_sup = pd.DataFrame(data=part_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_commune])
           return df_part_etude_sup
-    indice_sans_diplome_com = part_etude_sup_com("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_commune, select_annee)
+    indice_sans_diplome_com = part_etude_sup_com("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_commune, select_annee)
 
     # EPCI
     @st.cache(persist=True)
@@ -498,7 +498,7 @@ def app():
           part_pop_non_scol_etude_sup = (pop_bac_sup / pop_non_scol)*100
           df_part_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_epci])
           return df_part_etude_sup
-    indice_etude_sup_epci = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_epci,select_annee)
+    indice_etude_sup_epci = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_epci,select_annee)
 
     # Département
     @st.cache(persist=True)
@@ -526,7 +526,7 @@ def app():
         df_part_non_scol_etude_sup = pd.DataFrame(data=part_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_departement])
         return df_part_non_scol_etude_sup
 
-    valeurs_etude_sup_dep = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",code_departement,select_annee)
+    valeurs_etude_sup_dep = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",code_departement,select_annee)
 
     # Région
     @st.cache(persist=True)
@@ -554,7 +554,7 @@ def app():
         df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_region])
         return df_part_pop_non_scol_etude_sup
 
-    valeurs_etude_sup_reg = part_etude_sup_region("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",str(round(code_region)),select_annee)
+    valeurs_etude_sup_reg = part_etude_sup_region("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",str(round(code_region)),select_annee)
 
     # France
     @st.cache(persist=True)
@@ -576,7 +576,7 @@ def app():
           df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = ["France"])
           return df_part_pop_non_scol_etude_sup
 
-    valeur_part_etude_sup_fr = part_etude_sup_France("./diplome/base-ic-diplomes-formation-" + select_annee + "-test.csv",select_annee)
+    valeur_part_etude_sup_fr = part_etude_sup_France("./diplome/base-ic-diplomes-formation-" + select_annee + ".csv",select_annee)
 
     # Comparaison
     @st.cache(persist=True)
@@ -606,38 +606,38 @@ def app():
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #FRANCE
     #2014
-    valeur_part_etude_sup_fr_2014 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2014-test.csv",'2014')
+    valeur_part_etude_sup_fr_2014 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2014.csv",'2014')
     indice_2014 = valeur_part_etude_sup_fr_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
     #2015
-    valeur_part_etude_sup_fr_2015 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2015-test.csv",'2015')
+    valeur_part_etude_sup_fr_2015 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2015.csv",'2015')
     indice_2015 = valeur_part_etude_sup_fr_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
     #2016
-    valeur_part_etude_sup_fr_2016 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2016-test.csv",'2016')
+    valeur_part_etude_sup_fr_2016 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2016.csv",'2016')
     indice_2016 = valeur_part_etude_sup_fr_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
     #2017
-    valeur_part_etude_sup_fr_2017 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2017-test.csv",'2017')
+    valeur_part_etude_sup_fr_2017 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2017.csv",'2017')
     indice_2017 = valeur_part_etude_sup_fr_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
     #2018
-    valeur_part_etude_sup_fr_2018 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2018-test.csv",'2018')
+    valeur_part_etude_sup_fr_2018 = part_etude_sup_France("./diplome/base-ic-diplomes-formation-2018.csv",'2018')
     indice_2018 = valeur_part_etude_sup_fr_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
     df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
                        columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
 
     #RÉGION
     #2014
-    valeur_part_etude_sup_region_2014 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2014-test.csv",str(round(code_region)),'2014')
+    valeur_part_etude_sup_region_2014 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2014.csv",str(round(code_region)),'2014')
     indice_2014 = valeur_part_etude_sup_region_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
     #2015
-    valeur_part_etude_sup_region_2015 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2015-test.csv",str(round(code_region)),'2015')
+    valeur_part_etude_sup_region_2015 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2015.csv",str(round(code_region)),'2015')
     indice_2015 = valeur_part_etude_sup_region_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
     #2016
-    valeur_part_etude_sup_region_2016 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2016-test.csv",str(round(code_region)),'2016')
+    valeur_part_etude_sup_region_2016 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2016.csv",str(round(code_region)),'2016')
     indice_2016 = valeur_part_etude_sup_region_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
     #2017
-    valeur_part_etude_sup_region_2017 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2017-test.csv",str(round(code_region)),'2017')
+    valeur_part_etude_sup_region_2017 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2017.csv",str(round(code_region)),'2017')
     indice_2017 = valeur_part_etude_sup_region_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
     #2018
-    valeur_part_etude_sup_region_2018 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2018-test.csv",str(round(code_region)),'2018')
+    valeur_part_etude_sup_region_2018 = part_etude_sup_region("./diplome/base-ic-diplomes-formation-2018.csv",str(round(code_region)),'2018')
     indice_2018 = valeur_part_etude_sup_region_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
     indice_2018
     df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
@@ -646,19 +646,19 @@ def app():
 
     #DÉPARTEMENT
     #2014
-    valeur_part_etude_sup_departement_2014 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2014-test.csv",code_departement,'2014')
+    valeur_part_etude_sup_departement_2014 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2014.csv",code_departement,'2014')
     indice_2014 = valeur_part_etude_sup_departement_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
     #2015
-    valeur_part_etude_sup_departement_2015 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2015-test.csv",code_departement,'2015')
+    valeur_part_etude_sup_departement_2015 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2015.csv",code_departement,'2015')
     indice_2015 = valeur_part_etude_sup_departement_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
     #2016
-    valeur_part_etude_sup_departement_2016 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2016-test.csv",code_departement,'2016')
+    valeur_part_etude_sup_departement_2016 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2016.csv",code_departement,'2016')
     indice_2016 = valeur_part_etude_sup_departement_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
     #2017
-    valeur_part_etude_sup_departement_2017 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2017-test.csv",code_departement,'2017')
+    valeur_part_etude_sup_departement_2017 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2017.csv",code_departement,'2017')
     indice_2017 = valeur_part_etude_sup_departement_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
     #2018
-    valeur_part_etude_sup_departement_2018 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2018-test.csv",code_departement,'2018')
+    valeur_part_etude_sup_departement_2018 = part_etude_sup_departement("./diplome/base-ic-diplomes-formation-2018.csv",code_departement,'2018')
     indice_2018 = valeur_part_etude_sup_departement_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
 
     df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
@@ -666,19 +666,19 @@ def app():
 
     #EPCI
     #2014
-    valeur_part_etude_sup_epci_2014 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2014-test.csv",code_epci,'2014')
+    valeur_part_etude_sup_epci_2014 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2014.csv",code_epci,'2014')
     indice_2014 = valeur_part_etude_sup_epci_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
     #2015
-    valeur_part_etude_sup_epci_2015 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2015-test.csv",code_epci,'2015')
+    valeur_part_etude_sup_epci_2015 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2015.csv",code_epci,'2015')
     indice_2015 = valeur_part_etude_sup_epci_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
     #2016
-    valeur_part_etude_sup_epci_2016 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2016-test.csv",code_epci,'2016')
+    valeur_part_etude_sup_epci_2016 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2016.csv",code_epci,'2016')
     indice_2016 = valeur_part_etude_sup_epci_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
     #2017
-    valeur_part_etude_sup_epci_2017 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2017-test.csv",code_epci,'2017')
+    valeur_part_etude_sup_epci_2017 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2017.csv",code_epci,'2017')
     indice_2017 = valeur_part_etude_sup_epci_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
     #2018
-    valeur_part_etude_sup_epci_2018 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2018-test.csv",code_epci,'2018')
+    valeur_part_etude_sup_epci_2018 = part_etude_sup_epci("./diplome/base-ic-diplomes-formation-2018.csv",code_epci,'2018')
     indice_2018 = valeur_part_etude_sup_epci_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
 
     df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
@@ -686,19 +686,19 @@ def app():
 
     #COMMUNE
     #2014
-    valeur_part_etude_sup_commune_2014 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2014-test.csv",code_commune,'2014')
+    valeur_part_etude_sup_commune_2014 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2014.csv",code_commune,'2014')
     indice_2014 = valeur_part_etude_sup_commune_2014["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2014"][0]
     #2015
-    valeur_part_etude_sup_commune_2015 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2015-test.csv",code_commune,'2015')
+    valeur_part_etude_sup_commune_2015 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2015.csv",code_commune,'2015')
     indice_2015 = valeur_part_etude_sup_commune_2015["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2015"][0]
     #2016
-    valeur_part_etude_sup_commune_2016 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2016-test.csv",code_commune,'2016')
+    valeur_part_etude_sup_commune_2016 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2016.csv",code_commune,'2016')
     indice_2016 = valeur_part_etude_sup_commune_2016["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2016"][0]
     #2017
-    valeur_part_etude_sup_commune_2017 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2017-test.csv",code_commune,'2017')
+    valeur_part_etude_sup_commune_2017 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2017.csv",code_commune,'2017')
     indice_2017 = valeur_part_etude_sup_commune_2017["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2017"][0]
     #2018
-    valeur_part_etude_sup_commune_2018 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2018-test.csv",code_commune,'2018')
+    valeur_part_etude_sup_commune_2018 = part_etude_sup_com("./diplome/base-ic-diplomes-formation-2018.csv",code_commune,'2018')
     indice_2018 = valeur_part_etude_sup_commune_2018["Part des personnes titulaires d'un diplôme de l'enseignement supérieur 2018"][0]
 
     df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
