@@ -89,6 +89,19 @@ def app():
   df = df.reset_index(drop=True)
   df = df[["Rentrée scolaire", "Nom de la commune","Nom de l'établissment", "Secteur", "IPS"]]
   st.write(df)
+
+
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+  csv = convert_df(df)
+  st.download_button(
+  label="💾 Télécharger les données",
+  data=csv,
+  file_name='ips_ecole.csv',
+  mime='text/csv'
+  )
+
   st.caption("2022, 1ere année de mise à disposition")
   st.caption("IPS : outil de mesure quantitatif de la situation sociale des élèves face aux apprentissages dans les établissements scolaires français. Plus l'indice est élevé, plus l'élève évolue dans un contexte familial favorable aux apprentissages. Cet indice est construit à partir des professions et catégories socioprofessionnelles (PCS) des représentants légaux des élèves.")
 
@@ -104,6 +117,17 @@ def app():
   df = df.reset_index(drop=True)
   df = df[["Rentrée scolaire", "Nom de la commune","Nom de l'établissment", "Secteur", "IPS"]]
   st.write(df)
+
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+  csv = convert_df(df)
+  st.download_button(
+  label="💾 Télécharger les données",
+  data=csv,
+  file_name='ips_collège.csv',
+  mime='text/csv'
+  )
 
   st.subheader("Analyse nationale pour les collèges")
   df = pd.read_csv('./jeunesse/EN/fr-en-ips_colleges_2022.csv', dtype={"Rentrée scolaire": str , "Code du département": str, "Code INSEE de la commune": str}, sep=";")
