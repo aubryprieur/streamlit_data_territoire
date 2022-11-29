@@ -276,6 +276,20 @@ def app():
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_imm_iris)
 
+  #Télécharger les données
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(indice_imm_iris)
+
+  st.download_button(
+       label="💾 Télécharger les données",
+       data=csv,
+       file_name='pop_immigrée.csv',
+       mime='text/csv',
+   )
   ##########################################################################
   st.header('4.Personnes étrangères')
   st.caption("Un étranger est une personne qui réside en France et ne possède pas la nationalité française, soit qu'elle possède une autre nationalité (à titre exclusif), soit qu'elle n'en ait aucune (c'est le cas des personnes apatrides). Les personnes de nationalité française possédant une autre nationalité (ou plusieurs) sont considérées en France comme françaises. Un étranger n'est pas forcément immigré, il peut être né en France (les mineurs notamment).")
@@ -296,6 +310,21 @@ def app():
   indice_etr_iris = part_pers_etr_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_etr_iris)
+
+  #Télécharger les données
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(indice_etr_iris)
+
+  st.download_button(
+       label="💾 Télécharger les données",
+       data=csv,
+       file_name='pop_étrangere.csv',
+       mime='text/csv',
+   )
 ############################
   st.caption("Zoom sur les QPV")
 
@@ -321,6 +350,21 @@ def app():
     return df_qpv
   part_etrangers_qpv = part_etrangers_qpv('./population/demographie_qpv/DEMO_' + select_annee_pop_etr + '.csv', nom_commune, select_annee_pop_etr)
   st.table(part_etrangers_qpv)
+
+  #Télécharger les données
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(part_etrangers_qpv)
+
+  st.download_button(
+       label="💾 Télécharger les données",
+       data=csv,
+       file_name='pop_étrangere.csv',
+       mime='text/csv',
+   )
 ############################################################################
 
 

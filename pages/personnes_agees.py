@@ -75,6 +75,21 @@ def app():
     with st.expander("Visualiser le tableau des iris"):
       st.table(nvm_iris)
 
+  #Télécharger les données
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(nvm_iris)
+
+  st.download_button(
+       label="💾 Télécharger les données",
+       data=csv,
+       file_name='indice_vieux.csv',
+       mime='text/csv',
+   )
+
   st.subheader('a.Comparaison sur une année')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #comparaison des territoires
@@ -221,7 +236,20 @@ def app():
     pop_global = IV_global(select_annee)
     st.table(pop_global)
 
+    #Télécharger les données
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
 
+    csv = convert_df(pop_global)
+
+    st.download_button(
+         label="💾 Télécharger les données",
+         data=csv,
+         file_name='comparaison_indice_vieux.csv',
+         mime='text/csv',
+     )
   st.subheader('b.Évolution')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #FRANCE
@@ -353,6 +381,20 @@ def app():
     with st.expander("Visualiser le tableau des iris"):
       st.table(indice_80_seules_iris)
 
+    #Télécharger les données
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(indice_80_seules_iris)
+
+    st.download_button(
+         label="💾 Télécharger les données",
+         data=csv,
+         file_name='pers_80_seules.csv',
+         mime='text/csv',
+     )
 
   st.subheader("a.Comparaison des territoires sur une année")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -498,6 +540,22 @@ def app():
     indice_80_seules = IV_global(select_annee)
     st.table(indice_80_seules)
 
+    #Télécharger les données
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(indice_80_seules)
+
+    st.download_button(
+         label="💾 Télécharger les données",
+         data=csv,
+         file_name='Comparaison_pers_80_seules.csv',
+         mime='text/csv',
+     )
+
+
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #FRANCE
@@ -634,6 +692,21 @@ def app():
     nvm_iris =indice_remplacement_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
     with st.expander("Visualiser le tableau des iris"):
       st.table(nvm_iris)
+
+    #Télécharger les données
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(nvm_iris)
+
+    st.download_button(
+         label="💾 Télécharger les données",
+         data=csv,
+         file_name='Indice_evol_generations_agees.csv',
+         mime='text/csv',
+     )
 
   st.subheader("a.Comparaison entre territoires sur une année")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -779,6 +852,20 @@ def app():
     indice_remplacement = indice_remplacement_global(select_annee)
     st.table(indice_remplacement)
 
+    #Télécharger les données
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(indice_remplacement)
+
+    st.download_button(
+         label="💾 Télécharger les données",
+         data=csv,
+         file_name='Comparaison_indice_evol_generations_agees.csv',
+         mime='text/csv',
+     )
 
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):

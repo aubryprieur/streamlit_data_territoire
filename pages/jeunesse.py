@@ -70,7 +70,20 @@ def app():
   df = df.sort_values(by=['Patronyme','Session'], ascending=False)
   st.write(df)
 
+  #Télécharger les données
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
 
+  csv = convert_df(df)
+
+  st.download_button(
+       label="💾 Télécharger les données",
+       data=csv,
+       file_name='Reussite_brevet.csv',
+       mime='text/csv',
+   )
   line_chart = alt.Chart(df).mark_line(interpolate='basis').encode(
       alt.X('Session', title='Année'),
       alt.Y('Taux de réussite:Q', title='Tx de réussite', scale=alt.Scale(domain=[df["Taux de réussite"].min(), df["Taux de réussite"].max()])),
