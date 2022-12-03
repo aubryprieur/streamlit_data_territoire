@@ -44,8 +44,8 @@ def app():
   #Année
   select_annee = st.sidebar.select_slider(
        "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018'],
-       value=('2018'))
+       options=['2014', '2015', '2016', '2017', '2018', '2019'],
+       value=('2019'))
   st.sidebar.write('Mon année :', select_annee)
 
   #############################################################################
@@ -91,6 +91,21 @@ def app():
   indice_part_log_hlm_iris =part_log_hlm_iris("./logement/base-ic-logement-" + select_annee + ".csv",code_commune, select_annee)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_part_log_hlm_iris)
+
+  #Télécharger les données
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(indice_part_log_hlm_iris)
+
+  st.download_button(
+       label="💾 Télécharger les données",
+       data=csv,
+       file_name='part_logement_hlm.csv',
+       mime='text/csv',
+   )
 
   st.subheader('Comparaison')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -188,6 +203,21 @@ def app():
     part_hlm_fin = part_hlm_global(select_annee)
     st.table(part_hlm_fin)
 
+    #Télécharger les données
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(part_hlm_fin)
+
+    st.download_button(
+         label="💾 Télécharger les données",
+         data=csv,
+         file_name='Comparaison_part_logement_hlm.csv',
+         mime='text/csv',
+     )
+
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #FRANCE
@@ -206,8 +236,11 @@ def app():
     #2018
     valeur_part_hlm_fr_2018 = part_hlm_france("./logement/base-ic-logement-2018.csv",'2018')
     indice_2018 = valeur_part_hlm_fr_2018["Part des hlm 2018"][0]
-    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
+    #2019
+    valeur_part_hlm_fr_2019 = part_hlm_france("./logement/base-ic-logement-2019.csv",'2019')
+    indice_2019 = valeur_part_hlm_fr_2019["Part des hlm 2019"][0]
+    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=['France'])
 
     #RÉGION
     #2014
@@ -226,8 +259,12 @@ def app():
     valeur_part_hlm_region_2018 = part_hlm_region("./logement/base-ic-logement-2018.csv",code_region,'2018')
     indice_2018 = valeur_part_hlm_region_2018["Part des hlm 2018"][0]
     indice_2018
-    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
+    #2019
+    valeur_part_hlm_region_2019 = part_hlm_region("./logement/base-ic-logement-2019.csv",code_region,'2019')
+    indice_2019 = valeur_part_hlm_region_2019["Part des hlm 2019"][0]
+    indice_2019
+    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018,indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_region])
 
     #DÉPARTEMENT
     #2014
@@ -245,9 +282,11 @@ def app():
     #2018
     valeur_part_hlm_departement_2018 = part_hlm_departement("./logement/base-ic-logement-2018.csv",code_departement,'2018')
     indice_2018 = valeur_part_hlm_departement_2018["Part des hlm 2018"][0]
-
-    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+    #2019
+    valeur_part_hlm_departement_2019 = part_hlm_departement("./logement/base-ic-logement-2019.csv",code_departement,'2019')
+    indice_2019 = valeur_part_hlm_departement_2019["Part des hlm 2019"][0]
+    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_departement])
 
     #EPCI
     #2014
@@ -265,9 +304,11 @@ def app():
     #2018
     valeur_part_hlm_epci_2018 = part_hlm_epci("./logement/base-ic-logement-2018.csv",code_epci,'2018')
     indice_2018 = valeur_part_hlm_epci_2018["Part des hlm 2018"][0]
-
-    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+    #2019
+    valeur_part_hlm_epci_2019 = part_hlm_epci("./logement/base-ic-logement-2019.csv",code_epci,'2019')
+    indice_2019 = valeur_part_hlm_epci_2019["Part des hlm 2019"][0]
+    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_epci])
 
     #COMMUNE
     #2014
@@ -285,9 +326,11 @@ def app():
     #2018
     valeur_part_hlm_commune_2018 = part_hlm_com("./logement/base-ic-logement-2018.csv",code_commune,'2018')
     indice_2018 = valeur_part_hlm_commune_2018["Part des hlm 2018"][0]
-
-    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+    #2019
+    valeur_part_hlm_commune_2019 = part_hlm_com("./logement/base-ic-logement-2019.csv",code_commune,'2019')
+    indice_2019 = valeur_part_hlm_commune_2019["Part des hlm 2019"][0]
+    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
+                       columns=['2014', '2015', '2016', '2017', '2018','2019'], index=[nom_commune])
 
     df_glob_part_hlm = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
 
@@ -325,6 +368,20 @@ def app():
   else:
     st.write("Pas de données des résidences en suroccupation pour l'année sélectionnée")
 
+  #Télécharger les données
+  @st.cache
+  def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
+
+  csv = convert_df(indice_part_log_suroccup_iris)
+
+  st.download_button(
+       label="💾 Télécharger les données",
+       data=csv,
+       file_name='part_logement_suroccupation.csv',
+       mime='text/csv',
+   )
 
   st.subheader('Comparaison')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -411,6 +468,21 @@ def app():
     else:
       st.write("Pas de données sur les résidences principales suroccupées pour l'année sélectionnée")
 
+    #Télécharger les données
+    @st.cache
+    def convert_df(df):
+      # IMPORTANT: Cache the conversion to prevent computation on every rerun
+      return df.to_csv().encode('utf-8')
+
+    csv = convert_df(part_suroccup_fin)
+
+    st.download_button(
+         label="💾 Télécharger les données",
+         data=csv,
+         file_name='comparaison_part_logement_suroccupation.csv',
+         mime='text/csv',
+     )
+
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #FRANCE
@@ -420,8 +492,11 @@ def app():
     #2018
     valeur_part_suroccup_fr_2018 = part_suroccup_france("./logement/base-ic-logement-2018.csv",'2018')
     indice_2018 = valeur_part_suroccup_fr_2018["Part des suroccup 2018"][0]
-    df_france_glob = pd.DataFrame(np.array([[indice_2017, indice_2018]]),
-                       columns=['2017', '2018'], index=['France'])
+    #2019
+    valeur_part_suroccup_fr_2019 = part_suroccup_france("./logement/base-ic-logement-2019.csv",'2019')
+    indice_2019 = valeur_part_suroccup_fr_2019["Part des suroccup 2019"][0]
+    df_france_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
+                       columns=['2017', '2018', '2019'], index=['France'])
 
     #RÉGION
     #2017
@@ -431,8 +506,12 @@ def app():
     valeur_part_suroccup_region_2018 = part_suroccup_region("./logement/base-ic-logement-2018.csv",code_region,'2018')
     indice_2018 = valeur_part_suroccup_region_2018["Part des suroccup 2018"][0]
     indice_2018
-    df_region_glob = pd.DataFrame(np.array([[indice_2017, indice_2018]]),
-                       columns=['2017', '2018'], index=[nom_region])
+    #2019
+    valeur_part_suroccup_region_2019 = part_suroccup_region("./logement/base-ic-logement-2019.csv",code_region,'2019')
+    indice_2019 = valeur_part_suroccup_region_2019["Part des suroccup 2019"][0]
+    indice_2019
+    df_region_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
+                       columns=['2017', '2018', '2019'], index=[nom_region])
 
     #DÉPARTEMENT
     #2017
@@ -441,9 +520,11 @@ def app():
     #2018
     valeur_part_suroccup_departement_2018 = part_suroccup_departement("./logement/base-ic-logement-2018.csv",code_departement,'2018')
     indice_2018 = valeur_part_suroccup_departement_2018["Part des suroccup 2018"][0]
-
-    df_departement_glob = pd.DataFrame(np.array([[indice_2017, indice_2018]]),
-                       columns=['2017', '2018'], index=[nom_departement])
+    #2019
+    valeur_part_suroccup_departement_2019 = part_suroccup_departement("./logement/base-ic-logement-2019.csv",code_departement,'2019')
+    indice_2019 = valeur_part_suroccup_departement_2019["Part des suroccup 2019"][0]
+    df_departement_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
+                       columns=['2017', '2018', '2019'], index=[nom_departement])
 
     #EPCI
     #2017
@@ -452,9 +533,11 @@ def app():
     #2018
     valeur_part_suroccup_epci_2018 = part_suroccup_epci("./logement/base-ic-logement-2018.csv",code_epci,'2018')
     indice_2018 = valeur_part_suroccup_epci_2018["Part des suroccup 2018"][0]
-
-    df_epci_glob = pd.DataFrame(np.array([[indice_2017, indice_2018]]),
-                       columns=['2017', '2018'], index=[nom_epci])
+    #2019
+    valeur_part_suroccup_epci_2019 = part_suroccup_epci("./logement/base-ic-logement-2019.csv",code_epci,'2019')
+    indice_2019 = valeur_part_suroccup_epci_2019["Part des suroccup 2019"][0]
+    df_epci_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
+                       columns=['2017', '2018', '2019'], index=[nom_epci])
 
     #COMMUNE
     #2017
@@ -463,9 +546,11 @@ def app():
     #2018
     valeur_part_suroccup_commune_2018 = part_suroccup_com("./logement/base-ic-logement-2018.csv",code_commune,'2018')
     indice_2018 = valeur_part_suroccup_commune_2018["Part des suroccup 2018"][0]
-
-    df_commune_glob = pd.DataFrame(np.array([[indice_2017, indice_2018]]),
-                       columns=['2017', '2018'], index=[nom_commune])
+    #2019
+    valeur_part_suroccup_commune_2019 = part_suroccup_com("./logement/base-ic-logement-2019.csv",code_commune,'2019')
+    indice_2019 = valeur_part_suroccup_commune_2019["Part des suroccup 2019"][0]
+    df_commune_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
+                       columns=['2017', '2018', '2019'], index=[nom_commune])
 
     df_glob_part_suroccup = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
 
