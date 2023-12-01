@@ -8,9 +8,13 @@ import json # library to handle JSON files
 # from streamlit_folium import folium_static
 from streamlit_folium import folium_static
 import folium # map rendering library
+import streamlit_folium as folium_st
+from shapely.geometry import Polygon, MultiPolygon
 import streamlit.components.v1 as components
 import fiona
 import matplotlib.pyplot as plt
+import plotly.express as px
+import jenkspy
 
 def app():
   #Commune
@@ -21,55 +25,28 @@ def app():
        options=list_commune)
   code_commune = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'COM'].iloc[0]
   st.sidebar.write('Ma commune:', code_commune, nom_commune)
-
   #EPCI
   df_epci = pd.read_csv("./EPCI_2020.csv", sep=";")
   nom_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'LIBEPCI'].iloc[0]
   code_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'EPCI'].iloc[0]
   st.sidebar.write('Mon EPCI:', code_epci, nom_epci)
-
-
   #Département
   code_departement = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'DEP'].iloc[0]
   df_departement = pd.read_csv("./departement2021.csv", dtype={"CHEFLIEU": str}, sep=",")
   nom_departement = df_departement.loc[df_departement['DEP'] == code_departement, 'LIBELLE'].iloc[0]
   st.sidebar.write('Mon département:', code_departement, nom_departement)
-
   #Région
   code_region = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'REG'].iloc[0]
   df_region = pd.read_csv("./region2021.csv", dtype={"CHEFLIEU": str}, sep=",")
   nom_region = df_region.loc[df_region['REG'] == code_region, 'LIBELLE'].iloc[0]
   st.sidebar.write('Ma région:', str(round(code_region)), nom_region)
 
-  #Année
-  select_annee = st.sidebar.select_slider(
-       "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018', '2019'],
-       value=('2019'))
-  st.sidebar.write('Mon année :', select_annee)
-
   #############################################################################
   st.title("🏘 Logement")
-
-  #variables
-  #P17_RP : nombre de résidences principales
-  #C17_RP_HSTU1P_SUROCC : nombre de résidences principales (hors studio de 1 personne) en suroccupation
-  #P17_RP_PROP : nombre de résidences principales occupées par des propriétaires
-  #P17_RP_LOC : nombre de résidences principales occupées par des locataires
-  #P17_RP_LOCHLMV : nombre de résidences principales HLM loué vide
-  #P17_RP_GRAT : nombre de résidences principales occupées gratuitement
-  #IRIS
-  #REG
-  #DEP
-  #COM
-  #LIBIRIS
-  st.header("Statut d'occupation des logements [proprio/locataire/...]")
-  st.header("Répartition des logements selon le nombre de pièces")
-  st.header("Répartition des logements selon l'ancienneté")
-
+  last_year = "2020"
   st.header('1.Part des logements HLM')
-
   st.subheader("Iris")
+  st.caption("Paru le 19/10/2023 - Millésime 2020")
   def part_log_hlm_iris(fichier, code, annee) :
     df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep=";")
     df_indice = df.loc[df['COM'] == code]
@@ -85,476 +62,413 @@ def app():
     df_indice_com['indice'] = df_indice_com['indice'].apply(np.int64)
     df_indice_com['P' + year +'_RP'] = df_indice_com['P' + year +'_RP'].apply(np.int64)
     df_indice_com['P' + year +'_RP_LOCHLMV'] = df_indice_com['P' + year +'_RP_LOCHLMV'].apply(np.int64)
-    df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_RP':"Résidences principales (" + select_annee + ")" ,'P' + year + '_RP_LOCHLMV':"résidences principales HLM loué vide (" + select_annee + ")" ,'indice':"Part des résidences principales HLM (" + select_annee + ")" })
+    df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_RP':"Résidences principales (" + annee + ")" ,'P' + year + '_RP_LOCHLMV':"résidences principales HLM loué vide (" + annee + ")" ,'indice':"Part des résidences principales HLM (" + annee + ")" })
     return df_indice_com
 
-  indice_part_log_hlm_iris =part_log_hlm_iris("./logement/base-ic-logement-" + select_annee + ".csv",code_commune, select_annee)
+  indice_part_log_hlm_iris =part_log_hlm_iris("./logement/base-ic-logement-" + last_year + ".csv",code_commune, last_year)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_part_log_hlm_iris)
+  ####################
+  # Carte Part logements sociaux
+  # URL de l'API
+  url = "https://public.opendatasoft.com/api/records/1.0/search/?dataset=georef-france-iris-millesime&q=&rows=500&sort=year&facet=year&facet=reg_name&facet=dep_name&facet=arrdep_name&facet=ze2020_name&facet=bv2012_name&facet=epci_name&facet=ept_name&facet=com_name&facet=com_arm_name&facet=iris_name&facet=iris_area_code&facet=iris_type&facet=com_code&refine.year=2022&refine.com_code=" + code_commune
+  # Appel à l'API
+  response = requests.get(url)
+  # Conversion de la réponse en JSON
+  data = response.json()
+  # Normalisation des données pour obtenir un DataFrame pandas
+  df = pd.json_normalize(data['records'])
+  # Séparation des latitudes et longitudes
+  latitudes, longitudes = zip(*df['fields.geo_point_2d'])
+  # Conversion du DataFrame en GeoDataFrame
+  gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(longitudes, latitudes))
+  # Supposons que 'gdf' est votre GeoDataFrame original
+  gdf.set_crs(epsg=4326, inplace=True)  # Définir le système de coordonnées actuel si ce n'est pas déjà fait
 
-  #Télécharger les données
-  @st.cache
-  def convert_df(df):
-    # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv().encode('utf-8')
+  def to_multipolygon(coords):
+      def is_nested_list(lst):
+          return any(isinstance(i, list) for i in lst)
 
-  csv = convert_df(indice_part_log_hlm_iris)
+      if len(coords) == 0:
+          return None
 
-  st.download_button(
-       label="💾 Télécharger les données",
-       data=csv,
-       file_name='part_logement_hlm.csv',
-       mime='text/csv',
-   )
+      # If the first element of coords is a list of lists, we're dealing with a MultiPolygon
+      if is_nested_list(coords[0]):
+          polygons = []
+          for poly_coords in coords:
+              # If the first element of poly_coords is a list of lists, we're dealing with a Polygon with holes
+              if is_nested_list(poly_coords[0]):
+                  polygons.append(Polygon(shell=poly_coords[0], holes=poly_coords[1:]))
+              else:
+                  polygons.append(Polygon(poly_coords))
+          return MultiPolygon(polygons)
+      else:
+          return Polygon(coords)
 
+
+  # Convertir les coordonnées des frontières en objets Polygon ou MultiPolygon
+  gdf['geometry'] = gdf['fields.geo_shape.coordinates'].apply(to_multipolygon)
+
+  # Joindre le dataframe de population avec le GeoDataFrame
+  gdf = gdf.merge(indice_part_log_hlm_iris, left_on='fields.iris_code', right_on="Code de l'iris")
+
+  # Créer une carte centrée autour de la latitude et longitude moyenne
+  map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
+  breaks = jenkspy.jenks_breaks(gdf["Part des résidences principales HLM (" + last_year + ")"], 5)
+  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+  # Ajouter la carte choroplèthe
+  folium.Choropleth(
+    geo_data=gdf.set_index("Code de l'iris"),
+    name='choropleth',
+    data=gdf,
+    columns=["Code de l'iris", "Part des résidences principales HLM (" + last_year + ")"],
+    key_on='feature.id',
+    fill_color='YlOrRd',
+    fill_opacity=0.7,
+    line_opacity=0.2,
+    color='#ffffff',
+    weight=3,
+    opacity=1.0,
+    legend_name='Part des logements HLM parmi les résidences principales',
+    bins=breaks
+  ).add_to(m)
+
+  #folium.LayerControl().add_to(m)
+
+  style_function = lambda x: {'fillColor': '#ffffff',
+                          'color':'#000000',
+                          'fillOpacity': 0.1,
+                          'weight': 0.1}
+  highlight_function = lambda x: {'fillColor': '#000000',
+                                'color':'#000000',
+                                'fillOpacity': 0.50,
+                                'weight': 0.1}
+  NIL = folium.features.GeoJson(
+    gdf,
+    style_function=style_function,
+    control=False,
+    highlight_function=highlight_function,
+    tooltip=folium.features.GeoJsonTooltip(
+        fields=["Nom de l'iris", "Part des résidences principales HLM (" + last_year + ")"],
+        aliases=['Iris: ', "Part des logements sociaux :"],
+        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+    )
+  )
+  m.add_child(NIL)
+  m.keep_in_front(NIL)
+  folium_st.folium_static(m)
+
+  #################################
   st.subheader('Comparaison')
+  st.caption("Agrégation à partir de l'échelle communale. Paru le 27/06/2023 - Millésime 2020")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     # Commune
     def part_hlm_com(fichier, code_commune, annee):
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep = ';')
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str,"REG": str}, sep = ';')
       year = annee[-2:]
-      df_ville = df.loc[df["COM"]==code_commune]
-      nb_residences_princ = df_ville.loc[:, 'P'+ year + '_RP'].sum()
-      nb_residences_hlm = (df_ville.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum())
+      df_ville = df.loc[df["CODGEO"]==code_commune]
+      nb_residences_princ = df_ville['P'+ year + '_RP'].iloc[0]
+      nb_residences_hlm = df_ville['P'+ year + '_RP_LOCHLMV'].iloc[0]
       part_hlm = (nb_residences_hlm / nb_residences_princ)*100
       df_part_hlm = pd.DataFrame(data=part_hlm, columns = ['Part des hlm ' + annee], index = [nom_commune])
       return df_part_hlm
-    indice_part_hlm_com = part_hlm_com("./logement/base-ic-logement-" + select_annee + ".csv",code_commune, select_annee)
-
+    indice_part_hlm_com = part_hlm_com("./logement/commune/base-cc-logement-" + last_year + ".csv",code_commune, last_year)
     # EPCI
     def part_hlm_epci(fichier, epci, annee):
       epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "MODIF_IRIS": str,"COM": str, "LAB_IRIS": str, "DEP": str, "UU2010": str, "GRD_QUART": str}, encoding= 'unicode_escape', sep = ';')
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str,"REG": str}, sep = ';')
       year = annee[-2:]
-      df_epci_com = pd.merge(df[['COM', 'P' + year + '_RP', 'P' + year + '_RP_LOCHLMV']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
-      df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM','P'+ year +'_RP' , 'P'+ year + '_RP_LOCHLMV']]
+      df_epci_com = pd.merge(df[['CODGEO', 'P' + year + '_RP', 'P' + year + '_RP_LOCHLMV']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='CODGEO', right_on='CODGEO')
+      df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI','P'+ year +'_RP' , 'P'+ year + '_RP_LOCHLMV']]
       nb_residences = df_epci.loc[:, 'P'+ year + '_RP'].sum()
       nb_residences_hlm = df_epci.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum()
       part_hlm = (nb_residences_hlm / nb_residences)*100
       df_part_hlm = pd.DataFrame(data=part_hlm, columns = ['Part des hlm ' + annee], index = [nom_epci])
       return df_part_hlm
-    indice_part_hlm_epci = part_hlm_epci("./logement/base-ic-logement-" + select_annee + ".csv",code_epci,select_annee)
-
+    indice_part_hlm_epci = part_hlm_epci("./logement/commune/base-cc-logement-" + last_year + ".csv",code_epci,last_year)
     # Département
     def part_hlm_departement(fichier, departement, annee):
-      if int(annee) >= 2017:
-        communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str},sep = ',')
-        df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
-        year = annee[-2:]
-        df_dpt = pd.merge(df[['COM', 'P' + year +'_RP', 'P' + year + '_RP_LOCHLMV']], communes_select[['COM','DEP']],  on='COM', how='left')
-        df_departement = df_dpt.loc[df_dpt["DEP"]==departement, ['DEP', 'COM','P'+ year +'_RP' , 'P'+ year + '_RP_LOCHLMV']]
-        nb_residences = df_departement.loc[:, 'P'+ year + '_RP'].sum()
-        nb_residences_hlm = df_departement.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum()
-        part_hlm = (nb_residences_hlm / nb_residences)*100
-        df_part_hlm = pd.DataFrame(data=part_hlm, columns = ["Part des hlm " + annee], index = [nom_departement])
-        return df_part_hlm
-      else:
-        df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str},sep = ';')
-        year = annee[-2:]
-        df_departement = df.loc[df["DEP"]==departement, ['P' + year + '_RP' , 'P' + year + '_RP_LOCHLMV']]
-        nb_residences = df_departement.loc[:, 'P' + year + '_RP'].sum()
-        nb_residences_hlm = df_departement.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum()
-        part_hlm = (nb_residences_hlm / nb_residences)*100
-        df_part_hlm = pd.DataFrame(data=part_hlm, columns = ['Part des hlm ' + annee], index = [nom_departement])
-        return df_part_hlm
-    indice_part_hlm_dpt =part_hlm_departement("./logement/base-ic-logement-" + select_annee + ".csv",code_departement, select_annee)
-
-      # Région
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str,"REG": str},sep = ';')
+      year = annee[-2:]
+      df_departement = df.loc[df["DEP"]==departement, ['P' + year + '_RP' , 'P' + year + '_RP_LOCHLMV']]
+      nb_residences = df_departement.loc[:, 'P' + year + '_RP'].sum()
+      nb_residences_hlm = df_departement.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum()
+      part_hlm = (nb_residences_hlm / nb_residences)*100
+      df_part_hlm = pd.DataFrame(data=part_hlm, columns = ['Part des hlm ' + annee], index = [nom_departement])
+      return df_part_hlm
+    indice_part_hlm_dpt =part_hlm_departement("./logement/commune/base-cc-logement-" + last_year + ".csv",code_departement, last_year)
+    # Région
     def part_hlm_region(fichier, region, annee):
-      if int(annee) >= 2017:
-        communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str},sep = ',')
-        df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
-        year = annee[-2:]
-        df_region = pd.merge(df[['COM', 'P' + year +'_RP', 'P' + year + '_RP_LOCHLMV']], communes_select[['COM','REG']],  on='COM', how='left')
-        df_region = df_region.loc[df_region["REG"]==region, ['REG', 'COM','P'+ year +'_RP' , 'P'+ year + '_RP_LOCHLMV']]
-        nb_residences = df_region.loc[:, 'P'+ year + '_RP'].sum()
-        nb_residences_hlm = df_region.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum()
-        part_hlm = (nb_residences_hlm / nb_residences)*100
-        df_part_hlm = pd.DataFrame(data=part_hlm, columns = ["Part des hlm " + annee], index = [nom_region])
-        return df_part_hlm
-      else:
-        df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str},sep = ';')
-        year = annee[-2:]
-        df_region = df.loc[df["REG"]==region, ['P' + year + '_RP' , 'P' + year + '_RP_LOCHLMV']]
-        nb_residences = df_region.loc[:, 'P' + year + '_RP'].sum()
-        nb_residences_hlm = df_region.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum()
-        part_hlm = (nb_residences_hlm / nb_residences)*100
-        df_part_hlm = pd.DataFrame(data=part_hlm, columns = ['Part des hlm ' + annee], index = [nom_region])
-        return df_part_hlm
-    indice_part_hlm_region =part_hlm_region("./logement/base-ic-logement-" + select_annee + ".csv",code_region, select_annee)
-
-      # France
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str},sep = ';')
+      year = annee[-2:]
+      df_region = df.loc[df["REG"]==region, ['P' + year + '_RP' , 'P' + year + '_RP_LOCHLMV']]
+      nb_residences = df_region.loc[:, 'P' + year + '_RP'].sum()
+      nb_residences_hlm = df_region.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum()
+      part_hlm = (nb_residences_hlm / nb_residences)*100
+      df_part_hlm = pd.DataFrame(data=part_hlm, columns = ['Part des hlm ' + annee], index = [nom_region])
+      return df_part_hlm
+    indice_part_hlm_region =part_hlm_region("./logement/commune/base-cc-logement-" + last_year + ".csv",str(round(code_region)), last_year)
+    # France
     def part_hlm_france(fichier, annee):
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, sep = ';')
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
       year = annee[-2:]
       nb_residences = df.loc[:, 'P'+ year + '_RP'].sum()
       nb_residences_hlm = df.loc[:, 'P'+ year + '_RP_LOCHLMV'].sum()
       part_hlm = ( nb_residences_hlm / nb_residences ) * 100
       df_part_hlm = pd.DataFrame(data=part_hlm, columns = ["Part des hlm " + annee], index = ["France"])
       return df_part_hlm
-    indice_part_hlm_fr = part_hlm_france("./logement/base-ic-logement-" + select_annee + ".csv",select_annee)
-
+    indice_part_hlm_fr = part_hlm_france("./logement/commune/base-cc-logement-" + last_year + ".csv",last_year)
     # Comparaison
     def part_hlm_global(annee):
         df = pd.concat([indice_part_hlm_com,indice_part_hlm_epci, indice_part_hlm_dpt, indice_part_hlm_region, indice_part_hlm_fr])
         year = annee
         return df
-
-    part_hlm_fin = part_hlm_global(select_annee)
+    part_hlm_fin = part_hlm_global(last_year)
     st.table(part_hlm_fin)
+  #################################
+  st.subheader("Évolution")
+  st.caption("Agrégation à partir de l'échelle communale. Paru le 27/06/2023 - Millésime 2020")
 
-    #Télécharger les données
-    @st.cache
-    def convert_df(df):
-      # IMPORTANT: Cache the conversion to prevent computation on every rerun
-      return df.to_csv().encode('utf-8')
+  def evolution_part_hlm(generate_data_function, *args):
+    evolution = []
+    for annee in range(2015, 2021):
+        fichier = f"./logement/commune/base-cc-logement-{annee}.csv"
+        df_part_hlm = generate_data_function(fichier, *args, str(annee))
+        if not df_part_hlm.empty:
+            part_hlm = df_part_hlm.iloc[0, 0]  # Première colonne de la première ligne
+            evolution.append({'Année': annee, 'Part HLM': part_hlm})
+        else:
+            evolution.append({'Année': annee, 'Part HLM': None})
+    return pd.DataFrame(evolution)
 
-    csv = convert_df(part_hlm_fin)
-
-    st.download_button(
-         label="💾 Télécharger les données",
-         data=csv,
-         file_name='Comparaison_part_logement_hlm.csv',
-         mime='text/csv',
-     )
-
-  st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
-    #FRANCE
-    #2014
-    valeur_part_hlm_fr_2014 = part_hlm_france("./logement/base-ic-logement-2014.csv",'2014')
-    indice_2014 = valeur_part_hlm_fr_2014["Part des hlm 2014"][0]
-    #2015
-    valeur_part_hlm_fr_2015 = part_hlm_france("./logement/base-ic-logement-2015.csv",'2015')
-    indice_2015 = valeur_part_hlm_fr_2015["Part des hlm 2015"][0]
-    #2016
-    valeur_part_hlm_fr_2016 = part_hlm_france("./logement/base-ic-logement-2016.csv",'2016')
-    indice_2016 = valeur_part_hlm_fr_2016["Part des hlm 2016"][0]
-    #2017
-    valeur_part_hlm_fr_2017 = part_hlm_france("./logement/base-ic-logement-2017.csv",'2017')
-    indice_2017 = valeur_part_hlm_fr_2017["Part des hlm 2017"][0]
-    #2018
-    valeur_part_hlm_fr_2018 = part_hlm_france("./logement/base-ic-logement-2018.csv",'2018')
-    indice_2018 = valeur_part_hlm_fr_2018["Part des hlm 2018"][0]
-    #2019
-    valeur_part_hlm_fr_2019 = part_hlm_france("./logement/base-ic-logement-2019.csv",'2019')
-    indice_2019 = valeur_part_hlm_fr_2019["Part des hlm 2019"][0]
-    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
-                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=['France'])
+    df_evolution_hlm_com = evolution_part_hlm(part_hlm_com, code_commune)
+    df_evolution_hlm_epci = evolution_part_hlm(part_hlm_epci, code_epci)
+    df_evolution_hlm_departement = evolution_part_hlm(part_hlm_departement, code_departement)
+    df_evolution_hlm_region = evolution_part_hlm(part_hlm_region, str(round(code_region)))
+    df_evolution_hlm_France = evolution_part_hlm(part_hlm_france)
 
-    #RÉGION
-    #2014
-    valeur_part_hlm_region_2014 = part_hlm_region("./logement/base-ic-logement-2014.csv",code_region,'2014')
-    indice_2014 = valeur_part_hlm_region_2014["Part des hlm 2014"][0]
-    #2015
-    valeur_part_hlm_region_2015 = part_hlm_region("./logement/base-ic-logement-2015.csv",code_region,'2015')
-    indice_2015 = valeur_part_hlm_region_2015["Part des hlm 2015"][0]
-    #2016
-    valeur_part_hlm_region_2016 = part_hlm_region("./logement/base-ic-logement-2016.csv",code_region,'2016')
-    indice_2016 = valeur_part_hlm_region_2016["Part des hlm 2016"][0]
-    #2017
-    valeur_part_hlm_region_2017 = part_hlm_region("./logement/base-ic-logement-2017.csv",code_region,'2017')
-    indice_2017 = valeur_part_hlm_region_2017["Part des hlm 2017"][0]
-    #2018
-    valeur_part_hlm_region_2018 = part_hlm_region("./logement/base-ic-logement-2018.csv",code_region,'2018')
-    indice_2018 = valeur_part_hlm_region_2018["Part des hlm 2018"][0]
-    indice_2018
-    #2019
-    valeur_part_hlm_region_2019 = part_hlm_region("./logement/base-ic-logement-2019.csv",code_region,'2019')
-    indice_2019 = valeur_part_hlm_region_2019["Part des hlm 2019"][0]
-    indice_2019
-    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018,indice_2019]]),
-                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_region])
-
-    #DÉPARTEMENT
-    #2014
-    valeur_part_hlm_departement_2014 = part_hlm_departement("./logement/base-ic-logement-2014.csv",code_departement,'2014')
-    indice_2014 = valeur_part_hlm_departement_2014["Part des hlm 2014"][0]
-    #2015
-    valeur_part_hlm_departement_2015 = part_hlm_departement("./logement/base-ic-logement-2015.csv",code_departement,'2015')
-    indice_2015 = valeur_part_hlm_departement_2015["Part des hlm 2015"][0]
-    #2016
-    valeur_part_hlm_departement_2016 = part_hlm_departement("./logement/base-ic-logement-2016.csv",code_departement,'2016')
-    indice_2016 = valeur_part_hlm_departement_2016["Part des hlm 2016"][0]
-    #2017
-    valeur_part_hlm_departement_2017 = part_hlm_departement("./logement/base-ic-logement-2017.csv",code_departement,'2017')
-    indice_2017 = valeur_part_hlm_departement_2017["Part des hlm 2017"][0]
-    #2018
-    valeur_part_hlm_departement_2018 = part_hlm_departement("./logement/base-ic-logement-2018.csv",code_departement,'2018')
-    indice_2018 = valeur_part_hlm_departement_2018["Part des hlm 2018"][0]
-    #2019
-    valeur_part_hlm_departement_2019 = part_hlm_departement("./logement/base-ic-logement-2019.csv",code_departement,'2019')
-    indice_2019 = valeur_part_hlm_departement_2019["Part des hlm 2019"][0]
-    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
-                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_departement])
-
-    #EPCI
-    #2014
-    valeur_part_hlm_epci_2014 = part_hlm_epci("./logement/base-ic-logement-2014.csv",code_epci,'2014')
-    indice_2014 = valeur_part_hlm_epci_2014["Part des hlm 2014"][0]
-    #2015
-    valeur_part_hlm_epci_2015 = part_hlm_epci("./logement/base-ic-logement-2015.csv",code_epci,'2015')
-    indice_2015 = valeur_part_hlm_epci_2015["Part des hlm 2015"][0]
-    #2016
-    valeur_part_hlm_epci_2016 = part_hlm_epci("./logement/base-ic-logement-2016.csv",code_epci,'2016')
-    indice_2016 = valeur_part_hlm_epci_2016["Part des hlm 2016"][0]
-    #2017
-    valeur_part_hlm_epci_2017 = part_hlm_epci("./logement/base-ic-logement-2017.csv",code_epci,'2017')
-    indice_2017 = valeur_part_hlm_epci_2017["Part des hlm 2017"][0]
-    #2018
-    valeur_part_hlm_epci_2018 = part_hlm_epci("./logement/base-ic-logement-2018.csv",code_epci,'2018')
-    indice_2018 = valeur_part_hlm_epci_2018["Part des hlm 2018"][0]
-    #2019
-    valeur_part_hlm_epci_2019 = part_hlm_epci("./logement/base-ic-logement-2019.csv",code_epci,'2019')
-    indice_2019 = valeur_part_hlm_epci_2019["Part des hlm 2019"][0]
-    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
-                       columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_epci])
-
-    #COMMUNE
-    #2014
-    valeur_part_hlm_commune_2014 = part_hlm_com("./logement/base-ic-logement-2014.csv",code_commune,'2014')
-    indice_2014 = valeur_part_hlm_commune_2014["Part des hlm 2014"][0]
-    #2015
-    valeur_part_hlm_commune_2015 = part_hlm_com("./logement/base-ic-logement-2015.csv",code_commune,'2015')
-    indice_2015 = valeur_part_hlm_commune_2015["Part des hlm 2015"][0]
-    #2016
-    valeur_part_hlm_commune_2016 = part_hlm_com("./logement/base-ic-logement-2016.csv",code_commune,'2016')
-    indice_2016 = valeur_part_hlm_commune_2016["Part des hlm 2016"][0]
-    #2017
-    valeur_part_hlm_commune_2017 = part_hlm_com("./logement/base-ic-logement-2017.csv",code_commune,'2017')
-    indice_2017 = valeur_part_hlm_commune_2017["Part des hlm 2017"][0]
-    #2018
-    valeur_part_hlm_commune_2018 = part_hlm_com("./logement/base-ic-logement-2018.csv",code_commune,'2018')
-    indice_2018 = valeur_part_hlm_commune_2018["Part des hlm 2018"][0]
-    #2019
-    valeur_part_hlm_commune_2019 = part_hlm_com("./logement/base-ic-logement-2019.csv",code_commune,'2019')
-    indice_2019 = valeur_part_hlm_commune_2019["Part des hlm 2019"][0]
-    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
-                       columns=['2014', '2015', '2016', '2017', '2018','2019'], index=[nom_commune])
-
-    df_glob_part_hlm = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
-
-    st.table(df_glob_part_hlm)
-
-    df_glob_part_hlm_transposed = df_glob_part_hlm.T
-    st.line_chart(df_glob_part_hlm_transposed)
-
-  st.header('1.Part des résidences principales en suroccupation')
-
+    df_evolution_hlm_final = df_evolution_hlm_com.merge(df_evolution_hlm_epci, on='Année', suffixes=('_com', '_epci'))\
+                                                 .merge(df_evolution_hlm_departement, on='Année')\
+                                                 .merge(df_evolution_hlm_region, on='Année', suffixes=('_dep', '_reg'))\
+                                                 .merge(df_evolution_hlm_France, on='Année')
+    # Renommez les colonnes pour clarifier
+    df_evolution_hlm_final.columns = ['Année', nom_commune, nom_epci, nom_departement, nom_region, 'France']
+    # Graphique
+    fig = px.line(df_evolution_hlm_final, x='Année', y=df_evolution_hlm_final.columns[1:],
+                  title='Évolution de la part des HLM par territoire',
+                  labels={'value': 'Part des HLM (%)', 'variable': 'Territoire'})
+    fig.update_traces(mode='lines+markers')
+    st.plotly_chart(fig)
+  ###############################################################################
+  st.header('2.Part des résidences principales en suroccupation')
   st.subheader("Iris")
+  st.caption("Paru le 19/10/2023 - Millésime 2020")
   def part_log_suroccup_iris(fichier, code, annee) :
-    if int(annee) >= 2017:
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep=";")
-      df_indice = df.loc[df['COM'] == code]
-      year = annee[-2:]
-      df_indice = df_indice[['COM','IRIS', 'P'+ year + '_RP','C' + year +'_RP_HSTU1P_SUROCC' ]]
-      df_indice['P'+ year + '_RP'] = df_indice['P'+ year + '_RP'].astype(float).to_numpy()
-      df_indice['C' + year +'_RP_HSTU1P_SUROCC'] = df_indice['C' + year +'_RP_HSTU1P_SUROCC'].astype(float).to_numpy()
-      df_indice['indice'] = np.where(df_indice['P' + year +'_RP'] < 1,df_indice['P' + year +'_RP'], (df_indice['C'+ year + '_RP_HSTU1P_SUROCC'] / df_indice['P' + year +'_RP']*100))
-      df_indice['indice'] = df_indice['indice'].astype(float).to_numpy()
-      communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
-      df_indice_com = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_indice[['IRIS','P' + year +'_RP', 'C' + year + '_RP_HSTU1P_SUROCC','indice']], left_on='CODE_IRIS', right_on="IRIS")
-      df_indice_com = df_indice_com[['CODE_IRIS','LIB_IRIS','P' + year +'_RP', 'C' + year + '_RP_HSTU1P_SUROCC','indice']]
-      df_indice_com['indice'] = df_indice_com['indice'].apply(np.int64)
-      df_indice_com['P' + year +'_RP'] = df_indice_com['P' + year +'_RP'].apply(np.int64)
-      df_indice_com['C' + year +'_RP_HSTU1P_SUROCC'] = df_indice_com['C' + year +'_RP_HSTU1P_SUROCC'].apply(np.int64)
-      df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_RP':"Résidences principales (" + select_annee + ")" ,'P' + year + '_RP_HSTU1P_SUROCC':"résidences principales en suroccupation (" + select_annee + ")" ,'indice':"Part des résidences en suroccupation (" + select_annee + ")" })
-      return df_indice_com
+    df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep=";")
+    year = annee[-2:]
+    df_indice = df.loc[df['COM'] == code]
+    df_indice = df_indice[['IRIS', 'LIBIRIS', 'P'+ year + '_RP','C' + year +'_RP_HSTU1P_SUROCC']]
+    df_indice['indice'] = (df_indice['C'+ year + '_RP_HSTU1P_SUROCC'] / df_indice['P' + year +'_RP']) * 100
+    df_indice_com = df_indice.rename(columns={'IRIS': "Code de l'iris",'LIBIRIS': "Nom de l'iris", 'P' + year +'_RP':"Résidences principales (" + annee + ")" ,'P' + year + '_RP_HSTU1P_SUROCC':"résidences principales en suroccupation (" + annee + ")" ,'indice':"Part des résidences en suroccupation (" + annee + ")" })
+    return df_indice_com
+  indice_part_log_suroccup_iris = part_log_suroccup_iris("./logement/base-ic-logement-" + last_year + ".csv",code_commune, last_year)
 
-  if int(select_annee) >= 2017:
-    indice_part_log_suroccup_iris =part_log_suroccup_iris("./logement/base-ic-logement-" + select_annee + ".csv",code_commune, select_annee)
-    with st.expander("Visualiser le tableau des iris"):
-      st.dataframe(indice_part_log_suroccup_iris)
-  else:
-    st.write("Pas de données des résidences en suroccupation pour l'année sélectionnée")
+  with st.expander("Visualiser le tableau des iris"):
+    st.dataframe(indice_part_log_suroccup_iris)
 
-  #Télécharger les données
-  @st.cache
-  def convert_df(df):
-    # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv().encode('utf-8')
+  ####################
+  # Carte Part logements suroccupés
+  # URL de l'API
+  url = "https://public.opendatasoft.com/api/records/1.0/search/?dataset=georef-france-iris-millesime&q=&rows=500&sort=year&facet=year&facet=reg_name&facet=dep_name&facet=arrdep_name&facet=ze2020_name&facet=bv2012_name&facet=epci_name&facet=ept_name&facet=com_name&facet=com_arm_name&facet=iris_name&facet=iris_area_code&facet=iris_type&facet=com_code&refine.year=2022&refine.com_code=" + code_commune
+  # Appel à l'API
+  response = requests.get(url)
+  # Conversion de la réponse en JSON
+  data = response.json()
+  # Normalisation des données pour obtenir un DataFrame pandas
+  df = pd.json_normalize(data['records'])
+  # Séparation des latitudes et longitudes
+  latitudes, longitudes = zip(*df['fields.geo_point_2d'])
+  # Conversion du DataFrame en GeoDataFrame
+  gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(longitudes, latitudes))
+  # Supposons que 'gdf' est votre GeoDataFrame original
+  gdf.set_crs(epsg=4326, inplace=True)  # Définir le système de coordonnées actuel si ce n'est pas déjà fait
 
-  csv = convert_df(indice_part_log_suroccup_iris)
+  def to_multipolygon(coords):
+      def is_nested_list(lst):
+          return any(isinstance(i, list) for i in lst)
 
-  st.download_button(
-       label="💾 Télécharger les données",
-       data=csv,
-       file_name='part_logement_suroccupation.csv',
-       mime='text/csv',
-   )
+      if len(coords) == 0:
+          return None
 
+      # If the first element of coords is a list of lists, we're dealing with a MultiPolygon
+      if is_nested_list(coords[0]):
+          polygons = []
+          for poly_coords in coords:
+              # If the first element of poly_coords is a list of lists, we're dealing with a Polygon with holes
+              if is_nested_list(poly_coords[0]):
+                  polygons.append(Polygon(shell=poly_coords[0], holes=poly_coords[1:]))
+              else:
+                  polygons.append(Polygon(poly_coords))
+          return MultiPolygon(polygons)
+      else:
+          return Polygon(coords)
+
+
+  # Convertir les coordonnées des frontières en objets Polygon ou MultiPolygon
+  gdf['geometry'] = gdf['fields.geo_shape.coordinates'].apply(to_multipolygon)
+  # Joindre le dataframe de population avec le GeoDataFrame
+  gdf = gdf.merge(indice_part_log_suroccup_iris, left_on='fields.iris_code', right_on="Code de l'iris")
+  # Créer une carte centrée autour de la latitude et longitude moyenne
+  map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
+  breaks = jenkspy.jenks_breaks(gdf["Part des résidences en suroccupation (" + last_year + ")"], 5)
+  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+  # Ajouter la carte choroplèthe
+  folium.Choropleth(
+    geo_data=gdf.set_index("Code de l'iris"),
+    name='choropleth',
+    data=gdf,
+    columns=["Code de l'iris", "Part des résidences en suroccupation (" + last_year + ")"],
+    key_on='feature.id',
+    fill_color='YlOrRd',
+    fill_opacity=0.7,
+    line_opacity=0.2,
+    color='#ffffff',
+    weight=3,
+    opacity=1.0,
+    legend_name='Part des logements suroccupés',
+    bins=breaks
+  ).add_to(m)
+
+  style_function = lambda x: {'fillColor': '#ffffff',
+                          'color':'#000000',
+                          'fillOpacity': 0.1,
+                          'weight': 0.1}
+  highlight_function = lambda x: {'fillColor': '#000000',
+                                'color':'#000000',
+                                'fillOpacity': 0.50,
+                                'weight': 0.1}
+  NIL = folium.features.GeoJson(
+    gdf,
+    style_function=style_function,
+    control=False,
+    highlight_function=highlight_function,
+    tooltip=folium.features.GeoJsonTooltip(
+        fields=["Nom de l'iris", "Part des résidences en suroccupation (" + last_year + ")"],
+        aliases=['Iris: ', "Part des logements suroccupés :"],
+        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+    )
+  )
+  m.add_child(NIL)
+  m.keep_in_front(NIL)
+  st.subheader("Part des logements suroccupés par IRIS")
+  # Afficher la carte dans Streamlit
+  folium_st.folium_static(m)
+  #############
   st.subheader('Comparaison')
+  st.caption("Agrégation à partir de l'échelle communale. Paru le 27/06/2023 - Millésime 2020")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     # Commune
     def part_suroccup_com(fichier, code_commune, annee):
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep = ';')
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str,"REG": str}, sep = ';')
       year = annee[-2:]
-      df_ville = df.loc[df["COM"]==code_commune]
-      nb_residences_princ = df_ville.loc[:, 'P'+ year + '_RP'].sum()
-      nb_residences_suroccup = (df_ville.loc[:, 'C'+ year + '_RP_HSTU1P_SUROCC'].sum())
-      part_suroccup = (nb_residences_suroccup / nb_residences_princ)*100
+      df_ville = df.loc[df["CODGEO"] == code_commune]
+      nb_residences_princ = df_ville['P'+ year + '_RP'].iloc[0]
+      nb_residences_suroccup = df_ville['C'+ year + '_RP_HSTU1P_SUROCC'].iloc[0]
+      part_suroccup = (nb_residences_suroccup / nb_residences_princ) * 100
       df_part_suroccup = pd.DataFrame(data=part_suroccup, columns = ['Part des suroccup ' + annee], index = [nom_commune])
       return df_part_suroccup
-    if int(select_annee) >= 2017:
-      indice_part_suroccup_com = part_suroccup_com("./logement/base-ic-logement-" + select_annee + ".csv",code_commune, select_annee)
-
+    indice_part_suroccup_com = part_suroccup_com("./logement/commune/base-cc-logement-" + last_year + ".csv",code_commune, last_year)
     # EPCI
     def part_suroccup_epci(fichier, epci, annee):
       epci_select = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "TYP_IRIS": str, "MODIF_IRIS": str,"COM": str, "LAB_IRIS": str, "DEP": str, "UU2010": str, "GRD_QUART": str}, encoding= 'unicode_escape', sep = ';')
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
       year = annee[-2:]
-      df_epci_com = pd.merge(df[['COM', 'P' + year + '_RP', 'C' + year + '_RP_HSTU1P_SUROCC']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='COM', right_on='CODGEO')
-      df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI', 'COM','P'+ year +'_RP' , 'C'+ year + '_RP_HSTU1P_SUROCC']]
+      df_epci_com = pd.merge(df[['CODGEO', 'P' + year + '_RP', 'C' + year + '_RP_HSTU1P_SUROCC']], epci_select[['CODGEO','EPCI', 'LIBEPCI']], left_on='CODGEO', right_on='CODGEO')
+      df_epci = df_epci_com.loc[df_epci_com["EPCI"]==str(epci), ['EPCI', 'LIBEPCI','P'+ year +'_RP' , 'C'+ year + '_RP_HSTU1P_SUROCC']]
       nb_residences = df_epci.loc[:, 'P'+ year + '_RP'].sum()
       nb_residences_suroccup = df_epci.loc[:, 'C'+ year + '_RP_HSTU1P_SUROCC'].sum()
       part_suroccup = (nb_residences_suroccup / nb_residences)*100
       df_part_suroccup = pd.DataFrame(data=part_suroccup, columns = ['Part des suroccup ' + annee], index = [nom_epci])
       return df_part_suroccup
-    if int(select_annee) >= 2017:
-      indice_part_suroccup_epci = part_suroccup_epci("./logement/base-ic-logement-" + select_annee + ".csv",code_epci,select_annee)
-
+    indice_part_suroccup_epci = part_suroccup_epci("./logement/commune/base-cc-logement-" + last_year + ".csv",code_epci,last_year)
     # Département
     def part_suroccup_departement(fichier, departement, annee):
-      if int(annee) >= 2017:
-        communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str},sep = ',')
-        df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
-        year = annee[-2:]
-        df_dpt = pd.merge(df[['COM', 'P' + year +'_RP', 'C' + year + '_RP_HSTU1P_SUROCC']], communes_select[['COM','DEP']],  on='COM', how='left')
-        df_departement = df_dpt.loc[df_dpt["DEP"]==departement, ['DEP', 'COM','P'+ year +'_RP' , 'C'+ year + '_RP_HSTU1P_SUROCC']]
-        nb_residences = df_departement.loc[:, 'P'+ year + '_RP'].sum()
-        nb_residences_suroccup = df_departement.loc[:, 'C'+ year + '_RP_HSTU1P_SUROCC'].sum()
-        part_suroccup = (nb_residences_suroccup / nb_residences)*100
-        df_part_suroccup = pd.DataFrame(data=part_suroccup, columns = ["Part des suroccup " + annee], index = [nom_departement])
-        return df_part_suroccup
-    if int(select_annee) >= 2017:
-      indice_part_suroccup_dpt =part_suroccup_departement("./logement/base-ic-logement-" + select_annee + ".csv",code_departement, select_annee)
-
-      # Région
-    def part_suroccup_region(fichier, region, annee):
-      communes_select = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str},sep = ',')
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "COM": str, "LAB_IRIS": str}, sep = ';')
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
       year = annee[-2:]
-      df_region = pd.merge(df[['COM', 'P' + year +'_RP', 'C' + year + '_RP_HSTU1P_SUROCC']], communes_select[['COM','REG']],  on='COM', how='left')
-      df_region = df_region.loc[df_region["REG"]==region, ['REG', 'COM','P'+ year +'_RP' , 'C'+ year + '_RP_HSTU1P_SUROCC']]
+      df_departement = df.loc[df["DEP"] == departement, ['DEP','P'+ year +'_RP' , 'C'+ year + '_RP_HSTU1P_SUROCC']]
+      nb_residences = df_departement.loc[:, 'P'+ year + '_RP'].sum()
+      nb_residences_suroccup = df_departement.loc[:, 'C'+ year + '_RP_HSTU1P_SUROCC'].sum()
+      part_suroccup = (nb_residences_suroccup / nb_residences)*100
+      df_part_suroccup = pd.DataFrame(data=part_suroccup, columns = ["Part des suroccup " + annee], index = [nom_departement])
+      return df_part_suroccup
+    indice_part_suroccup_dpt =part_suroccup_departement("./logement/commune/base-cc-logement-" + last_year + ".csv",code_departement, last_year)
+    # Région
+    def part_suroccup_region(fichier, region, annee):
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
+      year = annee[-2:]
+      df_region = df.loc[df["REG"] == region, ['REG', 'P'+ year +'_RP' , 'C'+ year + '_RP_HSTU1P_SUROCC']]
       nb_residences = df_region.loc[:, 'P'+ year + '_RP'].sum()
       nb_residences_suroccup = df_region.loc[:, 'C'+ year + '_RP_HSTU1P_SUROCC'].sum()
       part_suroccup = (nb_residences_suroccup / nb_residences)*100
       df_part_suroccup = pd.DataFrame(data=part_suroccup, columns = ["Part des suroccup " + annee], index = [nom_region])
       return df_part_suroccup
-    if int(select_annee) >= 2017:
-      indice_part_suroccup_region = part_suroccup_region("./logement/base-ic-logement-" + select_annee + ".csv",code_region, select_annee)
-
+    indice_part_suroccup_region = part_suroccup_region("./logement/commune/base-cc-logement-" + last_year + ".csv",str(round(code_region)), last_year)
     # France
     def part_suroccup_france(fichier, annee):
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str, "REG": str, "UU2010": str, "COM": str, "GRD_QUART": str, "LAB_IRIS": str}, sep = ';')
+      df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
       year = annee[-2:]
       nb_residences = df.loc[:, 'P'+ year + '_RP'].sum()
       nb_residences_suroccup = df.loc[:, 'C'+ year + '_RP_HSTU1P_SUROCC'].sum()
       part_suroccup = ( nb_residences_suroccup / nb_residences ) * 100
       df_part_suroccup = pd.DataFrame(data=part_suroccup, columns = ["Part des suroccup " + annee], index = ["France"])
       return df_part_suroccup
-    if int(select_annee) >= 2017:
-      indice_part_suroccup_fr = part_suroccup_france("./logement/base-ic-logement-" + select_annee + ".csv",select_annee)
-
+    indice_part_suroccup_fr = part_suroccup_france("./logement/commune/base-cc-logement-" + last_year + ".csv",last_year)
     # Comparaison
     def part_suroccup_global(annee):
         df = pd.concat([indice_part_suroccup_com,indice_part_suroccup_epci, indice_part_suroccup_dpt, indice_part_suroccup_region, indice_part_suroccup_fr])
         year = annee
         return df
-
-    if int(select_annee) >= 2017:
-      part_suroccup_fin = part_suroccup_global(select_annee)
-      st.table(part_suroccup_fin)
-    else:
-      st.write("Pas de données sur les résidences principales suroccupées pour l'année sélectionnée")
-
-    #Télécharger les données
-    @st.cache
-    def convert_df(df):
-      # IMPORTANT: Cache the conversion to prevent computation on every rerun
-      return df.to_csv().encode('utf-8')
-
-    csv = convert_df(part_suroccup_fin)
-
-    st.download_button(
-         label="💾 Télécharger les données",
-         data=csv,
-         file_name='comparaison_part_logement_suroccupation.csv',
-         mime='text/csv',
-     )
-
+    part_suroccup_fin = part_suroccup_global(last_year)
+    st.write(part_suroccup_fin)
+  ##############
   st.subheader("b.Evolution")
+  st.caption("Agrégation à partir de l'échelle communale. Paru le 27/06/2023 - Millésime 2020")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
-    #FRANCE
-    #2017
-    valeur_part_suroccup_fr_2017 = part_suroccup_france("./logement/base-ic-logement-2017.csv",'2017')
-    indice_2017 = valeur_part_suroccup_fr_2017["Part des suroccup 2017"][0]
-    #2018
-    valeur_part_suroccup_fr_2018 = part_suroccup_france("./logement/base-ic-logement-2018.csv",'2018')
-    indice_2018 = valeur_part_suroccup_fr_2018["Part des suroccup 2018"][0]
-    #2019
-    valeur_part_suroccup_fr_2019 = part_suroccup_france("./logement/base-ic-logement-2019.csv",'2019')
-    indice_2019 = valeur_part_suroccup_fr_2019["Part des suroccup 2019"][0]
-    df_france_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
-                       columns=['2017', '2018', '2019'], index=['France'])
+    def evolution_part_suroccup(generate_data_function, *args):
+      evolution = []
+      for annee in range(2017, 2021):  # De 2017 à 2020
+          fichier = f"./logement/commune/base-cc-logement-{annee}.csv"
+          df_part_suroccup = generate_data_function(fichier, *args, str(annee))
+          if not df_part_suroccup.empty:
+              part_suroccup = df_part_suroccup.iloc[0, 0]  # Première colonne de la première ligne
+              evolution.append({'Année': annee, 'Part suroccup': part_suroccup})
+          else:
+              evolution.append({'Année': annee, 'Part suroccup': None})
 
-    #RÉGION
-    #2017
-    valeur_part_suroccup_region_2017 = part_suroccup_region("./logement/base-ic-logement-2017.csv",code_region,'2017')
-    indice_2017 = valeur_part_suroccup_region_2017["Part des suroccup 2017"][0]
-    #2018
-    valeur_part_suroccup_region_2018 = part_suroccup_region("./logement/base-ic-logement-2018.csv",code_region,'2018')
-    indice_2018 = valeur_part_suroccup_region_2018["Part des suroccup 2018"][0]
-    indice_2018
-    #2019
-    valeur_part_suroccup_region_2019 = part_suroccup_region("./logement/base-ic-logement-2019.csv",code_region,'2019')
-    indice_2019 = valeur_part_suroccup_region_2019["Part des suroccup 2019"][0]
-    indice_2019
-    df_region_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
-                       columns=['2017', '2018', '2019'], index=[nom_region])
+      return pd.DataFrame(evolution)
+    df_evolution_suroccup_com = evolution_part_suroccup(part_suroccup_com, code_commune)
+    df_evolution_suroccup_epci = evolution_part_suroccup(part_suroccup_epci, code_epci)
+    df_evolution_suroccup_departement = evolution_part_suroccup(part_suroccup_departement, code_departement)
+    df_evolution_suroccup_region = evolution_part_suroccup(part_suroccup_region, str(round(code_region)))
+    df_evolution_suroccup_France = evolution_part_suroccup(part_suroccup_france)
 
-    #DÉPARTEMENT
-    #2017
-    valeur_part_suroccup_departement_2017 = part_suroccup_departement("./logement/base-ic-logement-2017.csv",code_departement,'2017')
-    indice_2017 = valeur_part_suroccup_departement_2017["Part des suroccup 2017"][0]
-    #2018
-    valeur_part_suroccup_departement_2018 = part_suroccup_departement("./logement/base-ic-logement-2018.csv",code_departement,'2018')
-    indice_2018 = valeur_part_suroccup_departement_2018["Part des suroccup 2018"][0]
-    #2019
-    valeur_part_suroccup_departement_2019 = part_suroccup_departement("./logement/base-ic-logement-2019.csv",code_departement,'2019')
-    indice_2019 = valeur_part_suroccup_departement_2019["Part des suroccup 2019"][0]
-    df_departement_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
-                       columns=['2017', '2018', '2019'], index=[nom_departement])
+    df_evolution_suroccup_final = df_evolution_suroccup_com.merge(df_evolution_suroccup_epci, on='Année', suffixes=('_com', '_epci'))\
+                                                          .merge(df_evolution_suroccup_departement, on='Année')\
+                                                          .merge(df_evolution_suroccup_region, on='Année', suffixes=('_dep', '_reg'))\
+                                                          .merge(df_evolution_suroccup_France, on='Année')
 
-    #EPCI
-    #2017
-    valeur_part_suroccup_epci_2017 = part_suroccup_epci("./logement/base-ic-logement-2017.csv",code_epci,'2017')
-    indice_2017 = valeur_part_suroccup_epci_2017["Part des suroccup 2017"][0]
-    #2018
-    valeur_part_suroccup_epci_2018 = part_suroccup_epci("./logement/base-ic-logement-2018.csv",code_epci,'2018')
-    indice_2018 = valeur_part_suroccup_epci_2018["Part des suroccup 2018"][0]
-    #2019
-    valeur_part_suroccup_epci_2019 = part_suroccup_epci("./logement/base-ic-logement-2019.csv",code_epci,'2019')
-    indice_2019 = valeur_part_suroccup_epci_2019["Part des suroccup 2019"][0]
-    df_epci_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
-                       columns=['2017', '2018', '2019'], index=[nom_epci])
+    df_evolution_suroccup_final.columns = ['Année', nom_commune, nom_epci, nom_departement, nom_region, 'France']
+    # Graphique
+    fig = px.line(df_evolution_suroccup_final, x='Année', y=df_evolution_suroccup_final.columns[1:],
+                  title='Évolution de la part des logements en suroccupation par territoire',
+                  labels={'value': 'Part des logements en suroccupation (%)', 'variable': 'Territoire'})
 
-    #COMMUNE
-    #2017
-    valeur_part_suroccup_commune_2017 = part_suroccup_com("./logement/base-ic-logement-2017.csv",code_commune,'2017')
-    indice_2017 = valeur_part_suroccup_commune_2017["Part des suroccup 2017"][0]
-    #2018
-    valeur_part_suroccup_commune_2018 = part_suroccup_com("./logement/base-ic-logement-2018.csv",code_commune,'2018')
-    indice_2018 = valeur_part_suroccup_commune_2018["Part des suroccup 2018"][0]
-    #2019
-    valeur_part_suroccup_commune_2019 = part_suroccup_com("./logement/base-ic-logement-2019.csv",code_commune,'2019')
-    indice_2019 = valeur_part_suroccup_commune_2019["Part des suroccup 2019"][0]
-    df_commune_glob = pd.DataFrame(np.array([[indice_2017, indice_2018, indice_2019]]),
-                       columns=['2017', '2018', '2019'], index=[nom_commune])
+    fig.update_traces(mode='lines+markers')
+    # Traitement des années comme des catégories
+    fig.update_xaxes(type='category')
+    # Afficher le graphique dans Streamlit
+    st.plotly_chart(fig)
 
-    df_glob_part_suroccup = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
-
-    st.table(df_glob_part_suroccup)
-
-    df_glob_part_suroccup_transposed = df_glob_part_suroccup.T
-    st.line_chart(df_glob_part_suroccup_transposed)

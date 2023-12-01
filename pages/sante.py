@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import plotly_express as px
 import numpy as np
 import altair as alt
 import geopandas as gpd
@@ -20,33 +22,21 @@ def app():
        options=list_commune)
   code_commune = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'COM'].iloc[0]
   st.sidebar.write('Ma commune:', code_commune, nom_commune)
-
   #EPCI
   df_epci = pd.read_csv("./EPCI_2020.csv", sep=";")
   nom_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'LIBEPCI'].iloc[0]
   code_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'EPCI'].iloc[0]
   st.sidebar.write('Mon EPCI:', code_epci, nom_epci)
-
-
   #Département
   code_departement = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'DEP'].iloc[0]
   df_departement = pd.read_csv("./departement2021.csv", dtype={"CHEFLIEU": str}, sep=",")
   nom_departement = df_departement.loc[df_departement['DEP'] == code_departement, 'LIBELLE'].iloc[0]
   st.sidebar.write('Mon département:', code_departement, nom_departement)
-
   #Région
   code_region = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'REG'].iloc[0]
   df_region = pd.read_csv("./region2021.csv", dtype={"CHEFLIEU": str}, sep=",")
   nom_region = df_region.loc[df_region['REG'] == code_region, 'LIBELLE'].iloc[0]
   st.sidebar.write('Ma région:', str(round(code_region)), nom_region)
-
-  #Année
-  select_annee = st.sidebar.select_slider(
-       "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018'],
-       value=('2018'))
-  st.sidebar.write('Mon année :', select_annee)
-
   #############################################################################
 
   st.title("🩺 SANTÉ")
@@ -100,17 +90,39 @@ def app():
   #Global
   result = pd.concat([tx_mortalite_ville,tx_mortalite_epci, tx_mortalite_dpt, tx_mortalite_reg, tx_mortalite_france])
   st.write(result)
+  ############################################################################
+  st.header("Accessibilité potentielle localisée (APL) aux médecins généralistes")
+  st.caption("L’Accessibilité Potentielle Localisée est un indicateur local, disponible au niveau de chaque commune, qui tient compte de l’offre et de la demande issue des communes environnantes. Calculé à l’échelle communale, l’APL met en évidence des disparités d’offre de soins. L’APL tient compte du niveau d’activité des professionnels en exercice ainsi que de la structure par âge de la population de chaque commune qui influence les besoins de soins. L’indicateur permet de quantifier la possibilité des habitants d’accéder aux soins des médecins généralistes libéraux.")
 
-  @st.cache
-  def convert_df(df):
-    # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv().encode('utf-8')
+  df_apl = pd.read_csv("./sante/apl/apl_medecin_generaliste_com_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
+  #Commune
+  df_apl_com = df_apl.loc[df_apl["codgeo"] == code_commune]
+  apl_com = df_apl_com['apl_mg_hmep'].values[0]
+  #epci
+  df_apl_epci = pd.read_csv("./sante/apl/apl_medecin_generaliste_epci_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
+  df_apl_epci = df_apl_epci.loc[df_apl_epci["codgeo"] == code_epci]
+  apl_epci = df_apl_epci['apl_mg_hmep'].values[0]
+  #Département
+  df_apl_dpt = pd.read_csv("./sante/apl/apl_medecin_generaliste_dpt_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
+  df_apl_dpt = df_apl_dpt.loc[df_apl_dpt["codgeo"] == code_departement]
+  apl_dpt = df_apl_dpt['apl_mg_hmep'].values[0]
+  #Région
+  df_apl_reg = pd.read_csv("./sante/apl/apl_medecin_generaliste_region_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
+  df_apl_reg = df_apl_reg.loc[df_apl_reg["codgeo"] == str(round(code_region))]
+  apl_reg = df_apl_reg['apl_mg_hmep'].values[0]
+  #France
+  apl_fr = "3,9"
+  #Comparaison
+  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "APL - 2018": [str(apl_com), apl_epci, apl_dpt, apl_reg, apl_fr]}
+  df = pd.DataFrame(data=d)
+  st.write(df)
 
-  csv = convert_df(result)
+  #Boite à moustaches
+  df_apl = df_apl.replace(',','.', regex=True)
+  df_apl['apl_mg_hmep'] = pd.to_numeric(df_apl['apl_mg_hmep'])
+  fig = px.box(df_apl, x='an', y='apl_mg_hmep')
+  boxplot_chart = st.plotly_chart(fig)
+  boxplot_chart
 
-  st.download_button(
-    label="💾 Télécharger les données",
-    data=csv,
-    file_name='tx_mortalite_comparaison.csv',
-    mime='text/csv',
-  )
+
+

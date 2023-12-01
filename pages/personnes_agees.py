@@ -8,8 +8,11 @@ import json # library to handle JSON files
 # from streamlit_folium import folium_static
 from streamlit_folium import folium_static
 import folium # map rendering library
+import streamlit_folium as folium_st
+from shapely.geometry import Polygon, MultiPolygon
 import streamlit.components.v1 as components
 import fiona
+import jenkspy
 
 def app():
   #Commune
@@ -20,35 +23,77 @@ def app():
        options=list_commune)
   code_commune = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'COM'].iloc[0]
   st.sidebar.write('Ma commune:', code_commune, nom_commune)
-
   #EPCI
   df_epci = pd.read_csv("./EPCI_2020.csv", sep=";")
   nom_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'LIBEPCI'].iloc[0]
   code_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'EPCI'].iloc[0]
   st.sidebar.write('Mon EPCI:', code_epci, nom_epci)
-
-
   #Département
   code_departement = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'DEP'].iloc[0]
   df_departement = pd.read_csv("./departement2021.csv", dtype={"CHEFLIEU": str}, sep=",")
   nom_departement = df_departement.loc[df_departement['DEP'] == code_departement, 'LIBELLE'].iloc[0]
   st.sidebar.write('Mon département:', code_departement, nom_departement)
-
   #Région
   code_region = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'REG'].iloc[0]
+  code_region = round(code_region)
   df_region = pd.read_csv("./region2021.csv", dtype={"CHEFLIEU": str}, sep=",")
   nom_region = df_region.loc[df_region['REG'] == code_region, 'LIBELLE'].iloc[0]
   st.sidebar.write('Ma région:', str(round(code_region)), nom_region)
 
-  #Année
-  select_annee = st.sidebar.select_slider(
-       "Sélection de l'année",
-       options=['2014', '2015', '2016', '2017', '2018', '2019'],
-       value=('2019'))
-  st.sidebar.write('Mon année :', select_annee)
-
   #############################################################################
   st.title("👴👵 PERSONNES ÂGÉES")
+  st.header("Population des plus de 65 ans")
+  last_year = "2020"
+  #commune
+  def part_pop_65(code_commune, select_annee):
+    df = pd.read_csv("./personnes_agees/BTX_TD_POP1A_" + select_annee + ".csv", dtype={"CODGEO": str}, sep=";")
+    df_pop_65_com = df.loc[df['CODGEO'] == code_commune]
+    pop_tot = df_pop_65_com.sum(axis=1).values[0]
+    pop_65 = (df_pop_65_com["SEXE1_AGEPYR1065"] + df_pop_65_com["SEXE1_AGEPYR1080"] + df_pop_65_com["SEXE2_AGEPYR1065"] + df_pop_65_com["SEXE2_AGEPYR1080"]).values[0]
+    tx_pop_65 = (pop_65 / pop_tot) * 100
+    return tx_pop_65, pop_65
+  tx_pop_65_2020 = part_pop_65(code_commune, last_year)
+  tx_pop_65_2015 = part_pop_65(code_commune, "2015")
+  diff_pop_2015_2020 = tx_pop_65_2020[1] - tx_pop_65_2015[1]
+  if diff_pop_2015_2020 > 0:
+    st.write("Le nombre de séniors de plus de 65 ans a augmenté de " + str(diff_pop_2015_2020) + " personnes sur la commune de " + nom_commune + " depuis 2015." )
+    st.write("Elle compte aujourd'hui " + str(tx_pop_65_2020[1]) + " personnes de plus de 65 ans.")
+    st.write("Et représente " + str(round(tx_pop_65_2020[0],2)) + "% de la population.")
+  #EPCI
+  df = pd.read_csv("./personnes_agees/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str}, sep=";")
+  df_epci = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
+  df_epci_merge = pd.merge(df, df_epci[['CODGEO','EPCI', 'LIBEPCI']], left_on='CODGEO', right_on='CODGEO')
+  df_epci = df_epci_merge.loc[df_epci_merge["EPCI"] == str(code_epci)]
+  pop_tot_epci = df_epci.sum(axis=1).values[0]
+  pop_65_epci = (df_epci["SEXE1_AGEPYR1065"] + df_epci["SEXE1_AGEPYR1080"] + df_epci["SEXE2_AGEPYR1065"] + df_epci["SEXE2_AGEPYR1080"]).values[0]
+  tx_pop_65_epci = (pop_65_epci / pop_tot_epci) * 100
+  #Département
+  df = pd.read_csv("./personnes_agees/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str}, sep=";")
+  df_dpt = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str}, sep = ',')
+  df_dpt_merge = pd.merge(df, df_dpt[['COM','DEP']], left_on='CODGEO', right_on='COM')
+  df_dpt = df_dpt_merge.loc[df_dpt_merge["DEP"] == str(code_departement)]
+  pop_tot_dpt = df_dpt.sum(axis=1).values[0]
+  pop_65_dpt = (df_dpt["SEXE1_AGEPYR1065"] + df_dpt["SEXE1_AGEPYR1080"] + df_dpt["SEXE2_AGEPYR1065"] + df_dpt["SEXE2_AGEPYR1080"]).values[0]
+  tx_pop_65_dpt = (pop_65_dpt / pop_tot_dpt) * 100
+  #région
+  df = pd.read_csv("./personnes_agees/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str}, sep=";")
+  df_region = pd.read_csv('./commune_2021.csv', dtype={"COM": str, "DEP": str, "REG": str}, sep = ',')
+  df_region_merge = pd.merge(df, df_region[['COM','REG']], left_on='CODGEO', right_on='COM')
+  df_region = df_region_merge.loc[df_region_merge["REG"] == str(code_region)]
+  pop_tot_region = df_region.sum(axis=1).values[0]
+  pop_65_region = (df_region["SEXE1_AGEPYR1065"] + df_region["SEXE1_AGEPYR1080"] + df_region["SEXE2_AGEPYR1065"] + df_region["SEXE2_AGEPYR1080"]).values[0]
+  tx_pop_65_region = (pop_65_region / pop_tot_region) * 100
+  #France
+  df_fr = pd.read_csv("./personnes_agees/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str}, sep=";")
+  pop_tot_fr = df_fr.sum(axis=1).values[0]
+  pop_65_fr = (df_fr["SEXE1_AGEPYR1065"] + df_fr["SEXE1_AGEPYR1080"] + df_fr["SEXE2_AGEPYR1065"] + df_fr["SEXE2_AGEPYR1080"]).values[0]
+  tx_pop_65_fr = (pop_65_fr / pop_tot_fr) * 100
+  #Comparaison
+  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part des plus de 65 ans - " + last_year + " (en %)": [tx_pop_65_2020[0], tx_pop_65_epci, tx_pop_65_dpt, tx_pop_65_region, tx_pop_65_fr]}
+  df = pd.DataFrame(data=d)
+  st.write(df)
+  ##########################################################################
+
   st.header('1.Indice de vieillissement')
   st.caption("L'indice de vieillissement est le rapport de la population des 65 ans et plus sur celle des moins de 20 ans. Un indice autour de 100 indique que les 65 ans et plus et les moins de 20 ans sont présents dans à peu près les mêmes proportions sur le territoire; plus l’indice est faible plus le rapport est favorable aux jeunes, plus il est élevé plus il est favorable aux personnes âgées.")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -69,27 +114,106 @@ def app():
       df_indice_com['indice'] = df_indice_com['indice'].apply(np.int64)
       df_indice_com['P' + year +'_POP0019'] = df_indice_com['P' + year +'_POP0019'].apply(np.int64)
       df_indice_com['P' + year +'_POP65P'] = df_indice_com['P' + year +'_POP65P'].apply(np.int64)
-      df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP0019':"Moins de 20 ans (" + select_annee + ")" ,'P' + year + '_POP65P':"Plus de 65 ans (" + select_annee + ")",'indice':"Indice de vieillissement (" + select_annee + ")" })
+      df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP0019':"Moins de 20 ans (" + annee + ")" ,'P' + year + '_POP65P':"Plus de 65 ans (" + annee + ")",'indice':"Indice de vieillissement (" + annee + ")" })
       return df_indice_com
-    nvm_iris =indice_vieux_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
+    nvm_iris =indice_vieux_iris("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_commune, last_year)
     with st.expander("Visualiser le tableau des iris"):
       st.table(nvm_iris)
 
-  #Télécharger les données
-  @st.cache
-  def convert_df(df):
-    # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv().encode('utf-8')
+  ######################
+  # Carte indice vieux
+  # URL de l'API
+  url = "https://public.opendatasoft.com/api/records/1.0/search/?dataset=georef-france-iris-millesime&q=&rows=500&sort=year&facet=year&facet=reg_name&facet=dep_name&facet=arrdep_name&facet=ze2020_name&facet=bv2012_name&facet=epci_name&facet=ept_name&facet=com_name&facet=com_arm_name&facet=iris_name&facet=iris_area_code&facet=iris_type&facet=com_code&refine.year=2022&refine.com_code=" + code_commune
+  # Appel à l'API
+  response = requests.get(url)
+  # Conversion de la réponse en JSON
+  data = response.json()
+  # Normalisation des données pour obtenir un DataFrame pandas
+  df = pd.json_normalize(data['records'])
+  # Séparation des latitudes et longitudes
+  latitudes, longitudes = zip(*df['fields.geo_point_2d'])
+  # Conversion du DataFrame en GeoDataFrame
+  gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(longitudes, latitudes))
+  # Supposons que 'gdf' est votre GeoDataFrame original
+  gdf.set_crs(epsg=4326, inplace=True)  # Définir le système de coordonnées actuel si ce n'est pas déjà fait
 
-  csv = convert_df(nvm_iris)
+  def to_multipolygon(coords):
+      def is_nested_list(lst):
+          return any(isinstance(i, list) for i in lst)
 
-  st.download_button(
-       label="💾 Télécharger les données",
-       data=csv,
-       file_name='indice_vieux.csv',
-       mime='text/csv',
-   )
+      if len(coords) == 0:
+          return None
 
+      # If the first element of coords is a list of lists, we're dealing with a MultiPolygon
+      if is_nested_list(coords[0]):
+          polygons = []
+          for poly_coords in coords:
+              # If the first element of poly_coords is a list of lists, we're dealing with a Polygon with holes
+              if is_nested_list(poly_coords[0]):
+                  polygons.append(Polygon(shell=poly_coords[0], holes=poly_coords[1:]))
+              else:
+                  polygons.append(Polygon(poly_coords))
+          return MultiPolygon(polygons)
+      else:
+          return Polygon(coords)
+
+
+  # Convertir les coordonnées des frontières en objets Polygon ou MultiPolygon
+  gdf['geometry'] = gdf['fields.geo_shape.coordinates'].apply(to_multipolygon)
+
+  # Joindre le dataframe de population avec le GeoDataFrame
+  gdf = gdf.merge(nvm_iris, left_on='fields.iris_code', right_on="Code de l'iris")
+
+  # Créer une carte centrée autour de la latitude et longitude moyenne
+  map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
+  breaks = jenkspy.jenks_breaks(gdf["Indice de vieillissement (" + last_year + ")"], 5)
+  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+  # Ajouter la carte choroplèthe
+  folium.Choropleth(
+    geo_data=gdf.set_index("Code de l'iris"),
+    name='choropleth',
+    data=gdf,
+    columns=["Code de l'iris", "Indice de vieillissement (" + last_year + ")"],
+    key_on='feature.id',
+    fill_color='YlOrRd',
+    fill_opacity=0.7,
+    line_opacity=0.2,
+    color='#ffffff',
+    weight=3,
+    opacity=1.0,
+    legend_name='Indice de vieillissement',
+    bins=breaks
+  ).add_to(m)
+
+  folium.LayerControl().add_to(m)
+
+  style_function = lambda x: {'fillColor': '#ffffff',
+                          'color':'#000000',
+                          'fillOpacity': 0.1,
+                          'weight': 0.1}
+  highlight_function = lambda x: {'fillColor': '#000000',
+                                'color':'#000000',
+                                'fillOpacity': 0.50,
+                                'weight': 0.1}
+  NIL = folium.features.GeoJson(
+    gdf,
+    style_function=style_function,
+    control=False,
+    highlight_function=highlight_function,
+    tooltip=folium.features.GeoJsonTooltip(
+        fields=["Nom de l'iris", "Indice de vieillissement (" + last_year + ")"],
+        aliases=['Iris: ', "Indice de vieillissement:"],
+        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+    )
+  )
+  m.add_child(NIL)
+  m.keep_in_front(NIL)
+  st.subheader("Indice de vieillissement par IRIS")
+  # Afficher la carte dans Streamlit
+  folium_st.folium_static(m)
+
+  #################################
   st.subheader('a.Comparaison sur une année')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #comparaison des territoires
@@ -104,7 +228,7 @@ def app():
         IV = round((Plus_de_65 / Moins_de_20)*100,2)
         df_iv = pd.DataFrame(data=IV, columns = ['Indice de vieillissement en ' + annee], index = [nom_commune])
         return df_iv
-    valeur_comiv = IV_commune("./population/base-ic-evol-struct-pop-" + select_annee + ".csv", code_commune, select_annee)
+    valeur_comiv = IV_commune("./population/base-ic-evol-struct-pop-" + last_year + ".csv", code_commune, last_year)
 
     # EPCI
     def IV_epci(fichier, epci, annee):
@@ -124,7 +248,7 @@ def app():
         IV = round((P65 / M20)*100,2)
         df_ind_epci = pd.DataFrame(data=IV, columns = ["Indice de vieillissement en " + annee], index = [nom_epci])
         return df_ind_epci
-    valeurs_ind_epci = IV_epci("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_epci,select_annee)
+    valeurs_ind_epci = IV_epci("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_epci,last_year)
 
     # Département
     def IV_departement_M2017(fichier, departement, annee):
@@ -161,10 +285,10 @@ def app():
         df_dep = pd.DataFrame(data=IV, columns = ['Indice de vieillissement en ' + annee], index = [nom_departement])
         return df_dep
 
-    if int(select_annee) < 2017:
-        valeurs_dep_iv = IV_departement_M2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_departement,select_annee)
+    if int(last_year) < 2017:
+        valeurs_dep_iv = IV_departement_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_departement,last_year)
     else :
-        valeurs_dep_iv = IV_departement_P2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_departement,select_annee)
+        valeurs_dep_iv = IV_departement_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_departement,last_year)
 
 
     # Région
@@ -204,10 +328,10 @@ def app():
         df_reg = pd.DataFrame(data=IV, columns = ['Indice de vieillissement en ' + annee], index = [nom_region])
         return df_reg
 
-    if int(select_annee) < 2017:
-        valeurs_reg_iv = IV_region_M2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",str(round(code_region)),select_annee)
+    if int(last_year) < 2017:
+        valeurs_reg_iv = IV_region_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
     else :
-        valeurs_reg_iv = IV_region_P2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",str(round(code_region)),select_annee)
+        valeurs_reg_iv = IV_region_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
 
     # France
     def IV_France(fichier, annee):
@@ -225,7 +349,7 @@ def app():
         df_fr = pd.DataFrame(data=IV, columns = ['Indice de vieillissement en ' + annee], index = ["France"])
         return df_fr
 
-    valeur_iv_fr = IV_France("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",select_annee)
+    valeur_iv_fr = IV_France("./population/base-ic-evol-struct-pop-" + last_year + ".csv",last_year)
 
     # Comparaison
     def IV_global(annee):
@@ -233,23 +357,10 @@ def app():
         year = annee
         return df
 
-    pop_global = IV_global(select_annee)
+    pop_global = IV_global(last_year)
     st.table(pop_global)
 
-    #Télécharger les données
-    @st.cache
-    def convert_df(df):
-      # IMPORTANT: Cache the conversion to prevent computation on every rerun
-      return df.to_csv().encode('utf-8')
-
-    csv = convert_df(pop_global)
-
-    st.download_button(
-         label="💾 Télécharger les données",
-         data=csv,
-         file_name='comparaison_indice_vieux.csv',
-         mime='text/csv',
-     )
+  ###############################
   st.subheader('b.Évolution')
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #FRANCE
@@ -268,8 +379,14 @@ def app():
     #2018
     valeur_iv_fr_2018 = IV_France("./population/base-ic-evol-struct-pop-2018.csv",'2018')
     indice_2018 = valeur_iv_fr_2018['Indice de vieillissement en 2018'][0]
-    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=['France'])
+    #2019
+    valeur_iv_fr_2019 = IV_France("./population/base-ic-evol-struct-pop-2019.csv",'2019')
+    indice_2019 = valeur_iv_fr_2019['Indice de vieillissement en 2019'][0]
+    #2020
+    valeur_iv_fr_2020 = IV_France("./population/base-ic-evol-struct-pop-2020.csv",'2020')
+    indice_2020 = valeur_iv_fr_2020['Indice de vieillissement en 2020'][0]
+    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019, indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=['France'])
 
     #RÉGION
     #2014
@@ -287,8 +404,14 @@ def app():
     #2018
     valeur_iv_region_2018 = IV_region_P2017("./population/base-ic-evol-struct-pop-2018.csv",str(round(code_region)),'2018')
     indice_2018 = valeur_iv_region_2018['Indice de vieillissement en 2018'][0]
-    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_region])
+    #2019
+    valeur_iv_region_2019 = IV_region_P2017("./population/base-ic-evol-struct-pop-2019.csv",str(round(code_region)),'2019')
+    indice_2019 = valeur_iv_region_2019['Indice de vieillissement en 2019'][0]
+    #2020
+    valeur_iv_region_2020 = IV_region_P2017("./population/base-ic-evol-struct-pop-2020.csv",str(round(code_region)),'2020')
+    indice_2020 = valeur_iv_region_2020['Indice de vieillissement en 2020'][0]
+    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019, indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=[nom_region])
 
     #DÉPARTEMENT
     #2014
@@ -306,8 +429,14 @@ def app():
     #2018
     valeur_iv_departement_2018 = IV_departement_P2017("./population/base-ic-evol-struct-pop-2018.csv",code_departement,'2018')
     indice_2018 = valeur_iv_departement_2018['Indice de vieillissement en 2018'][0]
-    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+    #2019
+    valeur_iv_departement_2019 = IV_departement_P2017("./population/base-ic-evol-struct-pop-2019.csv",code_departement,'2019')
+    indice_2019 = valeur_iv_departement_2019['Indice de vieillissement en 2019'][0]
+    #2020
+    valeur_iv_departement_2020 = IV_departement_P2017("./population/base-ic-evol-struct-pop-2020.csv",code_departement,'2020')
+    indice_2020 = valeur_iv_departement_2020['Indice de vieillissement en 2020'][0]
+    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019, indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=[nom_departement])
 
     #EPCI
     #2014
@@ -325,8 +454,14 @@ def app():
     #2018
     valeur_iv_epci_2018 = IV_epci("./population/base-ic-evol-struct-pop-2018.csv",code_epci,'2018')
     indice_2018 = valeur_iv_epci_2018['Indice de vieillissement en 2018'][0]
-    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+    #2019
+    valeur_iv_epci_2019 = IV_epci("./population/base-ic-evol-struct-pop-2019.csv",code_epci,'2019')
+    indice_2019 = valeur_iv_epci_2019['Indice de vieillissement en 2019'][0]
+    #2020
+    valeur_iv_epci_2020 = IV_epci("./population/base-ic-evol-struct-pop-2020.csv",code_epci,'2020')
+    indice_2020 = valeur_iv_epci_2020['Indice de vieillissement en 2020'][0]
+    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019, indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=[nom_epci])
 
     #COMMUNE
     #2014
@@ -344,8 +479,14 @@ def app():
     #2018
     valeur_iv_commune_2018 = IV_commune("./population/base-ic-evol-struct-pop-2018.csv",code_commune,'2018')
     indice_2018 = valeur_iv_commune_2018['Indice de vieillissement en 2018'][0]
-    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+    #2019
+    valeur_iv_commune_2019 = IV_commune("./population/base-ic-evol-struct-pop-2019.csv",code_commune,'2019')
+    indice_2019 = valeur_iv_commune_2019['Indice de vieillissement en 2019'][0]
+    #2018
+    valeur_iv_commune_2020 = IV_commune("./population/base-ic-evol-struct-pop-2020.csv",code_commune,'2020')
+    indice_2020 = valeur_iv_commune_2020['Indice de vieillissement en 2020'][0]
+    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019, indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=[nom_commune])
 
     df_glob_indice_vieux = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
 
@@ -354,13 +495,13 @@ def app():
     df_indice_vieux_transposed = df_glob_indice_vieux.T
     st.line_chart(df_indice_vieux_transposed)
 
-
+  ##########################################################################
   st.header("2.Part des personnes de 80 ans et plus vivant seules")
 
   st.subheader("Iris")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     def part80_seules_iris(fichier, code, annee) :
-      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, encoding= 'unicode_escape', sep=";", header=0)
+      df = pd.read_csv(fichier, dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep=";", header=0)
       df_indice = df.loc[df['COM'] == code]
       year = annee[-2:]
       df_indice = df_indice[['COM','IRIS', 'P'+ year + '_POP80P','P' + year +'_POP80P_PSEUL' ]]
@@ -375,27 +516,105 @@ def app():
       df_indice_com['indice'] = df_indice_com['indice'].apply(np.int64)
       df_indice_com['P' + year +'_POP80P'] = df_indice_com['P' + year +'_POP80P'].apply(np.int64)
       df_indice_com['P' + year +'_POP80P_PSEUL'] = df_indice_com['P' + year +'_POP80P_PSEUL'].apply(np.int64)
-      df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP80P':"Plus de 80 ans (" + select_annee + ")" ,'P' + year + '_POP80P_PSEUL':"Plus de 80 ans vivant seules (" + select_annee + ")" ,'indice':"Part des personnes de plus de 80 ans vivant seules (" + select_annee + ")" })
+      df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP80P':"Plus de 80 ans (" + annee + ")" ,'P' + year + '_POP80P_PSEUL':"Plus de 80 ans vivant seules (" + annee + ")" ,'indice':"Part des personnes de plus de 80 ans vivant seules (" + annee + ")" })
       return df_indice_com
-    indice_80_seules_iris =part80_seules_iris("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_commune, select_annee)
+    indice_80_seules_iris =part80_seules_iris("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_commune, last_year)
     with st.expander("Visualiser le tableau des iris"):
       st.table(indice_80_seules_iris)
+  #################################################
+  # Carte Personnes de 80 ans et plus seules
+  # URL de l'API
+  url = "https://public.opendatasoft.com/api/records/1.0/search/?dataset=georef-france-iris-millesime&q=&rows=500&sort=year&facet=year&facet=reg_name&facet=dep_name&facet=arrdep_name&facet=ze2020_name&facet=bv2012_name&facet=epci_name&facet=ept_name&facet=com_name&facet=com_arm_name&facet=iris_name&facet=iris_area_code&facet=iris_type&facet=com_code&refine.year=2022&refine.com_code=" + code_commune
+  # Appel à l'API
+  response = requests.get(url)
+  # Conversion de la réponse en JSON
+  data = response.json()
+  # Normalisation des données pour obtenir un DataFrame pandas
+  df = pd.json_normalize(data['records'])
+  # Séparation des latitudes et longitudes
+  latitudes, longitudes = zip(*df['fields.geo_point_2d'])
+  # Conversion du DataFrame en GeoDataFrame
+  gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(longitudes, latitudes))
+  # Supposons que 'gdf' est votre GeoDataFrame original
+  gdf.set_crs(epsg=4326, inplace=True)  # Définir le système de coordonnées actuel si ce n'est pas déjà fait
 
-    #Télécharger les données
-    @st.cache
-    def convert_df(df):
-      # IMPORTANT: Cache the conversion to prevent computation on every rerun
-      return df.to_csv().encode('utf-8')
+  def to_multipolygon(coords):
+      def is_nested_list(lst):
+          return any(isinstance(i, list) for i in lst)
 
-    csv = convert_df(indice_80_seules_iris)
+      if len(coords) == 0:
+          return None
 
-    st.download_button(
-         label="💾 Télécharger les données",
-         data=csv,
-         file_name='pers_80_seules.csv',
-         mime='text/csv',
-     )
+      # If the first element of coords is a list of lists, we're dealing with a MultiPolygon
+      if is_nested_list(coords[0]):
+          polygons = []
+          for poly_coords in coords:
+              # If the first element of poly_coords is a list of lists, we're dealing with a Polygon with holes
+              if is_nested_list(poly_coords[0]):
+                  polygons.append(Polygon(shell=poly_coords[0], holes=poly_coords[1:]))
+              else:
+                  polygons.append(Polygon(poly_coords))
+          return MultiPolygon(polygons)
+      else:
+          return Polygon(coords)
 
+
+  # Convertir les coordonnées des frontières en objets Polygon ou MultiPolygon
+  gdf['geometry'] = gdf['fields.geo_shape.coordinates'].apply(to_multipolygon)
+
+  # Joindre le dataframe de population avec le GeoDataFrame
+  gdf = gdf.merge(indice_80_seules_iris, left_on='fields.iris_code', right_on="Code de l'iris")
+
+  # Créer une carte centrée autour de la latitude et longitude moyenne
+  map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
+  breaks = jenkspy.jenks_breaks(gdf["Part des personnes de plus de 80 ans vivant seules (" + last_year + ")"], 5)
+  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+  # Ajouter la carte choroplèthe
+  folium.Choropleth(
+    geo_data=gdf.set_index("Code de l'iris"),
+    name='choropleth',
+    data=gdf,
+    columns=["Code de l'iris", "Part des personnes de plus de 80 ans vivant seules (" + last_year + ")"],
+    key_on='feature.id',
+    fill_color='YlOrRd',
+    fill_opacity=0.7,
+    line_opacity=0.2,
+    color='#ffffff',
+    weight=3,
+    opacity=1.0,
+    legend_name='Part des personnes de 80 ans et plus seules',
+    bins=breaks
+  ).add_to(m)
+
+  folium.LayerControl().add_to(m)
+
+  style_function = lambda x: {'fillColor': '#ffffff',
+                          'color':'#000000',
+                          'fillOpacity': 0.1,
+                          'weight': 0.1}
+  highlight_function = lambda x: {'fillColor': '#000000',
+                                'color':'#000000',
+                                'fillOpacity': 0.50,
+                                'weight': 0.1}
+  NIL = folium.features.GeoJson(
+    gdf,
+    style_function=style_function,
+    control=False,
+    highlight_function=highlight_function,
+    tooltip=folium.features.GeoJsonTooltip(
+        fields=["Nom de l'iris", "Part des personnes de plus de 80 ans vivant seules (" + last_year + ")"],
+        aliases=['Iris: ', "Part des personnes de 80 ans et plus seules :"],
+        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+    )
+  )
+  m.add_child(NIL)
+  m.keep_in_front(NIL)
+  st.subheader("Part des personnes de 80 ans et plus seules par IRIS")
+  # Afficher la carte dans Streamlit
+  folium_st.folium_static(m)
+
+  #################################
   st.subheader("a.Comparaison des territoires sur une année")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     # Commune
@@ -409,7 +628,7 @@ def app():
         part_80_seules = round((Plus_de_80_seules / Plus_de_80)*100,0)
         df_Part_pers_80_seules = pd.DataFrame(data=part_80_seules, columns = ['Part des personnes de plus de 80 ans vivant seules ' + annee], index = [nom_commune])
         return df_Part_pers_80_seules
-    indice_80_seules_com = part80_seules_com("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_commune, select_annee)
+    indice_80_seules_com = part80_seules_com("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_commune, last_year)
 
     # EPCI
     def part80_seules_epci(fichier, epci, annee):
@@ -429,7 +648,7 @@ def app():
         part_80_seules = round((M80_seules / P80)*100,0)
         df_Part_pers_80_seules = pd.DataFrame(data=part_80_seules, columns = ['Part des personnes de plus de 80 ans vivant seules ' + annee], index = [nom_epci])
         return df_Part_pers_80_seules
-    valeurs_part80_seules_epci = part80_seules_epci("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_epci,select_annee)
+    valeurs_part80_seules_epci = part80_seules_epci("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_epci,last_year)
 
     # Département
     def part80_seules_departement_M2017(fichier, departement, annee):
@@ -466,10 +685,10 @@ def app():
         df_dep = pd.DataFrame(data=part_80_seules, columns = ['Part des personnes de plus de 80 ans vivant seules ' + annee], index = [nom_departement])
         return df_dep
 
-    if int(select_annee) < 2017:
-        valeurs_dep_iv = part80_seules_departement_M2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_departement,select_annee)
+    if int(last_year) < 2017:
+        valeurs_dep_iv = part80_seules_departement_M2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_departement,last_year)
     else :
-        valeurs_dep_iv = part80_seules_departement_P2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",code_departement,select_annee)
+        valeurs_dep_iv = part80_seules_departement_P2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_departement,last_year)
 
     # Région
     #si année de 2014 à 2016 (inclus)
@@ -508,10 +727,10 @@ def app():
         df_reg = pd.DataFrame(data=part_80_seules, columns = ['Part des personnes de plus de 80 ans vivant seules ' + annee], index = [nom_region])
         return df_reg
 
-    if int(select_annee) < 2017:
-        valeurs_reg_iv = IV_region_M2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",str(round(code_region)),select_annee)
+    if int(last_year) < 2017:
+        valeurs_reg_iv = IV_region_M2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",str(round(code_region)),last_year)
     else :
-        valeurs_reg_iv = IV_region_P2017("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",str(round(code_region)),select_annee)
+        valeurs_reg_iv = IV_region_P2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",str(round(code_region)),last_year)
 
     # France
     def part80_seules_France(fichier, annee):
@@ -529,7 +748,7 @@ def app():
         df_fr = pd.DataFrame(data=part_80_seules, columns = ['Part des personnes de plus de 80 ans vivant seules ' + annee], index = ["France"])
         return df_fr
 
-    valeur_part80_seules_fr = part80_seules_France("./famille/base-ic-couples-familles-menages-" + select_annee + ".csv",select_annee)
+    valeur_part80_seules_fr = part80_seules_France("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",last_year)
 
     # Comparaison
     def IV_global(annee):
@@ -537,25 +756,10 @@ def app():
         year = annee
         return df
 
-    indice_80_seules = IV_global(select_annee)
+    indice_80_seules = IV_global(last_year)
     st.table(indice_80_seules)
 
-    #Télécharger les données
-    @st.cache
-    def convert_df(df):
-      # IMPORTANT: Cache the conversion to prevent computation on every rerun
-      return df.to_csv().encode('utf-8')
-
-    csv = convert_df(indice_80_seules)
-
-    st.download_button(
-         label="💾 Télécharger les données",
-         data=csv,
-         file_name='Comparaison_pers_80_seules.csv',
-         mime='text/csv',
-     )
-
-
+  ##############################
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #FRANCE
@@ -574,9 +778,14 @@ def app():
     #2018
     valeur_part80_seules_fr_2018 = part80_seules_France("./famille/base-ic-couples-familles-menages-2018.csv",'2018')
     indice_2018 = valeur_part80_seules_fr_2018['Part des personnes de plus de 80 ans vivant seules 2018'][0]
-
-    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017','2018'], index=['France'])
+    #2019
+    valeur_part80_seules_fr_2019 = part80_seules_France("./famille/base-ic-couples-familles-menages-2019.csv",'2019')
+    indice_2019 = valeur_part80_seules_fr_2019['Part des personnes de plus de 80 ans vivant seules 2019'][0]
+    #2020
+    valeur_part80_seules_fr_2020 = part80_seules_France("./famille/base-ic-couples-familles-menages-2020.csv",'2020')
+    indice_2020 = valeur_part80_seules_fr_2020['Part des personnes de plus de 80 ans vivant seules 2020'][0]
+    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017','2018', '2019', '2020'], index=['France'])
 
     #RÉGION
     #2014
@@ -594,9 +803,14 @@ def app():
     #2018
     valeur_part80_seules_region_2018 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",str(round(code_region)),'2018')
     indice_2018 = valeur_part80_seules_region_2018['Part des personnes de plus de 80 ans vivant seules 2018'][0]
-
-    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017','2018'], index=[nom_region])
+    #2019
+    valeur_part80_seules_region_2019 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",str(round(code_region)),'2019')
+    indice_2019 = valeur_part80_seules_region_2019['Part des personnes de plus de 80 ans vivant seules 2019'][0]
+    #2020
+    valeur_part80_seules_region_2020 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2020.csv",str(round(code_region)),'2020')
+    indice_2020 = valeur_part80_seules_region_2020['Part des personnes de plus de 80 ans vivant seules 2020'][0]
+    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017','2018', '2019', '2020'], index=[nom_region])
 
     #DÉPARTEMENT
     #2014
@@ -614,9 +828,14 @@ def app():
     #2018
     valeur_part80_seules_departement_2018 = part80_seules_departement_P2017("./famille/base-ic-couples-familles-menages-2018.csv",code_departement,'2018')
     indice_2018 = valeur_part80_seules_departement_2018['Part des personnes de plus de 80 ans vivant seules 2018'][0]
-
-    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017','2018'], index=[nom_departement])
+    #2018
+    valeur_part80_seules_departement_2019 = part80_seules_departement_P2017("./famille/base-ic-couples-familles-menages-2019.csv",code_departement,'2019')
+    indice_2019 = valeur_part80_seules_departement_2019['Part des personnes de plus de 80 ans vivant seules 2019'][0]
+    #2020
+    valeur_part80_seules_departement_2020 = part80_seules_departement_P2017("./famille/base-ic-couples-familles-menages-2020.csv",code_departement,'2020')
+    indice_2020 = valeur_part80_seules_departement_2020['Part des personnes de plus de 80 ans vivant seules 2020'][0]
+    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017','2018', '2019', '2020'], index=[nom_departement])
 
     #EPCI
     #2014
@@ -634,9 +853,14 @@ def app():
     #2018
     valeur_part80_seules_epci_2018 = part80_seules_epci("./famille/base-ic-couples-familles-menages-2018.csv",code_epci,'2018')
     indice_2018 = valeur_part80_seules_epci_2018['Part des personnes de plus de 80 ans vivant seules 2018'][0]
-
-    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017','2018'], index=[nom_epci])
+    #2019
+    valeur_part80_seules_epci_2019 = part80_seules_epci("./famille/base-ic-couples-familles-menages-2019.csv",code_epci,'2019')
+    indice_2019 = valeur_part80_seules_epci_2019['Part des personnes de plus de 80 ans vivant seules 2019'][0]
+    #2020
+    valeur_part80_seules_epci_2020 = part80_seules_epci("./famille/base-ic-couples-familles-menages-2020.csv",code_epci,'2020')
+    indice_2020 = valeur_part80_seules_epci_2020['Part des personnes de plus de 80 ans vivant seules 2020'][0]
+    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017','2018', '2019', '2020'], index=[nom_epci])
 
     #COMMUNE
     #2014
@@ -654,9 +878,14 @@ def app():
     #2018
     valeur_part80_seules_commune_2018 = part80_seules_com("./famille/base-ic-couples-familles-menages-2018.csv",code_commune,'2018')
     indice_2018 = valeur_part80_seules_commune_2018['Part des personnes de plus de 80 ans vivant seules 2018'][0]
-
-    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017','2018'], index=[nom_commune])
+    #2019
+    valeur_part80_seules_commune_2019 = part80_seules_com("./famille/base-ic-couples-familles-menages-2019.csv",code_commune,'2019')
+    indice_2019 = valeur_part80_seules_commune_2019['Part des personnes de plus de 80 ans vivant seules 2019'][0]
+    #2020
+    valeur_part80_seules_commune_2020 = part80_seules_com("./famille/base-ic-couples-familles-menages-2020.csv",code_commune,'2020')
+    indice_2020 = valeur_part80_seules_commune_2020['Part des personnes de plus de 80 ans vivant seules 2020'][0]
+    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017','2018', '2019', '2020'], index=[nom_commune])
 
     df_glob_indice_vieux = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
 
@@ -666,9 +895,8 @@ def app():
     st.line_chart(df_glob_indice_vieux_transposed)
 
 
-
+  #########################################################################
   st.header("3.Indice d'évolution des générations âgées")
-
   st.subheader("Iris")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     def indice_remplacement_iris(fichier, code, annee) :
@@ -687,26 +915,11 @@ def app():
       df_indice_com['indice'].round(decimals = 2)
       df_indice_com['P' + year +'_POP6074'] = df_indice_com['P' + year +'_POP6074'].apply(np.int64)
       df_indice_com['P' + year +'_POP75P'] = df_indice_com['P' + year +'_POP75P'].apply(np.int64)
-      df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP6074':"60 à 74 ans (" + select_annee + ")" ,'P' + year + '_POP75P':"Plus de 75 ans (" + select_annee + ")",'indice':"Indice d'évolution des générations âgées (" + select_annee + ")" })
+      df_indice_com = df_indice_com.rename(columns={'CODE_IRIS': "Code de l'iris",'LIB_IRIS': "Nom de l'iris", 'P' + year +'_POP6074':"60 à 74 ans (" + annee + ")" ,'P' + year + '_POP75P':"Plus de 75 ans (" + annee + ")",'indice':"Indice d'évolution des générations âgées (" + annee + ")" })
       return df_indice_com
-    nvm_iris =indice_remplacement_iris("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
+    nvm_iris =indice_remplacement_iris("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_commune, last_year)
     with st.expander("Visualiser le tableau des iris"):
       st.table(nvm_iris)
-
-    #Télécharger les données
-    @st.cache
-    def convert_df(df):
-      # IMPORTANT: Cache the conversion to prevent computation on every rerun
-      return df.to_csv().encode('utf-8')
-
-    csv = convert_df(nvm_iris)
-
-    st.download_button(
-         label="💾 Télécharger les données",
-         data=csv,
-         file_name='Indice_evol_generations_agees.csv',
-         mime='text/csv',
-     )
 
   st.subheader("a.Comparaison entre territoires sur une année")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
@@ -721,7 +934,7 @@ def app():
         part_remplacement = round((Pop_6074 / Pop_75P),2)
         df_part_remplacement = pd.DataFrame(data=part_remplacement, columns = ['Indice de renouvellement des générations âgées ' + annee], index = [nom_commune])
         return df_part_remplacement
-    indice_remplacement_com = part_remplacement_com("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_commune, select_annee)
+    indice_remplacement_com = part_remplacement_com("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_commune, last_year)
 
     # EPCI
     def part_remplacement_epci(fichier, epci, annee):
@@ -741,7 +954,7 @@ def app():
         part_remplacement = round((P60 / P75),2)
         df_part_remplacement = pd.DataFrame(data=part_remplacement, columns = ['Indice de renouvellement des générations âgées ' + annee], index = [nom_epci])
         return df_part_remplacement
-    indice_remplacement_epci = part_remplacement_epci("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_epci,select_annee)
+    indice_remplacement_epci = part_remplacement_epci("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_epci,last_year)
 
     # Département
     def part_remplacement_M2017(fichier, departement, annee):
@@ -778,10 +991,10 @@ def app():
         df_dep = pd.DataFrame(data=part_remplacement, columns = ['Indice de renouvellement des générations âgées ' + annee], index = [nom_departement])
         return df_dep
 
-    if int(select_annee) < 2017:
-        indice_remplacement_dep = part_remplacement_M2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_departement,select_annee)
+    if int(last_year) < 2017:
+        indice_remplacement_dep = part_remplacement_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_departement,last_year)
     else :
-        indice_remplacement_dep = part_remplacement_P2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",code_departement,select_annee)
+        indice_remplacement_dep = part_remplacement_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_departement,last_year)
 
     # Région
     #si année de 2014 à 2016 (inclus)
@@ -820,10 +1033,10 @@ def app():
         df_reg = pd.DataFrame(data=part_remplacement, columns = ['Indice de renouvellement des générations âgées ' + annee], index = [nom_region])
         return df_reg
 
-    if int(select_annee) < 2017:
-        indice_remplacement_reg = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",str(round(code_region)),select_annee)
+    if int(last_year) < 2017:
+        indice_remplacement_reg = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
     else :
-        indice_remplacement_reg = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",str(round(code_region)),select_annee)
+        indice_remplacement_reg = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
 
     # France
     def part_remplacement_France(fichier, annee):
@@ -841,7 +1054,7 @@ def app():
         df_fr = pd.DataFrame(data=part_remplacement, columns = ['Indice de renouvellement des générations âgées ' + annee], index = ["France"])
         return df_fr
 
-    indice_remplacement_fr = part_remplacement_France("./population/base-ic-evol-struct-pop-" + select_annee + ".csv",select_annee)
+    indice_remplacement_fr = part_remplacement_France("./population/base-ic-evol-struct-pop-" + last_year + ".csv",last_year)
 
     # Comparaison
     def indice_remplacement_global(annee):
@@ -849,24 +1062,10 @@ def app():
         year = annee
         return df
 
-    indice_remplacement = indice_remplacement_global(select_annee)
+    indice_remplacement = indice_remplacement_global(last_year)
     st.table(indice_remplacement)
 
-    #Télécharger les données
-    @st.cache
-    def convert_df(df):
-      # IMPORTANT: Cache the conversion to prevent computation on every rerun
-      return df.to_csv().encode('utf-8')
-
-    csv = convert_df(indice_remplacement)
-
-    st.download_button(
-         label="💾 Télécharger les données",
-         data=csv,
-         file_name='Comparaison_indice_evol_generations_agees.csv',
-         mime='text/csv',
-     )
-
+  ##############################
   st.subheader("b.Evolution")
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #FRANCE
@@ -885,9 +1084,14 @@ def app():
     #2018
     valeur_part_remplacement_fr_2018 = part_remplacement_France("./population/base-ic-evol-struct-pop-2018.csv",'2018')
     indice_2018 = valeur_part_remplacement_fr_2018['Indice de renouvellement des générations âgées 2018'][0]
-
-    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017','2018'], index=['France'])
+    #2019
+    valeur_part_remplacement_fr_2019 = part_remplacement_France("./population/base-ic-evol-struct-pop-2019.csv",'2019')
+    indice_2019 = valeur_part_remplacement_fr_2019['Indice de renouvellement des générations âgées 2019'][0]
+    #2020
+    valeur_part_remplacement_fr_2020 = part_remplacement_France("./population/base-ic-evol-struct-pop-2020.csv",'2020')
+    indice_2020 = valeur_part_remplacement_fr_2020['Indice de renouvellement des générations âgées 2020'][0]
+    df_france_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017','2018', '2019', '2020'], index=['France'])
 
     #RÉGION
     #2014
@@ -905,9 +1109,14 @@ def app():
     #2018
     valeur_part_remplacement_region_2018 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2018.csv",str(round(code_region)),'2018')
     indice_2018 = valeur_part_remplacement_region_2018['Indice de renouvellement des générations âgées 2018'][0]
-
-    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017','2018'], index=[nom_region])
+    #2019
+    valeur_part_remplacement_region_2019 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2019.csv",str(round(code_region)),'2019')
+    indice_2019 = valeur_part_remplacement_region_2019['Indice de renouvellement des générations âgées 2019'][0]
+    #2020
+    valeur_part_remplacement_region_2020 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2020.csv",str(round(code_region)),'2020')
+    indice_2020 = valeur_part_remplacement_region_2020['Indice de renouvellement des générations âgées 2020'][0]
+    df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017','2018','2019', '2020'], index=[nom_region])
 
     #DÉPARTEMENT
     #2014
@@ -925,9 +1134,14 @@ def app():
     #2018
     valeur_part_remplacement_departement_2018 = part_remplacement_P2017("./population/base-ic-evol-struct-pop-2018.csv",code_departement,'2018')
     indice_2018 = valeur_part_remplacement_departement_2018['Indice de renouvellement des générations âgées 2018'][0]
-
-    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_departement])
+    #2019
+    valeur_part_remplacement_departement_2019 = part_remplacement_P2017("./population/base-ic-evol-struct-pop-2019.csv",code_departement,'2019')
+    indice_2019 = valeur_part_remplacement_departement_2019['Indice de renouvellement des générations âgées 2019'][0]
+    #2020
+    valeur_part_remplacement_departement_2020 = part_remplacement_P2017("./population/base-ic-evol-struct-pop-2020.csv",code_departement,'2020')
+    indice_2020 = valeur_part_remplacement_departement_2020['Indice de renouvellement des générations âgées 2020'][0]
+    df_departement_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=[nom_departement])
 
     #EPCI
     #2014
@@ -945,9 +1159,14 @@ def app():
     #2018
     valeur_part_remplacement_epci_2018 = part_remplacement_epci("./population/base-ic-evol-struct-pop-2018.csv",code_epci,'2018')
     indice_2018 = valeur_part_remplacement_epci_2018['Indice de renouvellement des générations âgées 2018'][0]
-
-    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_epci])
+    #2019
+    valeur_part_remplacement_epci_2019 = part_remplacement_epci("./population/base-ic-evol-struct-pop-2019.csv",code_epci,'2019')
+    indice_2019 = valeur_part_remplacement_epci_2019['Indice de renouvellement des générations âgées 2019'][0]
+    #2020
+    valeur_part_remplacement_epci_2020 = part_remplacement_epci("./population/base-ic-evol-struct-pop-2020.csv",code_epci,'2020')
+    indice_2020 = valeur_part_remplacement_epci_2020['Indice de renouvellement des générations âgées 2020'][0]
+    df_epci_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=[nom_epci])
 
     #COMMUNE
     #2014
@@ -965,9 +1184,14 @@ def app():
     #2018
     valeur_part_remplacement_commune_2018 = part_remplacement_com("./population/base-ic-evol-struct-pop-2018.csv",code_commune,'2018')
     indice_2018 = valeur_part_remplacement_commune_2018['Indice de renouvellement des générations âgées 2018'][0]
-
-    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018]]),
-                       columns=['2014', '2015', '2016', '2017', '2018'], index=[nom_commune])
+    #2019
+    valeur_part_remplacement_commune_2019 = part_remplacement_com("./population/base-ic-evol-struct-pop-2019.csv",code_commune,'2019')
+    indice_2019 = valeur_part_remplacement_commune_2019['Indice de renouvellement des générations âgées 2019'][0]
+    #2020
+    valeur_part_remplacement_commune_2020 = part_remplacement_com("./population/base-ic-evol-struct-pop-2020.csv",code_commune,'2020')
+    indice_2020 = valeur_part_remplacement_commune_2020['Indice de renouvellement des générations âgées 2020'][0]
+    df_commune_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
+                       columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=[nom_commune])
 
     df_glob_remplacement = pd.concat([df_france_glob, df_region_glob, df_departement_glob, df_epci_glob, df_commune_glob])
 
@@ -976,8 +1200,7 @@ def app():
     df_glob_remplacement_transposed = df_glob_remplacement.T
     st.line_chart(df_glob_remplacement_transposed)
 
-
-    #################################
+    #######################################################################
     st.header("Part des personnes de 60 ans ou plus parmi la population")
     st.subheader("Zoom QPV")
 
