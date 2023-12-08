@@ -1,4 +1,5 @@
 import streamlit as st
+from .utils import remove_comma, round_to_two, round_to_zero
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -61,7 +62,16 @@ def app():
   df_pop_iris = pd.merge(df_pop_iris, df_iris[["CODE_IRIS","LIB_IRIS"]], left_on='IRIS', right_on="CODE_IRIS")
   df_pop_iris = df_pop_iris[["CODE_IRIS","LIB_IRIS", "P" + last_year[-2:] + "_POP"]]
   df_pop_iris["PART_POP"] = (df_pop_iris["P" + last_year[-2:] + "_POP"] / df_pop_iris["P" + last_year[-2:] + "_POP"].sum())* 100
-  st.write(df_pop_iris)
+  df_pop_iris['PART_POP'] = df_pop_iris['PART_POP'].apply(round_to_two)
+
+  # Créer une copie du DataFrame original
+  df_pop_iris_display = df_pop_iris.copy()
+  # Appliquer la fonction remove_comma uniquement à la colonne P20_POP
+  df_pop_iris_display["P" + last_year[-2:] + "_POP"] = df_pop_iris["P" + last_year[-2:] + "_POP"].apply(remove_comma)
+  df_pop_iris_display = df_pop_iris_display.rename(columns={"CODE_IRIS": "Code de l'IRIS", "LIB_IRIS" : "Nom de l'IRIS", "P" + last_year[-2:] + "_POP": "Population " + last_year, "PART_POP" : "Part de la population"})
+  # Afficher le nouveau DataFrame sur Streamlit
+  with st.expander("Visualiser le tableau des iris"):
+      st.write(df_pop_iris_display)
 
   #Carte
   # URL de l'API
@@ -130,8 +140,6 @@ def app():
     bins=breaks
   ).add_to(m3)
 
-  folium.LayerControl().add_to(m3)
-
   style_function = lambda x: {'fillColor': '#ffffff',
                           'color':'#000000',
                           'fillOpacity': 0.1,
@@ -162,7 +170,8 @@ def app():
   year = "2022"
   df_qpv = pd.read_csv("./population/demographie_qpv/DEMO_" + year + ".csv", dtype={"CODGEO": str}, sep=";")
   df_qpv = df_qpv.loc[df_qpv["LIB_COM"].str.contains(r'(?<!-)\b{}\b'.format(nom_commune))]
-  df_qpv = df_qpv[["CODGEO", "LIB_COM", "LIBGEO", "POP_MUN"]]
+  df_qpv = df_qpv[["LIB_COM", "LIBGEO", "POP_MUN"]]
+  df_qpv = df_qpv.reset_index(drop=True)
   st.write(df_qpv)
 
   #################################################################
@@ -186,6 +195,8 @@ def app():
   cols = list(df_pop_hist_ville.columns)
   cols.remove('Commune')
   df_pop_hist_ville = df_pop_hist_ville[['Commune'] + cols[::-1]]
+  df_pop_hist_ville = df_pop_hist_ville.apply(round_to_zero)
+
   st.table(df_pop_hist_ville)
 
   st.caption("Ajouter comparaison évolution de l'EPCI, dpt et région. Permet d'indiquer que c'est une dynamioque propre ou dans un contexte général. ")
@@ -377,6 +388,12 @@ def app():
   df_total = df_total[cols]
   # Réinitialiser l'index
   df_total = df_total.reset_index(drop=True)
+  # Pour chaque colonne dans df_total
+  for col in df_total.columns:
+    # Vérifiez si la colonne n'est pas 'Sexe'
+    if col != 'Sexe':
+        # Appliquer remove_comma sur les éléments de la colonne
+        df_total[col] = df_total[col].apply(remove_comma)
   st.write(df_total)
   ######################################################################
   st.header('4.Dépendance de la population')
@@ -422,6 +439,11 @@ def app():
   df_tranche_age_iris = df_tranche_age_iris[["IRIS","LIB_IRIS","part_pop0014","part_pop1529", "part_pop3044", "part_pop4559" ,"part_pop6074" , "part_pop75P"]]
   df_tranche_age_iris = df_tranche_age_iris.reset_index(drop=True)
   df_tranche_age_iris = df_tranche_age_iris.rename(columns={'LIB_IRIS': "Nom de l'iris",'IRIS': "Code de l'iris", "part_pop0014" : '00-14 ans' , "part_pop1529" : '15-29 ans' , "part_pop3044" : "30-44 ans", "part_pop4559" : "45-59 ans", "part_pop6074" : "60-74 ans", "part_pop75P" : "Plus de 75 ans"})
+  # Appliquer round_to_two sur les colonnes numériques
+  for col in df_tranche_age_iris.columns:
+    # Vérifiez si la colonne est numérique
+    if df_tranche_age_iris[col].dtype in ['float64', 'int64']:
+      df_tranche_age_iris[col] = df_tranche_age_iris[col].apply(round_to_two)
   st.write(df_tranche_age_iris)
 
   fig = px.bar(df_tranche_age_iris, x="Nom de l'iris", y=["00-14 ans","15-29 ans", "30-44 ans", "45-59 ans" ,"60-74 ans" , "Plus de 75 ans"], title="Répartition de la population", height=600, width=800)
@@ -506,6 +528,11 @@ def app():
   df_glob_tranches_age = pd.concat([tranches_age_com, tranches_age_epci, tranche_age_departement, tranche_age_region, tranche_age_france])
   df_glob_tranches_age = df_glob_tranches_age.rename(columns={'territoire': "Territoires",'pop0014': "00-14 ans", "pop1529" : '15-29 ans' , "pop3044" : '30-44 ans' , "pop4559" : "45-59 ans", "pop6074" : "60-74 ans", "pop75P" : "Plus de 75 ans"})
   df_glob_tranches_age = df_glob_tranches_age.reset_index(drop=True)
+  # Appliquer round_to_two sur les colonnes numériques
+  for col in df_glob_tranches_age.columns:
+    # Vérifiez si la colonne est numérique
+    if df_glob_tranches_age[col].dtype in ['float64', 'int64']:
+      df_glob_tranches_age[col] = df_glob_tranches_age[col].apply(round_to_two)
   st.write('Tableau')
   st.write(df_glob_tranches_age)
 
@@ -575,6 +602,11 @@ def app():
   df_pop_seule_fr = pd.DataFrame(data=[["France",pop1519seul,pop2024seul,pop2539seul,pop4054seul,pop5564seul,pop6579seul, pop80Pseul]], columns = ["LIBGEO", "1519_seul", "2024_seul", "2539_seul", "4054_seul", "5564_seul", "6579_seul", "80P_seul"])
 
   df_glob_pers_seules = pd.concat([df_pop_seule_com, df_pop_seule_epci, df_pop_seule_dep, df_pop_seule_reg, df_pop_seule_fr])
+  # Appliquer round_to_two sur les colonnes numériques
+  for col in df_glob_pers_seules.columns:
+    # Vérifiez si la colonne est numérique
+    if df_glob_pers_seules[col].dtype in ['float64', 'int64']:
+      df_glob_pers_seules[col] = df_glob_pers_seules[col].apply(round_to_two)
   st.write(df_glob_pers_seules)
 
   ###########
@@ -588,6 +620,11 @@ def app():
   df_iris["pop80Pseul"] = ( df_iris['P' + last_year[-2:] + '_POP80P_PSEUL'] / df_iris['P' + last_year[-2:] + '_POP80P']) * 100
   df_iris = df_iris[["IRIS", "LIBIRIS", "pop1524seul", "pop2554seul", "pop5579seul", "pop80Pseul"]]
   df_iris = df_iris.reset_index(drop=True)
+  # Appliquer round_to_two sur les colonnes numériques
+  for col in df_iris.columns:
+    # Vérifiez si la colonne est numérique
+    if df_iris[col].dtype in ['float64', 'int64']:
+      df_iris[col] = df_iris[col].apply(round_to_two)
   st.write(df_iris)
 
   #Carte 15-25 ans vivant seuls
@@ -659,8 +696,6 @@ def app():
     bins=breaks
   ).add_to(m)
 
-  folium.LayerControl().add_to(m)
-
   style_function = lambda x: {'fillColor': '#ffffff',
                           'color':'#000000',
                           'fillOpacity': 0.1,
@@ -712,8 +747,6 @@ def app():
     bins=breaks
   ).add_to(m2)
 
-  folium.LayerControl().add_to(m2)
-
   style_function = lambda x: {'fillColor': '#ffffff',
                           'color':'#000000',
                           'fillOpacity': 0.1,
@@ -744,18 +777,22 @@ def app():
   st.caption("Selon la définition adoptée par le Haut Conseil à l’Intégration, un immigré est une personne née étrangère à l’étranger et résidant en France. Les personnes nées françaises à l’étranger et vivant en France ne sont donc pas comptabilisées. À l’inverse, certains immigrés ont pu devenir français, les autres restant étrangers. Les populations étrangère et immigrée ne se confondent pas totalement : un immigré n’est pas nécessairement étranger et réciproquement, certains étrangers sont nés en France (essentiellement des mineurs). La qualité d’immigré est permanente : un individu continue à appartenir à la population immigrée même s’il devient français par acquisition. C’est le pays de naissance, et non la nationalité à la naissance, qui définit l'origine géographique d’un immigré.")
 
   def part_pers_imm_iris(fichier, ville, annee) :
-      df = pd.read_csv(fichier, dtype={"IRIS": str , "COM": str},sep=";")
-      year = annee[-2:]
-      df_ville = df.loc[df["COM"]== ville]
-      df_ville = df_ville.replace(',','.', regex=True)
-      df_ville = df_ville[['IRIS','P'+ year + '_POP','P'+ year + '_POP_IMM' ]]
-      df_ville['indice'] = np.where(df_ville['P' + year +'_POP'] < 1,df_ville['P' + year +'_POP'], (df_ville['P'+ year + '_POP_IMM'] / df_ville['P' + year +'_POP']*100))
-      communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
-      df_imm = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_ville[['IRIS','P' + year +'_POP', 'P' + year + '_POP_IMM','indice']], left_on='CODE_IRIS', right_on="IRIS")
-      df_imm = df_imm[['IRIS','LIB_IRIS','P' + year +'_POP', 'P' + year + '_POP_IMM','indice']]
-      df_imm = df_imm.rename(columns={'LIB_IRIS': "Nom de l'iris",'IRIS': "Code de l'iris", 'P' + year + '_POP' : 'Population', 'P' + year + '_POP_IMM' : "Personnes immigrées", 'indice' : "Part des personnes immigrées" })
-      df_imm = df_imm.reset_index(drop=True)
-      return df_imm
+    df = pd.read_csv(fichier, dtype={"IRIS": str , "COM": str},sep=";")
+    year = annee[-2:]
+    df_ville = df.loc[df["COM"]== ville]
+    df_ville = df_ville.replace(',','.', regex=True)
+    df_ville = df_ville[['IRIS','P'+ year + '_POP','P'+ year + '_POP_IMM' ]]
+    df_ville['indice'] = np.where(df_ville['P' + year +'_POP'] < 1,df_ville['P' + year +'_POP'], (df_ville['P'+ year + '_POP_IMM'] / df_ville['P' + year +'_POP']*100))
+    communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+    df_imm = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_ville[['IRIS','P' + year +'_POP', 'P' + year + '_POP_IMM','indice']], left_on='CODE_IRIS', right_on="IRIS")
+    df_imm = df_imm[['IRIS','LIB_IRIS','P' + year +'_POP', 'P' + year + '_POP_IMM','indice']]
+    df_imm = df_imm.rename(columns={'LIB_IRIS': "Nom de l'iris",'IRIS': "Code de l'iris", 'P' + year + '_POP' : 'Population', 'P' + year + '_POP_IMM' : "Personnes immigrées", 'indice' : "Part des personnes immigrées" })
+    df_imm = df_imm.reset_index(drop=True)
+    # Supprimer les virgules dans la colonne 'Population'
+    df_imm['Population'] = df_imm['Population'].apply(remove_comma)
+    # Arrondir à deux chiffres après la virgule dans la colonne 'Part des personnes immigrées'
+    df_imm['Part des personnes immigrées'] = df_imm['Part des personnes immigrées'].apply(round_to_two)
+    return df_imm
   indice_imm_iris = part_pers_imm_iris("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_commune, last_year)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_imm_iris)
@@ -829,8 +866,6 @@ def app():
     bins=breaks
   ).add_to(m3)
 
-  folium.LayerControl().add_to(m3)
-
   style_function = lambda x: {'fillColor': '#ffffff',
                           'color':'#000000',
                           'fillOpacity': 0.1,
@@ -896,18 +931,22 @@ def app():
   st.caption("Dernier millésime " + last_year + " - Paru le : 19/10/2023")
   st.caption("Un étranger est une personne qui réside en France et ne possède pas la nationalité française, soit qu'elle possède une autre nationalité (à titre exclusif), soit qu'elle n'en ait aucune (c'est le cas des personnes apatrides). Les personnes de nationalité française possédant une autre nationalité (ou plusieurs) sont considérées en France comme françaises. Un étranger n'est pas forcément immigré, il peut être né en France (les mineurs notamment).")
   def part_pers_etr_iris(fichier, ville, annee) :
-      df = pd.read_csv(fichier, dtype={"IRIS": str , "COM": str},sep=";")
-      year = annee[-2:]
-      df_ville = df.loc[df["COM"]== ville]
-      df_ville = df_ville.replace(',','.', regex=True)
-      df_ville = df_ville[['IRIS','P'+ year + '_POP','P'+ year + '_POP_ETR' ]]
-      df_ville['indice'] = np.where(df_ville['P' + year +'_POP'] < 1,df_ville['P' + year +'_POP'], (df_ville['P'+ year + '_POP_ETR'] / df_ville['P' + year +'_POP']*100))
-      communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
-      df_etr = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_ville[['IRIS','P' + year +'_POP', 'P' + year + '_POP_ETR','indice']], left_on='CODE_IRIS', right_on="IRIS")
-      df_etr = df_etr[['IRIS','LIB_IRIS','P' + year +'_POP', 'P' + year + '_POP_ETR','indice']]
-      df_etr = df_etr.rename(columns={'LIB_IRIS': "Nom de l'iris",'IRIS': "Code de l'iris", 'P' + year + '_POP' : 'Population', 'P' + year + '_POP_ETR' : "Personnes étrangères", 'indice' : "Part des personnes étrangères" })
-      df_etr = df_etr.reset_index(drop=True)
-      return df_etr
+    df = pd.read_csv(fichier, dtype={"IRIS": str , "COM": str},sep=";")
+    year = annee[-2:]
+    df_ville = df.loc[df["COM"]== ville]
+    df_ville = df_ville.replace(',','.', regex=True)
+    df_ville = df_ville[['IRIS','P'+ year + '_POP','P'+ year + '_POP_ETR' ]]
+    df_ville['indice'] = np.where(df_ville['P' + year +'_POP'] < 1,df_ville['P' + year +'_POP'], (df_ville['P'+ year + '_POP_ETR'] / df_ville['P' + year +'_POP']*100))
+    communes_select = pd.read_csv('./iris_2021.csv', dtype={"CODE_IRIS": str, "GRD_QUART": str, "DEPCOM": str, "UU2020": str, "REG": str, "DEP": str}, sep = ';')
+    df_etr = pd.merge(communes_select[['CODE_IRIS','LIB_IRIS']], df_ville[['IRIS','P' + year +'_POP', 'P' + year + '_POP_ETR','indice']], left_on='CODE_IRIS', right_on="IRIS")
+    df_etr = df_etr[['IRIS','LIB_IRIS','P' + year +'_POP', 'P' + year + '_POP_ETR','indice']]
+    df_etr = df_etr.rename(columns={'LIB_IRIS': "Nom de l'iris",'IRIS': "Code de l'iris", 'P' + year + '_POP' : 'Population', 'P' + year + '_POP_ETR' : "Personnes étrangères", 'indice' : "Part des personnes étrangères" })
+    df_etr = df_etr.reset_index(drop=True)
+    # Supprimer les virgules dans la colonne 'Population'
+    df_etr['Population'] = df_etr['Population'].apply(remove_comma)
+    # Arrondir à deux chiffres après la virgule dans la colonne 'Part des personnes étrangères'
+    df_etr['Part des personnes étrangères'] = df_etr['Part des personnes étrangères'].apply(round_to_two)
+    return df_etr
   indice_etr_iris = part_pers_etr_iris("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_commune, last_year)
   with st.expander("Visualiser le tableau des iris"):
     st.dataframe(indice_etr_iris)
@@ -980,8 +1019,6 @@ def app():
     legend_name='Part des personnes étrangères',
     bins=breaks
   ).add_to(m4)
-
-  folium.LayerControl().add_to(m4)
 
   style_function = lambda x: {'fillColor': '#ffffff',
                           'color':'#000000',

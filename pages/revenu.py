@@ -1,4 +1,5 @@
 import streamlit as st
+from .utils import remove_comma
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -77,8 +78,12 @@ def app():
       return df_ville
 
   nvm_iris = niveau_vie_median_iris("./revenu/revenu_iris/BASE_TD_FILO_DISP_IRIS_" + reference_year + ".csv",nom_commune, reference_year)
+  # Créer une copie du DataFrame original
+  nvm_iris_display = nvm_iris.copy()
+  # Appliquer la fonction remove_comma uniquement à la colonne P20_POP
+  nvm_iris_display["Niveau de vie " + reference_year + " en €"] = nvm_iris_display["Niveau de vie " + reference_year + " en €"].apply(remove_comma)
   with st.expander("Visualiser le tableau des iris"):
-    st.dataframe(nvm_iris)
+    st.dataframe(nvm_iris_display)
 
   # Carte Niveau de vie
   # URL de l'API
