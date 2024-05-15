@@ -1,5 +1,5 @@
 import streamlit as st
-from .utils import remove_comma
+from .utils import remove_comma, round_to_zero
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -15,6 +15,8 @@ import streamlit.components.v1 as components
 import fiona
 import matplotlib.pyplot as plt
 import jenkspy
+import plotly.express as px
+
 
 def app():
   #Commune
@@ -130,53 +132,59 @@ def app():
 
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  breaks = jenkspy.jenks_breaks(gdf["Niveau de vie " + reference_year + " en €"], 5)
-  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("Code de l'iris"),
-    name='choropleth',
-    data=gdf,
-    columns=["Code de l'iris", "Niveau de vie " + reference_year + " en €"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Médiane des revenus disponibles',
-    bins=breaks
-  ).add_to(m)
+  # Supprimer les lignes avec NaN pour le calcul de la méthode de Jenks et assurer que toutes les valeurs sont finies
+  gdf["Niveau de vie " + reference_year + " en €"] = pd.to_numeric(gdf["Niveau de vie " + reference_year + " en €"], errors='coerce')
+  gdf = gdf.dropna(subset=["Niveau de vie " + reference_year + " en €"])
 
-  folium.LayerControl().add_to(m)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Niveau de vie " + reference_year + " en €"].nunique()
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["Nom de l'iris", "Niveau de vie " + reference_year + " en €"],
-        aliases=['Iris: ', "Médiane des revenus disponibles :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m.add_child(NIL)
-  m.keep_in_front(NIL)
-  st.subheader("Médiane des revenus disponibles par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m)
+  if unique_values >= 5:
+      # Assez de valeurs uniques pour 5 classes
+      breaks = jenkspy.jenks_breaks(gdf["Niveau de vie " + reference_year + " en €"], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("Code de l'iris"),
+          name='choropleth',
+          data=gdf,
+          columns=["Code de l'iris", "Niveau de vie " + reference_year + " en €"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Médiane des revenus disponibles',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["Nom de l'iris", "Niveau de vie " + reference_year + " en €"],
+              aliases=['Iris: ', "Médiane des revenus disponibles :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Médiane des revenus disponibles par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
 
 ############################
   st.caption("Zoom sur les QPV")
@@ -281,6 +289,7 @@ def app():
     test_tab = pd.concat([nvm_ville, nvm_epci, nvm_departement, nvm_region, nvm_france])
     test_tab = test_tab.reset_index(drop=True)
     test_tab = test_tab.rename(columns={'LIBGEO': "Territoire",'Q2' + reference_year[-2:] : "Niveau de vie " + reference_year})
+    test_tab["Niveau de vie " + reference_year] = test_tab["Niveau de vie " + reference_year].apply(round_to_zero).apply(remove_comma)
     st.write(test_tab)
 
 ##################################
@@ -335,17 +344,72 @@ def app():
       nvm = df.loc[:, f'Q2{annee[2:]}'].to_numpy().astype(float)
       indice = nvm[0]
       df_commune_glob[annee] = indice
-
     df_glob = pd.concat([df_france_glob, df_region_glob, df_dpt_glob, df_epci_glob, df_commune_glob])
+    # Pour chaque colonne dans df_glob
+    for col in df_glob.columns:
+      # Appliquer remove_comma puis round_to_zero
+      df_glob[col] = df_glob[col].apply(remove_comma).apply(round_to_zero)
     st.table(df_glob)
-    df1_transposed = df_glob.T
-
   # Afficher le graphique avec st.line_chart
-  st.line_chart(df1_transposed, use_container_width=True)
+  df1_transposed = df_glob.T
 
+  #Graphique évolution des écarts de revenu par rapport à la France.
+  # 'France' est l'entité de référence
+  # Supposons que df1_transposed est votre DataFrame
+  # 'France' est l'entité de référence
+  ecart_reference = df1_transposed['France']
 
+  # Calculer l'écart pour chaque entité par rapport à la référence
+  for col in df1_transposed.columns:
+      df1_transposed[col] = df1_transposed[col] - ecart_reference
 
-############################################################################
+  # Supprimer la colonne 'France' du DataFrame
+  df1_transposed.drop('France', axis=1, inplace=True)
+
+  # Création d'un graphique à lignes avec Plotly
+  fig = px.line(df1_transposed, x=df1_transposed.index, y=df1_transposed.columns,
+                title='Évolution des écarts par rapport à la France au fil du temps',
+                labels={'value': 'Écart', 'index': 'Année'})
+
+  # Ajouter des annotations pour chaque entité
+  for col in df1_transposed.columns:
+      ecart_diff = df1_transposed[col].iloc[-1] - df1_transposed[col].iloc[0]
+      fig.add_annotation(
+          x=df1_transposed.index[-1],
+          y=df1_transposed[col].iloc[-1],
+          text=f'{ecart_diff:+.0f}€',  # Formatage sans chiffre après la virgule et ajout du symbole €
+          showarrow=True,
+          arrowhead=1,
+          ax=20
+      )
+
+  # Mise à jour du layout si nécessaire
+  fig.update_layout(
+      xaxis_title='Année',
+      yaxis_title='Écart par rapport à la France',
+      legend_title='Entité'
+  )
+
+  # Afficher le graphique dans Streamlit
+  st.plotly_chart(fig)
+
+  # Phrase d'analyse
+  # Initialiser une liste pour stocker les territoires avec un écart accru
+  territoires_ecart_accru = []
+
+  # Parcourir les colonnes pour identifier les territoires avec un écart accru
+  for col in df1_transposed.columns:
+      if df1_transposed[col].iloc[-1] < df1_transposed[col].iloc[0]:
+          territoires_ecart_accru.append(col)
+
+  # Formuler la phrase
+  phrase = "Les territoires dont l'écart de revenu avec la France s'est agrandi au cours de la période sont : " + ", ".join(territoires_ecart_accru) + "."
+
+  # Afficher la phrase sous le graphique
+  st.write(phrase)
+
+  ############################################################################
+
   st.header("2.Taux de pauvreté au seuil de 60% du revenu disponible par UC médian métropolitain")
   st.caption("Mise en ligne 31/03/2023 - Millésime 2020")
   annee_reference = "2020"
@@ -410,57 +474,66 @@ def app():
 
   # Convertir les coordonnées des frontières en objets Polygon ou MultiPolygon
   gdf['geometry'] = gdf['fields.geo_shape.coordinates'].apply(to_multipolygon)
+
   # Joindre le dataframe de population avec le GeoDataFrame
   gdf = gdf.merge(taux_pauvrete_iris, left_on='fields.iris_code', right_on="Code de l'iris")
 
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  breaks = jenkspy.jenks_breaks(gdf["Taux de pauvreté " + annee_reference + " en %"], 5)
-  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("Code de l'iris"),
-    name='choropleth',
-    data=gdf,
-    columns=["Code de l'iris", "Taux de pauvreté " + annee_reference + " en %"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Taux de pauvreté à 60% du revenu disponible',
-    bins=breaks
-  ).add_to(m)
+  # Convertir en numérique et supprimer les NaN
+  gdf["Taux de pauvreté " + annee_reference + " en %"] = pd.to_numeric(gdf["Taux de pauvreté " + annee_reference + " en %"], errors='coerce')
+  gdf = gdf.dropna(subset=["Taux de pauvreté " + annee_reference + " en %"])
 
-  folium.LayerControl().add_to(m)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Taux de pauvreté " + annee_reference + " en %"].nunique()
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["Nom de l'iris", "Taux de pauvreté " + annee_reference + " en %"],
-        aliases=['Iris: ', "Taux de pauvreté à 60% du revenu disponible :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m.add_child(NIL)
-  m.keep_in_front(NIL)
-  st.subheader("Taux de pauvreté à 60% du revenu disponible par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m)
+  if unique_values >= 5:
+      # Assez de valeurs uniques pour 5 classes
+      breaks = jenkspy.jenks_breaks(gdf["Taux de pauvreté " + annee_reference + " en %"], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("Code de l'iris"),
+          name='choropleth',
+          data=gdf,
+          columns=["Code de l'iris", "Taux de pauvreté " + annee_reference + " en %"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Taux de pauvreté à 60% du revenu disponible',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["Nom de l'iris", "Taux de pauvreté " + annee_reference + " en %"],
+              aliases=['Iris: ', "Taux de pauvreté à 60% du revenu disponible :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Taux de pauvreté à 60% du revenu disponible par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
+
 
   ###########
   st.subheader("Taux de pauvreté Comparaison")

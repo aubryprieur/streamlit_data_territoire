@@ -466,52 +466,60 @@ def app():
 
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  breaks = jenkspy.jenks_breaks(gdf["Indice de jeunesse (" + last_year + ")"], 5)
-  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("Code de l'iris"),
-    name='choropleth',
-    data=gdf,
-    columns=["Code de l'iris", "Indice de jeunesse (" + last_year + ")"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Indice de jeunesse',
-    bins=breaks
-  ).add_to(m)
+  # Nettoyage des données en supprimant les NaN et conversion en numérique
+  gdf["Indice de jeunesse (" + last_year + ")"] = pd.to_numeric(gdf["Indice de jeunesse (" + last_year + ")"], errors='coerce')
+  gdf = gdf.dropna(subset=["Indice de jeunesse (" + last_year + ")"])
 
-  folium.LayerControl().add_to(m)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Indice de jeunesse (" + last_year + ")"].nunique()
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["Nom de l'iris", "Indice de jeunesse (" + last_year + ")"],
-        aliases=['Iris: ', "Indice de jeunesse :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m.add_child(NIL)
-  m.keep_in_front(NIL)
-  st.subheader("Indice jeunesse par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m)
+  if unique_values >= 5:
+      # Calcul des breaks avec la méthode de Jenks si suffisamment de valeurs uniques
+      breaks = jenkspy.jenks_breaks(gdf["Indice de jeunesse (" + last_year + ")"], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("Code de l'iris"),
+          name='choropleth',
+          data=gdf,
+          columns=["Code de l'iris", "Indice de jeunesse (" + last_year + ")"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Indice de jeunesse',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["Nom de l'iris", "Indice de jeunesse (" + last_year + ")"],
+              aliases=['Iris: ', "Indice de jeunesse :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Indice jeunesse par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
+
   #################################
   st.subheader("Zoom QPV")
   #Année

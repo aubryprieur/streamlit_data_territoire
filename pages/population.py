@@ -1,4 +1,5 @@
 import streamlit as st
+from .utils import afficher_infos_commune
 from .utils import remove_comma, round_to_two, round_to_zero
 import pandas as pd
 import numpy as np
@@ -21,30 +22,8 @@ import plotly.graph_objs as go
 import jenkspy
 
 def app():
-  #Commune
-  df_commune = pd.read_csv("./commune_2021.csv", sep=",")
-  list_commune = df_commune.loc[:, 'LIBELLE']
-  nom_commune = st.sidebar.selectbox(
-       "Sélectionnez votre commune :",
-       options=list_commune)
-  code_commune = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'COM'].iloc[0]
-  st.sidebar.write('Ma commune:', code_commune, nom_commune)
-  #EPCI
-  df_epci = pd.read_csv("./EPCI_2020.csv", sep=";")
-  nom_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'LIBEPCI'].iloc[0]
-  code_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'EPCI'].iloc[0]
-  st.sidebar.write('Mon EPCI:', code_epci, nom_epci)
-  #Département
-  code_departement = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'DEP'].iloc[0]
-  df_departement = pd.read_csv("./departement2021.csv", dtype={"CHEFLIEU": str}, sep=",")
-  nom_departement = df_departement.loc[df_departement['DEP'] == code_departement, 'LIBELLE'].iloc[0]
-  st.sidebar.write('Mon département:', code_departement, nom_departement)
-  #Région
-  code_region = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'REG'].iloc[0]
-  code_region = round(code_region)
-  df_region = pd.read_csv("./region2021.csv", dtype={"CHEFLIEU": str}, sep=",")
-  nom_region = df_region.loc[df_region['REG'] == code_region, 'LIBELLE'].iloc[0]
-  st.sidebar.write('Ma région:', str(round(code_region)), nom_region)
+  # Appeler la fonction et récupérer les informations
+  (code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region) = afficher_infos_commune()
 
   #############################################################################
   st.title("👵👧👨‍👩‍👧‍👦👨 POPULATION")
@@ -120,7 +99,15 @@ def app():
   gdf = gdf.dropna(subset=["P" + last_year[-2:] + "_POP"])
   # S'assurer que toutes les valeurs sont finies
   gdf = gdf[pd.to_numeric(gdf["P" + last_year[-2:] + "_POP"], errors='coerce').notnull()]
-  breaks = jenkspy.jenks_breaks(gdf["P" + last_year[-2:] + "_POP"], 5)
+  # Vérifier le nombre de valeurs uniques
+  unique_values = gdf["P" + last_year[-2:] + "_POP"].nunique()
+  # Appliquer l'algorithme de Jenks uniquement si le nombre de valeurs uniques est >= 5
+  if unique_values >= 5:
+    breaks = jenkspy.jenks_breaks(gdf["P" + last_year[-2:] + "_POP"], 5)
+  else:
+    # Gérer le cas où il y a moins de 5 valeurs uniques
+    # Par exemple, en utilisant le nombre de valeurs uniques comme nombre de classes
+    breaks = jenkspy.jenks_breaks(gdf["P" + last_year[-2:] + "_POP"], unique_values) if unique_values > 1 else [gdf["P" + last_year[-2:] + "_POP"].min(), gdf["P" + last_year[-2:] + "_POP"].max()]
   m3 = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
   # Ajouter la carte choroplèthe
@@ -676,7 +663,15 @@ def app():
   gdf = gdf.dropna(subset=['pop1524seul'])
   # S'assurer que toutes les valeurs sont finies
   gdf = gdf[pd.to_numeric(gdf['pop1524seul'], errors='coerce').notnull()]
-  breaks = jenkspy.jenks_breaks(gdf['pop1524seul'], 5)
+  # Vérifier le nombre de valeurs uniques
+  unique_values_pop1524seul = gdf['pop1524seul'].nunique()
+  # Appliquer l'algorithme de Jenks uniquement si le nombre de valeurs uniques est >= 5
+  if unique_values_pop1524seul >= 5:
+    breaks = jenkspy.jenks_breaks(gdf['pop1524seul'], 5)
+  else:
+    # Gérer le cas où il y a moins de 5 valeurs uniques
+    # Par exemple, en utilisant le nombre de valeurs uniques comme nombre de classes
+    breaks = jenkspy.jenks_breaks(gdf['pop1524seul'], unique_values_pop1524seul) if unique_values_pop1524seul > 1 else [gdf['pop1524seul'].min(), gdf['pop1524seul'].max()]
   m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
   # Ajouter la carte choroplèthe
@@ -727,50 +722,62 @@ def app():
   gdf = gdf.dropna(subset=['pop80Pseul'])
   # S'assurer que toutes les valeurs sont finies
   gdf = gdf[pd.to_numeric(gdf['pop80Pseul'], errors='coerce').notnull()]
-  breaks = jenkspy.jenks_breaks(gdf['pop80Pseul'], 5)
+  # Vérifier le nombre de valeurs uniques dans 'pop80Pseul'
+  unique_values_pop80Pseul = gdf['pop80Pseul'].nunique()
+  # Condition pour appliquer l'algorithme de Jenks
+  if unique_values_pop80Pseul >= 5:
+    breaks = jenkspy.jenks_breaks(gdf['pop80Pseul'], 5)
+  else:
+    # Si moins de 5 valeurs uniques, ajuster le nombre de classes ou gérer autrement
+    if unique_values_pop80Pseul > 1:
+        breaks = jenkspy.jenks_breaks(gdf['pop80Pseul'], unique_values_pop80Pseul)
+    else:
+        # Si une seule valeur unique, créer une "classe" basique avec min et max
+        breaks = [gdf['pop80Pseul'].min(), gdf['pop80Pseul'].max()]
   m2 = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index('IRIS'),
-    name='choropleth',
-    data=df_iris,
-    columns=['IRIS', 'pop80Pseul'],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Part des plus de 80 ans vivant seuls',
-    bins=breaks
-  ).add_to(m2)
+  if unique_values_pop80Pseul >= 3:
+    # Ajouter la carte choroplèthe
+    folium.Choropleth(
+      geo_data=gdf.set_index('IRIS'),
+      name='choropleth',
+      data=df_iris,
+      columns=['IRIS', 'pop80Pseul'],
+      key_on='feature.id',
+      fill_color='YlOrRd',
+      fill_opacity=0.7,
+      line_opacity=0.2,
+      color='#ffffff',
+      weight=3,
+      opacity=1.0,
+      legend_name='Part des plus de 80 ans vivant seuls',
+      bins=breaks
+    ).add_to(m2)
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["LIBIRIS", "pop80Pseul"],
-        aliases=['Iris: ', "Part des plus de 80 ans vivant seuls :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+    style_function = lambda x: {'fillColor': '#ffffff',
+                            'color':'#000000',
+                            'fillOpacity': 0.1,
+                            'weight': 0.1}
+    highlight_function = lambda x: {'fillColor': '#000000',
+                                  'color':'#000000',
+                                  'fillOpacity': 0.50,
+                                  'weight': 0.1}
+    NIL = folium.features.GeoJson(
+      gdf,
+      style_function=style_function,
+      control=False,
+      highlight_function=highlight_function,
+      tooltip=folium.features.GeoJsonTooltip(
+          fields=["LIBIRIS", "pop80Pseul"],
+          aliases=['Iris: ', "Part des plus de 80 ans vivant seuls :"],
+          style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+      )
     )
-  )
-  m2.add_child(NIL)
-  m2.keep_in_front(NIL)
-  st.subheader("Les plus de 80 ans ans vivant seuls par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m2)
+    m2.add_child(NIL)
+    m2.keep_in_front(NIL)
+    st.subheader("Les plus de 80 ans ans vivant seuls par IRIS")
+    # Afficher la carte dans Streamlit
+    folium_st.folium_static(m2)
   #############################################################################
   st.header('7.Personnes immigrées')
   st.caption("Dernier millésime " + last_year + " - Paru le : 19/10/2023")
@@ -841,55 +848,68 @@ def app():
   gdf = gdf.merge(indice_imm_iris, left_on='fields.iris_code', right_on="Code de l'iris")
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  # Créer une nouvelle carte pour la répartition de la population par iris
   # Supprimer les lignes avec NaN pour le calcul de la méthode de Jenks
   gdf = gdf.dropna(subset=["Part des personnes immigrées"])
   # S'assurer que toutes les valeurs sont finies
   gdf = gdf[pd.to_numeric(gdf["Part des personnes immigrées"], errors='coerce').notnull()]
-  breaks = jenkspy.jenks_breaks(gdf["Part des personnes immigrées"], 5)
-  m3 = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("fields.iris_code"),
-    name='choropleth',
-    data=indice_imm_iris,
-    columns=["Code de l'iris", "Part des personnes immigrées"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Part des personnes immigrées',
-    bins=breaks
-  ).add_to(m3)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Part des personnes immigrées"].nunique()
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["Nom de l'iris", "Part des personnes immigrées"],
-        aliases=['Iris: ', "Part des personnes immigrées :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m3.add_child(NIL)
-  m3.keep_in_front(NIL)
-  st.subheader("Part des personnes immigrées")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m3)
+  # Ajustement du nombre de classes pour l'algorithme de Jenks si nécessaire
+  if unique_values >= 5:
+      # Assez de valeurs uniques pour 5 classes
+      breaks = jenkspy.jenks_breaks(gdf["Part des personnes immigrées"], 5)
+      m3 = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("fields.iris_code"),
+          name='choropleth',
+          data=indice_imm_iris,
+          columns=["Code de l'iris", "Part des personnes immigrées"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Part des personnes immigrées',
+          bins=breaks
+      ).add_to(m3)
+
+      style_function = lambda x: {'fillColor': '#ffffff',
+                                  'color':'#000000',
+                                  'fillOpacity': 0.1,
+                                  'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000',
+                                      'color':'#000000',
+                                      'fillOpacity': 0.50,
+                                      'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["Nom de l'iris", "Part des personnes immigrées"],
+              aliases=['Iris: ', "Part des personnes immigrées :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m3.add_child(NIL)
+      m3.keep_in_front(NIL)
+      st.subheader("Part des personnes immigrées")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m3)
+  elif unique_values > 1:
+      # Quelques valeurs uniques, mais pas assez pour 5 classes
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe avec 5 classes. Envisagez d'ajuster le nombre de classes.")
+  else:
+      # Pas assez de valeurs uniques pour une carte significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe.")
+
   #############
   st.subheader("Comparaison")
   st.caption("ATTENTION, pour agréger j'ai repris les IRIS, pour agrégé à partir de l'échelle commune les bases imm et etrangers sont isolées, à refaire....")
@@ -991,59 +1011,63 @@ def app():
   # Convertir les coordonnées des frontières en objets Polygon ou MultiPolygon
   gdf['geometry'] = gdf['fields.geo_shape.coordinates'].apply(to_multipolygon)
 
-  # Joindre le dataframe de population avec le GeoDataFrame
+ # Joindre le dataframe de population avec le GeoDataFrame
   gdf = gdf.merge(indice_etr_iris, left_on='fields.iris_code', right_on="Code de l'iris")
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  # Créer une nouvelle carte pour la répartition de la population par iris
   # Supprimer les lignes avec NaN pour le calcul de la méthode de Jenks
   gdf = gdf.dropna(subset=["Part des personnes étrangères"])
   # S'assurer que toutes les valeurs sont finies
   gdf = gdf[pd.to_numeric(gdf["Part des personnes étrangères"], errors='coerce').notnull()]
-  breaks = jenkspy.jenks_breaks(gdf["Part des personnes étrangères"], 5)
-  m4 = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("fields.iris_code"),
-    name='choropleth',
-    data=indice_etr_iris,
-    columns=["Code de l'iris", "Part des personnes étrangères"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Part des personnes étrangères',
-    bins=breaks
-  ).add_to(m4)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Part des personnes étrangères"].nunique()
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["Nom de l'iris", "Part des personnes étrangères"],
-        aliases=['Iris: ', "Part des personnes étrangères :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m4.add_child(NIL)
-  m4.keep_in_front(NIL)
-  st.subheader("Part des personnes étrangères")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m4)
+  # Ajustement du nombre de classes pour l'algorithme de Jenks si nécessaire
+  if unique_values >= 5:
+      # Assez de valeurs uniques pour 5 classes
+      breaks = jenkspy.jenks_breaks(gdf["Part des personnes étrangères"], 5)
+      m4 = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("fields.iris_code"),
+          name='choropleth',
+          data=indice_etr_iris,
+          columns=["Code de l'iris", "Part des personnes étrangères"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Part des personnes étrangères',
+          bins=breaks
+      ).add_to(m4)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["Nom de l'iris", "Part des personnes étrangères"],
+              aliases=['Iris: ', "Part des personnes étrangères :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m4.add_child(NIL)
+      m4.keep_in_front(NIL)
+      st.subheader("Part des personnes étrangères")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m4)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
+
 
   #############
   st.subheader("Comparaison")
@@ -1097,7 +1121,7 @@ def app():
     map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
     map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', "TX_TOT_ET" ]]
     map_qpv_df_code_insee_extract
-    df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+    df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(r'(?<!-)\b{}\b'.format(nom_ville))]
     df_qpv = df_qpv.reset_index(drop=True)
     df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp','TX_TOT_ET']]
     df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", "TX_TOT_ET" : "Part des étrangers " + select_annee_pop_etr})

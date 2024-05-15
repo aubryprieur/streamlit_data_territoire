@@ -1,4 +1,5 @@
 import streamlit as st
+from .utils import remove_comma, round_to_two, round_to_zero
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -51,6 +52,7 @@ def app():
   df_iris = df_iris[["IRIS", "LIBIRIS", "P" + year + "_SAL15P_TP", "P" + year + "_SAL15P"]]
   df_iris = df_iris.reset_index(drop=True)
   df_iris["tx_temps_partiel"] = ( df_iris["P" + year + "_SAL15P_TP"] / df_iris["P" + year + "_SAL15P"] ) * 100
+  df_iris["tx_temps_partiel"] = df_iris["tx_temps_partiel"].round(2)
   st.write(df_iris)
 
   #################################
@@ -82,6 +84,7 @@ def app():
   #Comparaison
   d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part du temps partiel de 15 à 64 ans - " + annee_reference + " (en %)": [tpartiel_com, tpartiel_epci, tpartiel_dep, tpartiel_reg, tpartiel_fr]}
   df_global_tp = pd.DataFrame(data=d)
+  df_global_tp["tx_temps_partiel"] = df_global_tp["Part du temps partiel de 15 à 64 ans - " + annee_reference + " (en %)"].round(2)
   st.write(df_global_tp)
   #####################
   # Carte Temps partiel
@@ -129,57 +132,59 @@ def app():
 
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  # Calcul des intervals avec la méthode de Jenks
-  # Supprimer les lignes avec NaN pour le calcul de la méthode de Jenks
+
+  # Nettoyer les données en supprimant les NaN et en s'assurant que toutes les valeurs sont numériques
+  gdf['tx_temps_partiel'] = pd.to_numeric(gdf['tx_temps_partiel'], errors='coerce')
   gdf = gdf.dropna(subset=['tx_temps_partiel'])
-  # S'assurer que toutes les valeurs sont finies
-  gdf = gdf[pd.to_numeric(gdf['tx_temps_partiel'], errors='coerce').notnull()]
-  breaks = jenkspy.jenks_breaks(gdf['tx_temps_partiel'], 5)
-  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("IRIS"),
-    name='choropleth',
-    data=gdf,
-    columns=["IRIS", "tx_temps_partiel"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Taux de temps partiel',
-    bins=breaks
-  ).add_to(m)
+  # Vérifier le nombre de valeurs uniques
+  unique_values = gdf['tx_temps_partiel'].nunique()
 
-  folium.LayerControl().add_to(m)
+  if unique_values >= 5:
+      # Assez de valeurs uniques pour calculer 5 breaks avec la méthode de Jenks
+      breaks = jenkspy.jenks_breaks(gdf['tx_temps_partiel'], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["LIBIRIS", "tx_temps_partiel"],
-        aliases=['Iris: ', "Taux de temps partiel :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m.add_child(NIL)
-  m.keep_in_front(NIL)
-  st.subheader("Taux de temps partiel par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m)
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("IRIS"),
+          name='choropleth',
+          data=gdf,
+          columns=["IRIS", "tx_temps_partiel"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Taux de temps partiel',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["LIBIRIS", "tx_temps_partiel"],
+              aliases=['Iris: ', "Taux de temps partiel :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Taux de temps partiel par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
 
   ###########################################################################
   st.header("Taux de chomage des 15-64 ans")
@@ -191,6 +196,8 @@ def app():
   df_iris = df_iris[["IRIS", "LIBIRIS", "P" + year + "_CHOM1564", "P" + year +"_ACT1564"]]
   df_iris = df_iris.reset_index(drop=True)
   df_iris["tx_chomage"] = ( df_iris["P" + year + "_CHOM1564"] / df_iris["P" + year + "_ACT1564"] ) * 100
+  df_iris["tx_chomage"] = df_iris["tx_chomage"].round(2)
+  df_iris["P" + year +"_ACT1564"] = df_iris["P" + year +"_ACT1564"].apply(remove_comma)
   st.write(df_iris)
   #############################
 
@@ -222,6 +229,7 @@ def app():
   #Comparaison
   d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part des chômeurs de 15 à 64 ans - " + annee_reference + " (en %)": [chom_com, chom_epci, chom_dep, chom_reg, chom_fr]}
   df = pd.DataFrame(data=d)
+  df["Part des chômeurs de 15 à 64 ans - " + annee_reference + " (en %)"] = df["Part des chômeurs de 15 à 64 ans - " + annee_reference + " (en %)"].round(2)
   st.write(df)
   ########################
 
@@ -270,56 +278,60 @@ def app():
 
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  # Supprimer les lignes avec NaN pour le calcul de la méthode de Jenks
+
+  # Nettoyage des données en supprimant les NaN et conversion en numérique
+  gdf['tx_chomage'] = pd.to_numeric(gdf['tx_chomage'], errors='coerce')
   gdf = gdf.dropna(subset=['tx_chomage'])
-  # S'assurer que toutes les valeurs sont finies
-  gdf = gdf[pd.to_numeric(gdf['tx_chomage'], errors='coerce').notnull()]
-  breaks = jenkspy.jenks_breaks(gdf['tx_chomage'], 5)
-  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("IRIS"),
-    name='choropleth',
-    data=gdf,
-    columns=["IRIS", "tx_chomage"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Part des chômeurs de 15-64 ans',
-    bins=breaks
-  ).add_to(m)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf['tx_chomage'].nunique()
 
-  folium.LayerControl().add_to(m)
+  if unique_values >= 5:
+      # Calcul des breaks avec la méthode de Jenks si suffisamment de valeurs uniques
+      breaks = jenkspy.jenks_breaks(gdf['tx_chomage'], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["LIBIRIS", "tx_chomage"],
-        aliases=['Iris: ', "Taux de chômage :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m.add_child(NIL)
-  m.keep_in_front(NIL)
-  st.subheader("Part des chômeurs de 15-64 ans par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m)
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("IRIS"),
+          name='choropleth',
+          data=gdf,
+          columns=["IRIS", "tx_chomage"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Part des chômeurs de 15-64 ans',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["LIBIRIS", "tx_chomage"],
+              aliases=['Iris: ', "Taux de chômage :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Part des chômeurs de 15-64 ans par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
+
   ###########################################################################
 
   st.header("Taux d'emploi des 15-64 ans")
@@ -333,7 +345,7 @@ def app():
     map_qpv_df_code_insee = map_qpv_df.merge(df, left_on='code_qp', right_on='CODGEO')
     map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'TX_TOT_EMPL' ]]
     map_qpv_df_code_insee_extract
-    df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+    df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(r'(?<!-)\b{}\b'.format(nom_ville))]
     df_qpv = df_qpv.reset_index(drop=True)
     df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp', 'TX_TOT_EMPL']]
     df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", 'TX_TOT_EMPL' : "Taux d'emploi des 15/65 ans " + last_year_qpv})
@@ -354,14 +366,14 @@ def app():
     if int(annee) >= 2021:
       map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'TX_TOT_EDLIM' ]]
       map_qpv_df_code_insee_extract
-      df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+      df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(r'(?<!-)\b{}\b'.format(nom_ville))]
       df_qpv = df_qpv.reset_index(drop=True)
       df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp', 'TX_TOT_EDLIM']]
       df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", 'TX_TOT_EDLIM' : "Part des emplois à durée limitée " + last_year_qpv})
     else:
       map_qpv_df_code_insee_extract = map_qpv_df_code_insee[['nom_qp', 'code_qp', 'commune_qp','code_insee', 'TX_TOT_EPREC' ]]
       map_qpv_df_code_insee_extract
-      df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(nom_ville + "(,|$)")]
+      df_qpv = map_qpv_df_code_insee_extract.loc[map_qpv_df_code_insee_extract["commune_qp"].str.contains(r'(?<!-)\b{}\b'.format(nom_ville))]
       df_qpv = df_qpv.reset_index(drop=True)
       df_qpv = df_qpv[['code_qp', 'nom_qp','commune_qp', 'TX_TOT_EPREC']]
       df_qpv = df_qpv.rename(columns={'nom_qp': "Nom du quartier",'code_qp' : "Code du quartier", "commune_qp" : "Communes concernées", 'TX_TOT_EPREC' : "Part des emplois à durée limitée " + last_year_qpv})

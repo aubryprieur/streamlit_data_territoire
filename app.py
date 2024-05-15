@@ -1,6 +1,6 @@
 import streamlit as st
 from multiapp import MultiApp
-from pages import accueil, population, revenu, activite, personnes_agees, familles, petite_enfance, jeunesse, diplomes, logement, caf, sante, epci, qpv # import your app modules here
+from pages import accueil, population, revenu, activite, personnes_agees, familles, petite_enfance, jeunesse, diplomes, logement, caf, sante, tranquilite, epci, qpv # import your app modules here
 
 app = MultiApp()
 
@@ -17,6 +17,7 @@ app.add_app("Diplômes", diplomes.app)
 app.add_app("Logement", logement.app)
 app.add_app("CAF", caf.app)
 app.add_app("Santé", sante.app)
+app.add_app("Tranquilité", tranquilite.app)
 app.add_app("Epci", epci.app)
 app.add_app("Qpv", qpv.app)
 

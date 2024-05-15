@@ -124,17 +124,24 @@ def app():
   st.subheader("3.Taux de couverture global - Accueil jeune enfant")
   st.caption("Capacité théorique d'accueil des enfants de moins de 3 ans par les modes d'accueil 'formels' pour 100 enfants de moins de 3 ans.")
   st.caption("Les modes d'accueil formels regroupent : l'assistant(e) maternel(le) employé(e) directement par des particuliers, le salarié(e) à domicile, l'accueil en Eaje (collectif, familial et parental, micro-crèches) et l'école maternelle")
-  st.caption("Source : CAF 2020")
-  df = pd.read_csv("./petite_enfance/caf/TAUXCOUV2020.csv", dtype={"NUM_COM": str}, sep=";")
-  df = df.loc[df['NUM_COM'] == code_commune]
-  tx_com = df.iloc[0]['TAUXCOUV_COMM']
-  tx_epci = df.iloc[0]['TAUXCOUV_EPCI']
-  tx_dep = float(df.iloc[0]['TAUXCOUV_DEP'])
-  tx_reg = float(df.iloc[0]['TAUXCOUV_REG'])
-  tx_nat = df.iloc[0]['TAUXCOUV_NAT']
-  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Taux de couverture globale - 2020 (en %)": [tx_com, tx_epci, tx_dep, tx_reg, tx_nat]}
-  df = pd.DataFrame(data=d)
-  st.write(df)
+  st.caption("Source : ONAPE(Cnaf,Drees,Insee,CCMSA,MENESR-Depp,Acoss) - Millésime 2021 - Créé le 20 Octobre 2023 et mise à jour le 9 Janvier 2024")
+  last_year_caf = "2021"
+  df = pd.read_csv("./petite_enfance/caf/TAUXCOUV" + last_year_caf + ".csv", dtype={"NUM_COM": str}, sep=";")
+  code_commune_caf = code_commune.lstrip('0')
+  df = df.loc[df['NUMCOM'] == code_commune_caf]
+  # Vérifiez si le DataFrame est vide après le filtrage
+  if df.empty:
+      st.error("Aucune donnée trouvée pour le code de commune spécifié.")
+  else:
+    # Continuez avec le reste de votre traitement ici
+    tx_com = float(df.iloc[0]['tauxcouv_com'])
+    tx_epci = float(df.iloc[0]['tauxcouv_epci'])
+    tx_dep = float(df.iloc[0]['tauxcouv_dep'])
+    tx_reg = float(df.iloc[0]['tauxcouv_reg'])
+    tx_nat = float(df.iloc[0]['tauxcouv_fe'])
+    d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Taux de couverture globale - " + last_year_caf + " (en %)": [tx_com, tx_epci, tx_dep, tx_reg, tx_nat]}
+    df = pd.DataFrame(data=d)
+    st.write(df)
 
   #Surrepresentation de la commune
   if tx_com < tx_epci and tx_com < tx_dep and tx_com < tx_reg and tx_com < tx_nat:
@@ -368,52 +375,60 @@ def app():
 
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  breaks = jenkspy.jenks_breaks(gdf["Part_scol0205"], 5)
-  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("IRIS"),
-    name='choropleth',
-    data=gdf,
-    columns=["IRIS", "Part_scol0205"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Part des enfants de 2 à 5 ans scolarisés',
-    bins=breaks
-  ).add_to(m)
+  # Nettoyage des données en supprimant les NaN et conversion en numérique
+  gdf["Part_scol0205"] = pd.to_numeric(gdf["Part_scol0205"], errors='coerce')
+  gdf = gdf.dropna(subset=["Part_scol0205"])
 
-  folium.LayerControl().add_to(m)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Part_scol0205"].nunique()
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["LIBIRIS", "Part_scol0205"],
-        aliases=['Iris: ', "Part des enfants de 2 à 5 ans scolarisés :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m.add_child(NIL)
-  m.keep_in_front(NIL)
-  st.subheader("Part des enfants de 2 à 5 ans scolarisés par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m)
+  if unique_values >= 5:
+      # Calcul des breaks avec la méthode de Jenks si suffisamment de valeurs uniques
+      breaks = jenkspy.jenks_breaks(gdf["Part_scol0205"], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("IRIS"),
+          name='choropleth',
+          data=gdf,
+          columns=["IRIS", "Part_scol0205"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Part des enfants de 2 à 5 ans scolarisés',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["LIBIRIS", "Part_scol0205"],
+              aliases=['Iris: ', "Part des enfants de 2 à 5 ans scolarisés :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Part des enfants de 2 à 5 ans scolarisés par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
+
 
 
 

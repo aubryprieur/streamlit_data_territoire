@@ -113,52 +113,60 @@ def app():
 
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  breaks = jenkspy.jenks_breaks(gdf["Part des familles monoparentales (" + last_year + ")"], 5)
-  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("Code de l'iris"),
-    name='choropleth',
-    data=gdf,
-    columns=["Code de l'iris", "Part des familles monoparentales (" + last_year + ")"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Part des familles monoparentales',
-    bins=breaks
-  ).add_to(m)
+  # Nettoyage des données en supprimant les NaN et conversion en numérique
+  gdf["Part des familles monoparentales (" + last_year + ")"] = pd.to_numeric(gdf["Part des familles monoparentales (" + last_year + ")"], errors='coerce')
+  gdf = gdf.dropna(subset=["Part des familles monoparentales (" + last_year + ")"])
 
-  folium.LayerControl().add_to(m)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Part des familles monoparentales (" + last_year + ")"].nunique()
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["Nom de l'iris", "Part des familles monoparentales (" + last_year + ")"],
-        aliases=['Iris: ', "Part des familles monoparentales :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m.add_child(NIL)
-  m.keep_in_front(NIL)
-  st.subheader("Part des familles monoparentales par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m)
+  if unique_values >= 5:
+      # Calcul des breaks avec la méthode de Jenks si suffisamment de valeurs uniques
+      breaks = jenkspy.jenks_breaks(gdf["Part des familles monoparentales (" + last_year + ")"], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("Code de l'iris"),
+          name='choropleth',
+          data=gdf,
+          columns=["Code de l'iris", "Part des familles monoparentales (" + last_year + ")"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Part des familles monoparentales',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["Nom de l'iris", "Part des familles monoparentales (" + last_year + ")"],
+              aliases=['Iris: ', "Part des familles monoparentales :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Part des familles monoparentales par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
+
 
   #################################
   st.subheader("a.Comparaison sur une année")
@@ -500,52 +508,60 @@ def app():
 
   # Créer une carte centrée autour de la latitude et longitude moyenne
   map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-  breaks = jenkspy.jenks_breaks(gdf["Part des familles nombreuses (" + last_year + ") en %"], 5)
-  m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
 
-  # Ajouter la carte choroplèthe
-  folium.Choropleth(
-    geo_data=gdf.set_index("Code de l'iris"),
-    name='choropleth',
-    data=gdf,
-    columns=["Code de l'iris", "Part des familles nombreuses (" + last_year + ") en %"],
-    key_on='feature.id',
-    fill_color='YlOrRd',
-    fill_opacity=0.7,
-    line_opacity=0.2,
-    color='#ffffff',
-    weight=3,
-    opacity=1.0,
-    legend_name='Part des familles nombreuses',
-    bins=breaks
-  ).add_to(m)
+  # Nettoyage des données en supprimant les NaN et conversion en numérique
+  gdf["Part des familles nombreuses (" + last_year + ") en %"] = pd.to_numeric(gdf["Part des familles nombreuses (" + last_year + ") en %"], errors='coerce')
+  gdf = gdf.dropna(subset=["Part des familles nombreuses (" + last_year + ") en %"])
 
-  folium.LayerControl().add_to(m)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Part des familles nombreuses (" + last_year + ") en %"].nunique()
 
-  style_function = lambda x: {'fillColor': '#ffffff',
-                          'color':'#000000',
-                          'fillOpacity': 0.1,
-                          'weight': 0.1}
-  highlight_function = lambda x: {'fillColor': '#000000',
-                                'color':'#000000',
-                                'fillOpacity': 0.50,
-                                'weight': 0.1}
-  NIL = folium.features.GeoJson(
-    gdf,
-    style_function=style_function,
-    control=False,
-    highlight_function=highlight_function,
-    tooltip=folium.features.GeoJsonTooltip(
-        fields=["Nom de l'iris", "Part des familles nombreuses (" + last_year + ") en %"],
-        aliases=['Iris: ', "Part des familles nombreuses :"],
-        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
-    )
-  )
-  m.add_child(NIL)
-  m.keep_in_front(NIL)
-  st.subheader("Part des familles nombreuses par IRIS")
-  # Afficher la carte dans Streamlit
-  folium_st.folium_static(m)
+  if unique_values >= 5:
+      # Calcul des breaks avec la méthode de Jenks si suffisamment de valeurs uniques
+      breaks = jenkspy.jenks_breaks(gdf["Part des familles nombreuses (" + last_year + ") en %"], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("Code de l'iris"),
+          name='choropleth',
+          data=gdf,
+          columns=["Code de l'iris", "Part des familles nombreuses (" + last_year + ") en %"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Part des familles nombreuses',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["Nom de l'iris", "Part des familles nombreuses (" + last_year + ") en %"],
+              aliases=['Iris: ', "Part des familles nombreuses :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
+      )
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Part des familles nombreuses par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
+
 
   #################################
   st.subheader("a.Comparaison sur une année")
@@ -835,57 +851,65 @@ def app():
             return Polygon(coords)
 
 
-    # Convertir les coordonnées des frontières en objets Polygon ou MultiPolygon
-    gdf['geometry'] = gdf['fields.geo_shape.coordinates'].apply(to_multipolygon)
+  # Convertir les coordonnées des frontières en objets Polygon ou MultiPolygon
+  gdf['geometry'] = gdf['fields.geo_shape.coordinates'].apply(to_multipolygon)
 
-    # Joindre le dataframe de population avec le GeoDataFrame
-    gdf = gdf.merge(taille_menages, left_on='fields.iris_code', right_on="Code de l'iris")
+  # Joindre le dataframe de population avec le GeoDataFrame
+  gdf = gdf.merge(taille_menages, left_on='fields.iris_code', right_on="Code de l'iris")
 
-    # Créer une carte centrée autour de la latitude et longitude moyenne
-    map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
-    breaks = jenkspy.jenks_breaks(gdf["Taille moyenne des ménages (" + last_year + ")"], 5)
-    m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+  # Créer une carte centrée autour de la latitude et longitude moyenne
+  map_center = [gdf['geometry'].centroid.y.mean(), gdf['geometry'].centroid.x.mean()]
 
-    # Ajouter la carte choroplèthe
-    folium.Choropleth(
-      geo_data=gdf.set_index("Code de l'iris"),
-      name='choropleth',
-      data=gdf,
-      columns=["Code de l'iris", "Taille moyenne des ménages (" + last_year + ")"],
-      key_on='feature.id',
-      fill_color='YlOrRd',
-      fill_opacity=0.7,
-      line_opacity=0.2,
-      color='#ffffff',
-      weight=3,
-      opacity=1.0,
-      legend_name='Taille moyenne des ménages',
-      bins=breaks
-    ).add_to(m)
+  # Nettoyage des données en supprimant les NaN et conversion en numérique
+  gdf["Taille moyenne des ménages (" + last_year + ")"] = pd.to_numeric(gdf["Taille moyenne des ménages (" + last_year + ")"], errors='coerce')
+  gdf = gdf.dropna(subset=["Taille moyenne des ménages (" + last_year + ")"])
 
-    folium.LayerControl().add_to(m)
+  # Vérification du nombre de valeurs uniques
+  unique_values = gdf["Taille moyenne des ménages (" + last_year + ")"].nunique()
 
-    style_function = lambda x: {'fillColor': '#ffffff',
-                            'color':'#000000',
-                            'fillOpacity': 0.1,
-                            'weight': 0.1}
-    highlight_function = lambda x: {'fillColor': '#000000',
-                                  'color':'#000000',
-                                  'fillOpacity': 0.50,
-                                  'weight': 0.1}
-    NIL = folium.features.GeoJson(
-      gdf,
-      style_function=style_function,
-      control=False,
-      highlight_function=highlight_function,
-      tooltip=folium.features.GeoJsonTooltip(
-          fields=["Nom de l'iris", "Taille moyenne des ménages (" + last_year + ")"],
-          aliases=['Iris: ', "Taille moyenne des ménages :"],
-          style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+  if unique_values >= 5:
+      # Calcul des breaks avec la méthode de Jenks si suffisamment de valeurs uniques
+      breaks = jenkspy.jenks_breaks(gdf["Taille moyenne des ménages (" + last_year + ")"], 5)
+      m = folium.Map(location=map_center, zoom_start=12, control_scale=True, tiles='cartodb positron', attr='SCOP COPAS')
+
+      # Ajouter la carte choroplèthe
+      folium.Choropleth(
+          geo_data=gdf.set_index("Code de l'iris"),
+          name='choropleth',
+          data=gdf,
+          columns=["Code de l'iris", "Taille moyenne des ménages (" + last_year + ")"],
+          key_on='feature.id',
+          fill_color='YlOrRd',
+          fill_opacity=0.7,
+          line_opacity=0.2,
+          color='#ffffff',
+          weight=3,
+          opacity=1.0,
+          legend_name='Taille moyenne des ménages',
+          bins=breaks
+      ).add_to(m)
+
+      folium.LayerControl().add_to(m)
+
+      style_function = lambda x: {'fillColor': '#ffffff', 'color':'#000000', 'fillOpacity': 0.1, 'weight': 0.1}
+      highlight_function = lambda x: {'fillColor': '#000000', 'color':'#000000', 'fillOpacity': 0.50, 'weight': 0.1}
+      NIL = folium.features.GeoJson(
+          gdf,
+          style_function=style_function,
+          control=False,
+          highlight_function=highlight_function,
+          tooltip=folium.features.GeoJsonTooltip(
+              fields=["Nom de l'iris", "Taille moyenne des ménages (" + last_year + ")"],
+              aliases=['Iris: ', "Taille moyenne des ménages :"],
+              style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;")
+          )
       )
-    )
-    m.add_child(NIL)
-    m.keep_in_front(NIL)
-    st.subheader("Taille moyenne des ménages par IRIS")
-    # Afficher la carte dans Streamlit
-    folium_st.folium_static(m)
+      m.add_child(NIL)
+      m.keep_in_front(NIL)
+      st.subheader("Taille moyenne des ménages par IRIS")
+      # Afficher la carte dans Streamlit
+      folium_st.folium_static(m)
+  else:
+      # Pas assez de valeurs uniques pour une visualisation significative
+      st.warning("Pas assez de diversité dans les données pour afficher une carte choroplèthe significative.")
+
