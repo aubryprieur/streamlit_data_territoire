@@ -207,7 +207,7 @@ def app():
         df_part_sans_diplome = pd.DataFrame({'part_sans_diplome': [part_pop_non_scol_sans_diplome]})
         df_part_sans_diplome['LIBGEO'] = nom_region
         return df_part_sans_diplome
-    valeurs_sans_diplome_reg = part_sans_diplome_region("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv",str(round(code_region)), nom_region, last_year)
+    valeurs_sans_diplome_reg = part_sans_diplome_region("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv",code_region, nom_region, last_year)
     # France
     def part_sans_diplome_France(fichier, annee):
         df = pd.read_csv(fichier, dtype={"DEP": str, "REG": str, "CODGEO": str}, sep = ';')
@@ -248,7 +248,7 @@ def app():
     df_evolution_com = evolution_part_sans_diplome(part_sans_diplome_com, nom_commune, code_commune)
     df_evolution_epci = evolution_part_sans_diplome(part_sans_diplome_epci, nom_epci, code_epci)
     df_evolution_departement = evolution_part_sans_diplome(part_sans_diplome_departement, nom_departement, code_departement, nom_departement)
-    df_evolution_region = evolution_part_sans_diplome(part_sans_diplome_region, nom_region, str(round(code_region)), nom_region)
+    df_evolution_region = evolution_part_sans_diplome(part_sans_diplome_region, nom_region, code_region, nom_region)
     df_evolution_France = evolution_part_sans_diplome(part_sans_diplome_France, 'France')
     df_evolution_final = df_evolution_com.merge(df_evolution_epci, on='Année')\
                                          .merge(df_evolution_departement, on='Année')\
@@ -505,7 +505,7 @@ def app():
         part_pop_non_scol_etude_sup = (pop_non_scol_etude_sup / pop_non_scol)*100
         df_part_pop_non_scol_etude_sup = pd.DataFrame(data=part_pop_non_scol_etude_sup, columns = ["Part des personnes titulaires d'un diplôme de l'enseignement supérieur " + annee], index = [nom_region])
         return df_part_pop_non_scol_etude_sup
-    valeurs_etude_sup_reg = part_etude_sup_region("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv",str(round(code_region)),last_year)
+    valeurs_etude_sup_reg = part_etude_sup_region("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv",code_region,last_year)
     # France
     def part_etude_sup_France(fichier, annee):
         df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
@@ -551,7 +551,7 @@ def app():
     df_evolution_etudes_sup_com = evolution_part_etudes_sup(part_etude_sup_com, code_commune)
     df_evolution_etudes_sup_epci = evolution_part_etudes_sup(part_etude_sup_epci, code_epci)
     df_evolution_etudes_sup_departement = evolution_part_etudes_sup(part_etude_sup_departement, code_departement)
-    df_evolution_etudes_sup_region = evolution_part_etudes_sup(part_etude_sup_region, str(round(code_region)))
+    df_evolution_etudes_sup_region = evolution_part_etudes_sup(part_etude_sup_region, code_region)
     df_evolution_etudes_sup_France = evolution_part_etudes_sup(part_etude_sup_France)
 
     df_evolution_etudes_sup_final = df_evolution_etudes_sup_com.merge(df_evolution_etudes_sup_epci, on='Année', suffixes=('_com', '_epci'))\

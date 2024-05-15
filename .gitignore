@@ -12,6 +12,6 @@ QPV
 revenu
 sante
 tranquilite
-pages/__pycache__
+__pycache__/
 delinquance_2024.csv
 tranquilite/delinquance_2024.csv

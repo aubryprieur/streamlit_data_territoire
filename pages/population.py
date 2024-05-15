@@ -497,7 +497,7 @@ def app():
     pop75P = ((df_region.loc[:, "P" + year +"_POP7589"].sum() + df_region.loc[:, "P" + year +"_POP90P"].sum() )/ df_region["P" + year +"_POP"].sum()) * 100
     df_tranches_age_region = pd.DataFrame(data=[[nom_region,pop0014,pop1529,pop3044,pop4559,pop6074,pop75P]], columns = ["territoire","pop0014","pop1529","pop3044", "pop4559","pop6074", "pop75P"])
     return df_tranches_age_region
-  tranche_age_region = tranche_age_region("./population/commune/base-cc-evol-struct-pop-" + last_year + ".csv",str(round(code_region)), last_year)
+  tranche_age_region = tranche_age_region("./population/commune/base-cc-evol-struct-pop-" + last_year + ".csv", code_region, last_year)
   # France
   def tranche_age_france(fichier, annee):
     df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
@@ -567,7 +567,7 @@ def app():
   pop80Pseul = (df_dep['P' + year + '_POP80P_PSEUL'].sum() / df_dep['P' + year + '_POP80P'].sum()) * 100
   df_pop_seule_dep = pd.DataFrame(data=[[nom_departement,pop1519seul,pop2024seul,pop2539seul,pop4054seul,pop5564seul,pop6579seul, pop80Pseul]], columns = ["LIBGEO", "1519_seul", "2024_seul", "2539_seul", "4054_seul", "5564_seul", "6579_seul", "80P_seul"])
   #Région
-  df_reg = df.loc[df['REG'] == str(code_region)]
+  df_reg = df.loc[df['REG'] == code_region]
   df_reg = df_reg[["REG", "P" + year + "_POP1519_PSEUL", 'P' + year + '_POP2024_PSEUL', 'P' + year + '_POP2539_PSEUL', 'P' + year + '_POP4054_PSEUL', 'P' + year + '_POP5564_PSEUL', 'P' + year + '_POP6579_PSEUL', 'P' + year + '_POP80P_PSEUL', "P" + year + "_POP1519", 'P' + year + '_POP2024', 'P' + year + '_POP2539', 'P' + year + '_POP4054', 'P' + year + '_POP5564', 'P' + year + '_POP6579', 'P' + year + '_POP80P']]
   pop1519seul = ( df_reg['P' + year + '_POP1519_PSEUL'].sum() / df_reg['P' + year +'_POP1519'].sum() ) * 100
   pop2024seul = ( df_reg['P' + year + '_POP2024_PSEUL'].sum() / df_reg['P' + year + '_POP2024'].sum()) * 100

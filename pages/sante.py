@@ -58,7 +58,7 @@ def app():
     df_region = df.loc[df["codgeo"] == region]
     df_region = df_region.loc[df_region["an"] == "2013-2018"]
     return df_region
-  tx_mortalite_reg = tx_mortalite_region("./sante/taux_de_mortalite/insee_rp_evol_1968_region_2018.csv",str(round(code_region)))
+  tx_mortalite_reg = tx_mortalite_region("./sante/taux_de_mortalite/insee_rp_evol_1968_region_2018.csv",code_region)
 
   #France
   data = {'codgeo':['1'],
@@ -89,7 +89,7 @@ def app():
   apl_dpt = df_apl_dpt['apl_mg_hmep'].values[0]
   #Région
   df_apl_reg = pd.read_csv("./sante/apl/apl_medecin_generaliste_region_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
-  df_apl_reg = df_apl_reg.loc[df_apl_reg["codgeo"] == str(round(code_region))]
+  df_apl_reg = df_apl_reg.loc[df_apl_reg["codgeo"] == code_region]
   apl_reg = df_apl_reg['apl_mg_hmep'].values[0]
   #France
   apl_fr = "3,9"

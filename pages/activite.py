@@ -55,7 +55,7 @@ def app():
   df_dep = df_dep.reset_index(drop=True)
   tpartiel_dep = (df_dep.loc[:, "P" + year +"_SAL15P_TP"].sum() / df_dep["P" + year +"_SAL15P"].sum()) * 100
   #REG
-  df_reg = df.loc[df['REG'] == str(round(code_region))]
+  df_reg = df.loc[df['REG'] == code_region]
   df_reg = df_reg[["P" + year + "_SAL15P_TP", "P" + year + "_SAL15P"]]
   df_reg = df_reg.reset_index(drop=True)
   tpartiel_reg = (df_reg.loc[:, "P" + year +"_SAL15P_TP"].sum() / df_reg["P" + year +"_SAL15P"].sum()) * 100
@@ -200,7 +200,7 @@ def app():
   df_dep = df_dep.reset_index(drop=True)
   chom_dep = (df_dep.loc[:, "P" + year +"_CHOM1564"].sum() / df_dep["P" + year +"_ACT1564"].sum()) * 100
   #REG
-  df_reg = df.loc[df['REG'] == str(round(code_region))]
+  df_reg = df.loc[df['REG'] == code_region]
   df_reg = df_reg[["P" + year + "_CHOM1564", "P" + year + "_ACT1564"]]
   df_reg = df_reg.reset_index(drop=True)
   chom_reg = (df_reg.loc[:, "P" + year +"_CHOM1564"].sum() / df_reg["P" + year +"_ACT1564"].sum()) * 100

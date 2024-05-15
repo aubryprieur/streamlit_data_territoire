@@ -315,9 +315,9 @@ def app():
         return df_reg
 
     if int(last_year) < 2017:
-        valeurs_reg_iv = IV_region_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_reg_iv = IV_region_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_region,last_year)
     else :
-        valeurs_reg_iv = IV_region_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_reg_iv = IV_region_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_region,last_year)
 
     # France
     def IV_France(fichier, annee):
@@ -376,25 +376,25 @@ def app():
 
     #RÉGION
     #2014
-    valeur_iv_region_2014 = IV_region_M2017("./population/base-ic-evol-struct-pop-2014.csv",str(round(code_region)),'2014')
+    valeur_iv_region_2014 = IV_region_M2017("./population/base-ic-evol-struct-pop-2014.csv",code_region,'2014')
     indice_2014 = valeur_iv_region_2014['Indice de vieillissement en 2014'][0]
     #2015
-    valeur_iv_region_2015 = IV_region_M2017("./population/base-ic-evol-struct-pop-2015.csv",str(round(code_region)),'2015')
+    valeur_iv_region_2015 = IV_region_M2017("./population/base-ic-evol-struct-pop-2015.csv",code_region,'2015')
     indice_2015 = valeur_iv_region_2015['Indice de vieillissement en 2015'][0]
     #2016
-    valeur_iv_region_2016 = IV_region_M2017("./population/base-ic-evol-struct-pop-2016.csv",str(round(code_region)),'2016')
+    valeur_iv_region_2016 = IV_region_M2017("./population/base-ic-evol-struct-pop-2016.csv",code_region,'2016')
     indice_2016 = valeur_iv_region_2016['Indice de vieillissement en 2016'][0]
     #2017
-    valeur_iv_region_2017 = IV_region_P2017("./population/base-ic-evol-struct-pop-2017.csv",str(round(code_region)),'2017')
+    valeur_iv_region_2017 = IV_region_P2017("./population/base-ic-evol-struct-pop-2017.csv",code_region,'2017')
     indice_2017 = valeur_iv_region_2017['Indice de vieillissement en 2017'][0]
     #2018
-    valeur_iv_region_2018 = IV_region_P2017("./population/base-ic-evol-struct-pop-2018.csv",str(round(code_region)),'2018')
+    valeur_iv_region_2018 = IV_region_P2017("./population/base-ic-evol-struct-pop-2018.csv",code_region,'2018')
     indice_2018 = valeur_iv_region_2018['Indice de vieillissement en 2018'][0]
     #2019
-    valeur_iv_region_2019 = IV_region_P2017("./population/base-ic-evol-struct-pop-2019.csv",str(round(code_region)),'2019')
+    valeur_iv_region_2019 = IV_region_P2017("./population/base-ic-evol-struct-pop-2019.csv",code_region,'2019')
     indice_2019 = valeur_iv_region_2019['Indice de vieillissement en 2019'][0]
     #2020
-    valeur_iv_region_2020 = IV_region_P2017("./population/base-ic-evol-struct-pop-2020.csv",str(round(code_region)),'2020')
+    valeur_iv_region_2020 = IV_region_P2017("./population/base-ic-evol-struct-pop-2020.csv",code_region,'2020')
     indice_2020 = valeur_iv_region_2020['Indice de vieillissement en 2020'][0]
     df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019, indice_2020]]),
                        columns=['2014', '2015', '2016', '2017', '2018', '2019', '2020'], index=[nom_region])
@@ -722,9 +722,9 @@ def app():
         return df_reg
 
     if int(last_year) < 2017:
-        valeurs_reg_iv = IV_region_M2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_reg_iv = IV_region_M2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_region,last_year)
     else :
-        valeurs_reg_iv = IV_region_P2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_reg_iv = IV_region_P2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_region,last_year)
 
     # France
     def part80_seules_France(fichier, annee):
@@ -783,25 +783,25 @@ def app():
 
     #RÉGION
     #2014
-    valeur_part80_seules_region_2014 = IV_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",str(round(code_region)),'2014')
+    valeur_part80_seules_region_2014 = IV_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",code_region,'2014')
     indice_2014 = valeur_part80_seules_region_2014['Part des personnes de plus de 80 ans vivant seules 2014'][0]
     #2015
-    valeur_part80_seules_region_2015 = IV_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",str(round(code_region)),'2015')
+    valeur_part80_seules_region_2015 = IV_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",code_region,'2015')
     indice_2015 = valeur_part80_seules_region_2015['Part des personnes de plus de 80 ans vivant seules 2015'][0]
     #2016
-    valeur_part80_seules_region_2016 = IV_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",str(round(code_region)),'2016')
+    valeur_part80_seules_region_2016 = IV_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",code_region,'2016')
     indice_2016 = valeur_part80_seules_region_2016['Part des personnes de plus de 80 ans vivant seules 2016'][0]
     #2017
-    valeur_part80_seules_region_2017 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",str(round(code_region)),'2017')
+    valeur_part80_seules_region_2017 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",code_region,'2017')
     indice_2017 = valeur_part80_seules_region_2017['Part des personnes de plus de 80 ans vivant seules 2017'][0]
     #2018
-    valeur_part80_seules_region_2018 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",str(round(code_region)),'2018')
+    valeur_part80_seules_region_2018 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",code_region,'2018')
     indice_2018 = valeur_part80_seules_region_2018['Part des personnes de plus de 80 ans vivant seules 2018'][0]
     #2019
-    valeur_part80_seules_region_2019 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",str(round(code_region)),'2019')
+    valeur_part80_seules_region_2019 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",code_region,'2019')
     indice_2019 = valeur_part80_seules_region_2019['Part des personnes de plus de 80 ans vivant seules 2019'][0]
     #2020
-    valeur_part80_seules_region_2020 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2020.csv",str(round(code_region)),'2020')
+    valeur_part80_seules_region_2020 = IV_region_P2017("./famille/base-ic-couples-familles-menages-2020.csv",code_region,'2020')
     indice_2020 = valeur_part80_seules_region_2020['Part des personnes de plus de 80 ans vivant seules 2020'][0]
     df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
                        columns=['2014', '2015', '2016', '2017','2018', '2019', '2020'], index=[nom_region])
@@ -1028,9 +1028,9 @@ def app():
         return df_reg
 
     if int(last_year) < 2017:
-        indice_remplacement_reg = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
+        indice_remplacement_reg = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_region,last_year)
     else :
-        indice_remplacement_reg = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
+        indice_remplacement_reg = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_region,last_year)
 
     # France
     def part_remplacement_France(fichier, annee):
@@ -1089,25 +1089,25 @@ def app():
 
     #RÉGION
     #2014
-    valeur_part_remplacement_region_2014 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2014.csv",str(round(code_region)),'2014')
+    valeur_part_remplacement_region_2014 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2014.csv",code_region,'2014')
     indice_2014 = valeur_part_remplacement_region_2014['Indice de renouvellement des générations âgées 2014'][0]
     #2015
-    valeur_part_remplacement_region_2015 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2015.csv",str(round(code_region)),'2015')
+    valeur_part_remplacement_region_2015 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2015.csv",code_region,'2015')
     indice_2015 = valeur_part_remplacement_region_2015['Indice de renouvellement des générations âgées 2015'][0]
     #2016
-    valeur_part_remplacement_region_2016 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2016.csv",str(round(code_region)),'2016')
+    valeur_part_remplacement_region_2016 = part_remplacement_region_M2017("./population/base-ic-evol-struct-pop-2016.csv",code_region,'2016')
     indice_2016 = valeur_part_remplacement_region_2016['Indice de renouvellement des générations âgées 2016'][0]
     #2017
-    valeur_part_remplacement_region_2017 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2017.csv",str(round(code_region)),'2017')
+    valeur_part_remplacement_region_2017 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2017.csv",code_region,'2017')
     indice_2017 = valeur_part_remplacement_region_2017['Indice de renouvellement des générations âgées 2017'][0]
     #2018
-    valeur_part_remplacement_region_2018 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2018.csv",str(round(code_region)),'2018')
+    valeur_part_remplacement_region_2018 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2018.csv",code_region,'2018')
     indice_2018 = valeur_part_remplacement_region_2018['Indice de renouvellement des générations âgées 2018'][0]
     #2019
-    valeur_part_remplacement_region_2019 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2019.csv",str(round(code_region)),'2019')
+    valeur_part_remplacement_region_2019 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2019.csv",code_region,'2019')
     indice_2019 = valeur_part_remplacement_region_2019['Indice de renouvellement des générations âgées 2019'][0]
     #2020
-    valeur_part_remplacement_region_2020 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2020.csv",str(round(code_region)),'2020')
+    valeur_part_remplacement_region_2020 = part_remplacement_region_P2017("./population/base-ic-evol-struct-pop-2020.csv",code_region,'2020')
     indice_2020 = valeur_part_remplacement_region_2020['Indice de renouvellement des générations âgées 2020'][0]
     df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017,indice_2018,indice_2019,indice_2020]]),
                        columns=['2014', '2015', '2016', '2017','2018','2019', '2020'], index=[nom_region])

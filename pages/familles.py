@@ -262,9 +262,9 @@ def app():
         return df_Part_familles_mono
 
     if int(last_year) < 2017:
-        valeurs_fam_mono_reg = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_fam_mono_reg = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_region,last_year)
     else :
-        valeurs_fam_mono_reg = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_fam_mono_reg = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_region,last_year)
 
     # France
     def part_fam_mono_France(fichier, annee):
@@ -320,22 +320,22 @@ def app():
 
     #RÉGION
     #2014
-    valeur_part_fam_mono_region_2014 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",str(round(code_region)),'2014')
+    valeur_part_fam_mono_region_2014 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",code_region,'2014')
     indice_2014 = valeur_part_fam_mono_region_2014['Part des familles monoparentales 2014'][0]
     #2015
-    valeur_part_fam_mono_region_2015 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",str(round(code_region)),'2015')
+    valeur_part_fam_mono_region_2015 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",code_region,'2015')
     indice_2015 = valeur_part_fam_mono_region_2015['Part des familles monoparentales 2015'][0]
     #2016
-    valeur_part_fam_mono_region_2016 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",str(round(code_region)),'2016')
+    valeur_part_fam_mono_region_2016 = part_fam_mono_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",code_region,'2016')
     indice_2016 = valeur_part_fam_mono_region_2016['Part des familles monoparentales 2016'][0]
     #2017
-    valeur_part_fam_mono_region_2017 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",str(round(code_region)),'2017')
+    valeur_part_fam_mono_region_2017 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",code_region,'2017')
     indice_2017 = valeur_part_fam_mono_region_2017['Part des familles monoparentales 2017'][0]
     #2018
-    valeur_part_fam_mono_region_2018 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",str(round(code_region)),'2018')
+    valeur_part_fam_mono_region_2018 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",code_region,'2018')
     indice_2018 = valeur_part_fam_mono_region_2018['Part des familles monoparentales 2018'][0]
     #2019
-    valeur_part_fam_mono_region_2019 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",str(round(code_region)),'2019')
+    valeur_part_fam_mono_region_2019 = part_fam_mono_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",code_region,'2019')
     indice_2019 = valeur_part_fam_mono_region_2019['Part des familles monoparentales 2019'][0]
     df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
                        columns=['2014', '2015', '2016', '2017', '2018','2019'], index=[nom_region])
@@ -628,9 +628,9 @@ def app():
         return df_part_familles_nombreuses
 
     if int(last_year) < 2017:
-        valeurs_fam_nombreuses_reg = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_fam_nombreuses_reg = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_region,last_year)
     else :
-        valeurs_fam_nombreuses_reg = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_fam_nombreuses_reg = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-" + last_year + ".csv",code_region,last_year)
 
     # France
     def part_fam_nombreuses_France(fichier, annee):
@@ -682,22 +682,22 @@ def app():
 
     #RÉGION
     #2014
-    valeur_part_fam_nombreuses_region_2014 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",str(round(code_region)),'2014')
+    valeur_part_fam_nombreuses_region_2014 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2014.csv",code_region,'2014')
     indice_2014 = valeur_part_fam_nombreuses_region_2014['Part des familles nombreuses 2014'][0]
     #2015
-    valeur_part_fam_nombreuses_region_2015 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",str(round(code_region)),'2015')
+    valeur_part_fam_nombreuses_region_2015 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2015.csv",code_region,'2015')
     indice_2015 = valeur_part_fam_nombreuses_region_2015['Part des familles nombreuses 2015'][0]
     #2016
-    valeur_part_fam_nombreuses_region_2016 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",str(round(code_region)),'2016')
+    valeur_part_fam_nombreuses_region_2016 = part_fam_nombreuses_region_M2017("./famille/base-ic-couples-familles-menages-2016.csv",code_region,'2016')
     indice_2016 = valeur_part_fam_nombreuses_region_2016['Part des familles nombreuses 2016'][0]
     #2017
-    valeur_part_fam_nombreuses_region_2017 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",str(round(code_region)),'2017')
+    valeur_part_fam_nombreuses_region_2017 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2017.csv",code_region,'2017')
     indice_2017 = valeur_part_fam_nombreuses_region_2017['Part des familles nombreuses 2017'][0]
     #2018
-    valeur_part_fam_nombreuses_region_2018 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",str(round(code_region)),'2018')
+    valeur_part_fam_nombreuses_region_2018 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2018.csv",code_region,'2018')
     indice_2018 = valeur_part_fam_nombreuses_region_2018['Part des familles nombreuses 2018'][0]
     #2019
-    valeur_part_fam_nombreuses_region_2019 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",str(round(code_region)),'2019')
+    valeur_part_fam_nombreuses_region_2019 = part_fam_nombreuses_region_P2017("./famille/base-ic-couples-familles-menages-2019.csv",code_region,'2019')
     indice_2019 = valeur_part_fam_nombreuses_region_2019['Part des familles nombreuses 2019'][0]
     df_region_glob = pd.DataFrame(np.array([[indice_2014, indice_2015, indice_2016, indice_2017, indice_2018, indice_2019]]),
                        columns=['2014', '2015', '2016', '2017', '2018', '2019'], index=[nom_region])

@@ -641,9 +641,9 @@ def app():
         return df_reg
 
     if int(last_year) < 2017:
-        valeurs_reg_iv = IV_region_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_reg_iv = IV_region_M2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_region,last_year)
     else :
-        valeurs_reg_iv = IV_region_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",str(round(code_region)),last_year)
+        valeurs_reg_iv = IV_region_P2017("./population/base-ic-evol-struct-pop-" + last_year + ".csv",code_region,last_year)
 
     # France
     def IV_France(fichier, annee):
@@ -736,7 +736,7 @@ def app():
     df_region = df.loc[df["codgeo"] == region]
     df_region = df_region.loc[df_region["an"] == annee]
     return df_region
-  neet_reg = neet_region("./jeunesse/neet/region/neet_region_" + select_annee_neet + ".csv",str(round(code_region)), select_annee_neet)
+  neet_reg = neet_region("./jeunesse/neet/region/neet_region_" + select_annee_neet + ".csv",code_region, select_annee_neet)
   #France
   data = {'codgeo':['1'],
           'libgeo':['France'],
@@ -781,7 +781,7 @@ def app():
     df_region = df.loc[df["codgeo"] == region]
     df_region = df_region.loc[df_region["an"] == annee]
     return df_region
-  tx_lic_sport_0_14_reg = tx_licence_sport_0_14_region("./sante/sport/sport_0014/region/licsport_0014_region_" + select_annee_sport_0014 +".csv",str(round(code_region)), select_annee_sport_0014)
+  tx_lic_sport_0_14_reg = tx_licence_sport_0_14_region("./sante/sport/sport_0014/region/licsport_0014_region_" + select_annee_sport_0014 +".csv",code_region, select_annee_sport_0014)
 
   #France
   data = {'codgeo':['1'],
@@ -828,7 +828,7 @@ def app():
     df_region = df.loc[df["codgeo"] == region]
     df_region = df_region.loc[df_region["an"] == annee]
     return df_region
-  tx_lic_sport_0_14_filles_reg = tx_licence_sport_0_14_filles_region("./sante/sport/sport_0014_filles/region/licsport_0014_filles_region_" + select_annee_sport_0014 + ".csv",str(round(code_region)), select_annee_sport_0014)
+  tx_lic_sport_0_14_filles_reg = tx_licence_sport_0_14_filles_region("./sante/sport/sport_0014_filles/region/licsport_0014_filles_region_" + select_annee_sport_0014 + ".csv",code_region, select_annee_sport_0014)
 
   #France
   data = {'codgeo':['1'],

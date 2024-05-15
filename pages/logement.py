@@ -195,7 +195,7 @@ def app():
       part_hlm = (nb_residences_hlm / nb_residences)*100
       df_part_hlm = pd.DataFrame(data=part_hlm, columns = ['Part des hlm ' + annee], index = [nom_region])
       return df_part_hlm
-    indice_part_hlm_region =part_hlm_region("./logement/commune/base-cc-logement-" + last_year + ".csv",str(round(code_region)), last_year)
+    indice_part_hlm_region =part_hlm_region("./logement/commune/base-cc-logement-" + last_year + ".csv",code_region, last_year)
     # France
     def part_hlm_france(fichier, annee):
       df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
@@ -233,7 +233,7 @@ def app():
     df_evolution_hlm_com = evolution_part_hlm(part_hlm_com, code_commune)
     df_evolution_hlm_epci = evolution_part_hlm(part_hlm_epci, code_epci)
     df_evolution_hlm_departement = evolution_part_hlm(part_hlm_departement, code_departement)
-    df_evolution_hlm_region = evolution_part_hlm(part_hlm_region, str(round(code_region)))
+    df_evolution_hlm_region = evolution_part_hlm(part_hlm_region, code_region)
     df_evolution_hlm_France = evolution_part_hlm(part_hlm_france)
 
     df_evolution_hlm_final = df_evolution_hlm_com.merge(df_evolution_hlm_epci, on='Année', suffixes=('_com', '_epci'))\
@@ -411,7 +411,7 @@ def app():
       part_suroccup = (nb_residences_suroccup / nb_residences)*100
       df_part_suroccup = pd.DataFrame(data=part_suroccup, columns = ["Part des suroccup " + annee], index = [nom_region])
       return df_part_suroccup
-    indice_part_suroccup_region = part_suroccup_region("./logement/commune/base-cc-logement-" + last_year + ".csv",str(round(code_region)), last_year)
+    indice_part_suroccup_region = part_suroccup_region("./logement/commune/base-cc-logement-" + last_year + ".csv",code_region, last_year)
     # France
     def part_suroccup_france(fichier, annee):
       df = pd.read_csv(fichier, dtype={"CODGEO": str, "DEP": str, "REG": str}, sep = ';')
@@ -448,7 +448,7 @@ def app():
     df_evolution_suroccup_com = evolution_part_suroccup(part_suroccup_com, code_commune)
     df_evolution_suroccup_epci = evolution_part_suroccup(part_suroccup_epci, code_epci)
     df_evolution_suroccup_departement = evolution_part_suroccup(part_suroccup_departement, code_departement)
-    df_evolution_suroccup_region = evolution_part_suroccup(part_suroccup_region, str(round(code_region)))
+    df_evolution_suroccup_region = evolution_part_suroccup(part_suroccup_region, code_region)
     df_evolution_suroccup_France = evolution_part_suroccup(part_suroccup_france)
 
     df_evolution_suroccup_final = df_evolution_suroccup_com.merge(df_evolution_suroccup_epci, on='Année', suffixes=('_com', '_epci'))\

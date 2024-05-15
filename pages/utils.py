@@ -62,9 +62,15 @@ def afficher_infos_commune():
 
     # Déterminer la région
     code_region = df_commune.loc[df_commune['COM'] == code_commune, 'REG'].iloc[0]
-    df_region = pd.read_csv("./region2021.csv", dtype={"CHEFLIEU": str}, sep=",")
-    nom_region = df_region.loc[df_region['REG'] == code_region, 'LIBELLE'].iloc[0]
-    st.sidebar.write('Ma région:', str(round(code_region)), nom_region)
+    code_region = str(round(code_region))
+    # Lecture du fichier CSV des régions
+    df_region = pd.read_csv("./region2021.csv", dtype={"REG": str, "CHEFLIEU": str}, sep=",")
+    # Vérifier la correspondance avant d'accéder à l'élément
+    if code_region in df_region['REG'].values:
+        nom_region = df_region.loc[df_region['REG'] == code_region, 'LIBELLE'].iloc[0]
+    else:
+        nom_region = "Région non trouvée"
+    st.sidebar.write('Ma région:', code_region, nom_region)
 
     return code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region
 
