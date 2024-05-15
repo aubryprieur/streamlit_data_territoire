@@ -1,4 +1,5 @@
 import streamlit as st
+from .utils import afficher_infos_commune
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly_express as px
@@ -19,30 +20,8 @@ import jenkspy
 
 
 def app():
-  #Commune
-  df_commune = pd.read_csv("./commune_2021.csv", sep=",")
-  list_commune = df_commune.loc[:, 'LIBELLE']
-  nom_commune = st.sidebar.selectbox(
-       "Sélectionnez votre commune :",
-       options=list_commune)
-  code_commune = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'COM'].iloc[0]
-  st.sidebar.write('Ma commune:', code_commune, nom_commune)
-  #EPCI
-  df_epci = pd.read_csv("./EPCI_2020.csv", sep=";")
-  nom_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'LIBEPCI'].iloc[0]
-  code_epci = df_epci.loc[df_epci['CODGEO'] == code_commune, 'EPCI'].iloc[0]
-  st.sidebar.write('Mon EPCI:', code_epci, nom_epci)
-  #Département
-  code_departement = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'DEP'].iloc[0]
-  df_departement = pd.read_csv("./departement2021.csv", dtype={"CHEFLIEU": str}, sep=",")
-  nom_departement = df_departement.loc[df_departement['DEP'] == code_departement, 'LIBELLE'].iloc[0]
-  st.sidebar.write('Mon département:', code_departement, nom_departement)
-  #Région
-  code_region = df_commune.loc[df_commune['LIBELLE'] == nom_commune, 'REG'].iloc[0]
-  code_region = round(code_region)
-  df_region = pd.read_csv("./region2021.csv", dtype={"CHEFLIEU": str}, sep=",")
-  nom_region = df_region.loc[df_region['REG'] == code_region, 'LIBELLE'].iloc[0]
-  st.sidebar.write('Ma région:', str(round(code_region)), nom_region)
+  # Appeler la fonction et récupérer les informations
+  (code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region) = afficher_infos_commune()
 
   #############################################################################
   st.title("👦👧 JEUNESSE")
