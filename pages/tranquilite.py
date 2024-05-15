@@ -29,7 +29,7 @@ def app():
   st.title("🚨 Tranquilité")
   ############
   st.header('1.Test')
-  df_pop_iris = pd.read_csv("./tranquilite/delinquance_2024.csv", sep=";")
+  #df_pop_iris = pd.read_csv("./tranquilite/delinquance_2024.csv", sep=";")
 
 
   ############################################################################
