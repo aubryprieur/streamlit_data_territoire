@@ -1,6 +1,6 @@
 import streamlit as st
-from .utils import afficher_infos_commune
-from .utils import remove_comma, round_to_zero
+from pages.utils import afficher_infos_commune
+from pages.utils import remove_comma, round_to_zero
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -19,13 +19,16 @@ import jenkspy
 import plotly.express as px
 
 
-def app():
+def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region):
   # Appeler la fonction et récupérer les informations
-  (code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region) = afficher_infos_commune()
 
   ################################################################################
   st.title("💶 RESSOURCES - PAUVRETÉ")
   #################################################################
+  # Recherche code epci alternatif
+  df_epci_bis = pd.read_csv("./EPCI.csv", dtype={"COM": str}, sep=";")
+  nom_epci_bis = df_epci_bis.loc[df_epci_bis['COM'] == code_commune, 'LIBEPCI'].iloc[0]
+  code_epci_bis = df_epci_bis.loc[df_epci_bis['COM'] == code_commune, 'EPCI'].iloc[0]
   st.subheader('Le niveau de vie médian')
   st.caption("La médiane du revenu disponible correspond au niveau au-dessous duquel se situent 50 % de ces revenus. C'est de manière équivalente le niveau au-dessus duquel se situent 50 % des revenus.")
   st.caption("Le revenu disponible est le revenu à la disposition du ménage pour consommer et épargner. Il comprend les revenus d'activité (nets des cotisations sociales), indemnités de chômage, retraites et pensions, revenus fonciers, les revenus financiers et les prestations sociales reçues (prestations familiales, minima sociaux et prestations logements). Au total de ces ressources, on déduit les impôts directs (impôt sur le revenu, taxe d'habitation) et les prélèvements sociaux (CSG, CRDS).")
@@ -193,12 +196,13 @@ def app():
 
 ##################################
   st.subheader('Comparaison entre territoires')
-  st.write("Dernière année disponible : " + reference_year + ". Paru le : 31/03/2023")
+  reference_year_comparaison = "2021"
+  st.write("Dernière année disponible : " + reference_year_comparaison + ". Paru le : 29/01/2024")
 
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
     #Position de la commune
-    df = pd.read_csv("./revenu/revenu_commune/FILO" + reference_year + "_DISP_COM.csv", dtype={"CODGEO": str},sep=";")
-    year = reference_year[-2:]
+    df = pd.read_csv("./revenu/revenu_commune/FILO" + reference_year_comparaison + "_DISP_COM.csv", dtype={"CODGEO": str},sep=";")
+    year = reference_year_comparaison[-2:]
     df_ville = df[['CODGEO','LIBGEO','Q2' + year]]
     if int(year) <= 15:
       df_ville['Q2' + year] = df_ville['Q2' + year].str.replace(',', '.').astype(float)
@@ -217,7 +221,7 @@ def app():
         ville = df.loc[df["LIBGEO"]== nom_ville]
         nvm = ville[[ 'LIBGEO' ,'Q2'+ year]]
         return nvm
-    nvm_ville = niveau_vie_median_commune("./revenu/revenu_commune/FILO" + reference_year + "_DISP_COM.csv",nom_commune, reference_year)
+    nvm_ville = niveau_vie_median_commune("./revenu/revenu_commune/FILO" + reference_year_comparaison + "_DISP_COM.csv",nom_commune, reference_year_comparaison)
     #EPCI
     def niveau_vie_median_epci(fichier, cod_epci, annee) :
       df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
@@ -230,7 +234,7 @@ def app():
       else:
         nvm = epci[[ 'LIBGEO' ,'Q2'+ year]]
         return nvm
-    nvm_epci =niveau_vie_median_epci("./revenu/revenu_epci/FILO" + reference_year + "_DISP_EPCI.csv",str(code_epci), reference_year)
+    nvm_epci =niveau_vie_median_epci("./revenu/revenu_epci/FILO" + reference_year_comparaison + "_DISP_EPCI.csv",str(code_epci), reference_year_comparaison)
     #Département
     def niveau_vie_median_departement(fichier, nom_departement, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
@@ -240,7 +244,7 @@ def app():
         departement = df.loc[df["LIBGEO"]== nom_departement]
         nvm = departement[[ 'LIBGEO' ,'Q2'+ year]]
         return nvm
-    nvm_departement =niveau_vie_median_departement("./revenu/revenu_dpt/FILO" + reference_year + "_DISP_DEP.csv",nom_departement, reference_year)
+    nvm_departement =niveau_vie_median_departement("./revenu/revenu_dpt/FILO" + reference_year_comparaison + "_DISP_DEP.csv",nom_departement, reference_year_comparaison)
     #Région
     def niveau_vie_median_region(fichier, nom_region, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
@@ -250,7 +254,7 @@ def app():
         region = df.loc[df["LIBGEO"]== nom_region]
         nvm = region[[ 'LIBGEO' ,'Q2'+ year]]
         return nvm
-    nvm_region =niveau_vie_median_region("./revenu/revenu_region/FILO" + reference_year + "_DISP_REG.csv",nom_region, reference_year)
+    nvm_region =niveau_vie_median_region("./revenu/revenu_region/FILO" + reference_year_comparaison + "_DISP_REG.csv",nom_region, reference_year_comparaison)
     #France
     def niveau_vie_median_france(fichier, annee) :
         df = pd.read_csv(fichier, dtype={"CODGEO": str},sep=";")
@@ -258,20 +262,20 @@ def app():
         year = annee[-2:]
         nvm = df[[ 'LIBGEO' ,'Q2'+ year]].iloc[:1]
         return nvm
-    nvm_france =niveau_vie_median_france("./revenu/revenu_france/FILO" + reference_year + "_DISP_METROPOLE.csv", reference_year)
+    nvm_france =niveau_vie_median_france("./revenu/revenu_france/FILO" + reference_year_comparaison + "_DISP_METROPOLE.csv", reference_year_comparaison)
     #Global
     test_tab = pd.concat([nvm_ville, nvm_epci, nvm_departement, nvm_region, nvm_france])
     test_tab = test_tab.reset_index(drop=True)
-    test_tab = test_tab.rename(columns={'LIBGEO': "Territoire",'Q2' + reference_year[-2:] : "Niveau de vie " + reference_year})
-    test_tab["Niveau de vie " + reference_year] = test_tab["Niveau de vie " + reference_year].apply(round_to_zero).apply(remove_comma)
+    test_tab = test_tab.rename(columns={'LIBGEO': "Territoire",'Q2' + reference_year_comparaison[-2:] : "Niveau de vie " + reference_year_comparaison})
+    test_tab["Niveau de vie " + reference_year_comparaison] = test_tab["Niveau de vie " + reference_year_comparaison].apply(round_to_zero).apply(remove_comma)
     st.write(test_tab)
 
 ##################################
   st.subheader("Évolution sur les 7 dernières années disponibles")
-  st.write("Dernière année disponible : " + reference_year + ". Paru le : 31/03/2023")
+  st.write("Dernière année disponible : " + reference_year_comparaison + ". Paru le : 29/01/2024")
 
   with st.spinner('Nous générons votre tableau de données personnalisé...'):
-    annees = ['2014', '2015', '2016', '2017', '2018', '2019', '2020']
+    annees = ['2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021']
 
     #France
     def read_indice_csv_file(year):
@@ -279,7 +283,7 @@ def app():
       df = df.replace(',', '.', regex=True)
       nvm = df.loc[:, f'Q2{year[2:]}'].to_numpy().astype(float)
       return nvm[0]
-    years = ['2014', '2015', '2016', '2017', '2018', '2019', '2020']
+    years = ['2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021']
     indices = [read_indice_csv_file(year) for year in years]
     df_france_glob = pd.DataFrame([indices], columns=years, index=['France'])
     #Region
@@ -300,15 +304,26 @@ def app():
       nvm = df.loc[:, f'Q2{annee[2:]}'].to_numpy().astype(float)
       indice = nvm[0]
       df_dpt_glob[annee] = indice
-    #EPCI
+    # EPCI
     df_epci_glob = pd.DataFrame(columns=annees, index=[nom_epci])
     for annee in annees:
       df = pd.read_csv(f"./revenu/revenu_epci/FILO{annee}_DISP_EPCI.csv", dtype={"CODGEO": str}, sep=";")
-      df = df.loc[df["CODGEO"] == code_epci]
       df = df.replace(',', '.', regex=True)
-      nvm = df.loc[:, f'Q2{annee[2:]}'].to_numpy().astype(float)
-      indice = nvm[0]
-      df_epci_glob[annee] = indice
+
+      # Filtrage initial avec code_epci
+      df_filtered = df.loc[df["CODGEO"] == code_epci]
+
+      # Si df_filtered est vide, filtrer avec code_epci_bis
+      if df_filtered.empty:
+          df_filtered = df.loc[df["CODGEO"] == code_epci_bis]
+
+      if not df_filtered.empty:
+          nvm = df_filtered.loc[:, f'Q2{annee[2:]}'].to_numpy().astype(float)
+          indice = nvm[0]
+          df_epci_glob[annee] = indice
+      else:
+          # Gérer le cas où les deux filtrages sont vides
+          df_epci_glob[annee] = None  # ou toute autre valeur par défaut appropriée
     #Commune
     df_commune_glob = pd.DataFrame(columns=annees, index=[nom_commune])
     for annee in annees:
@@ -520,8 +535,16 @@ def app():
   mediane_pauvrete_com = df_pauv_com["TP60Q2" + annee[-2:]].values[0]
   #EPCI
   df_pauv_epci = pd.read_csv("./revenu/pauvrete/FILO" + annee + "_DISP_PAUVRES_EPCI.csv", dtype={"CODGEO": str},sep=";")
-  df_pauv_epci = df_pauv_epci.loc[df_pauv_epci["CODGEO"] == code_epci ]
-  taux_pauvrete_epci = df_pauv_epci["TP60" + annee[-2:]].values[0]
+  # Filtrage initial avec code_epci
+  df_pauv_epci_filtered = df_pauv_epci.loc[df_pauv_epci["CODGEO"] == code_epci]
+  # Si df_pauv_epci_filtered est vide, filtrer avec code_epci_bis
+  if df_pauv_epci_filtered.empty:
+      df_pauv_epci_filtered = df_pauv_epci.loc[df_pauv_epci["CODGEO"] == code_epci_bis]
+  # Vérifier si le DataFrame filtré est encore vide
+  if not df_pauv_epci_filtered.empty:
+      taux_pauvrete_epci = df_pauv_epci_filtered["TP60" + annee[-2:]].values[0]
+  else:
+      taux_pauvrete_epci = None  # ou toute autre valeur par défaut appropriée
   #Département
   df_pauv_dep = pd.read_csv("./revenu/pauvrete/FILO" + annee + "_DISP_PAUVRES_DEP.csv", dtype={"CODGEO": str},sep=";")
   df_pauv_dep = df_pauv_dep.loc[df_pauv_dep["CODGEO"] == code_departement ]

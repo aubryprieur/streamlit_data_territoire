@@ -1,5 +1,5 @@
 import streamlit as st
-from .utils import afficher_infos_commune
+from pages.utils import afficher_infos_commune
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -15,9 +15,8 @@ import streamlit.components.v1 as components
 import fiona
 import jenkspy
 
-def app():
+def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region):
   # Appeler la fonction et récupérer les informations
-  (code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region) = afficher_infos_commune()
 
   #############################################################################
   st.title("👶 PETITE ENFANCE")
