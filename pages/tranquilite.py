@@ -60,7 +60,42 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       "Usage de stupéfiants"
   ]
 
-  # Création du graphique
+  # Création du graphique de criminalité globale
+  # Filtrage et agrégation des données pour chaque niveau
+  df_commune_filtered = df_commune[(df_commune['CODGEO_2023'] == code_commune) & (df_commune['classe'].isin(categories))]
+  df_region_filtered = df_region[(df_region['Code.région'] == code_region) & (df_region['classe'].isin(categories))]
+  df_departement_filtered = df_departement[(df_departement['Code.département'] == code_departement) & (df_departement['classe'].isin(categories))]
+
+  # Groupement des données par année et calcul de la somme des tauxpourmille
+  commune_yearly = df_commune_filtered.groupby('annee')['tauxpourmille'].sum().reset_index()
+  region_yearly = df_region_filtered.groupby('annee')['tauxpourmille'].sum().reset_index()
+  departement_yearly = df_departement_filtered.groupby('annee')['tauxpourmille'].sum().reset_index()
+
+  # Création du graphique avec Plotly
+  fig = go.Figure()
+
+  # Ajout des traces pour chaque niveau
+  fig.add_trace(go.Scatter(x=commune_yearly['annee'], y=commune_yearly['tauxpourmille'],
+                           mode='lines+markers', name=f"{nom_commune}"))
+  fig.add_trace(go.Scatter(x=region_yearly['annee'], y=region_yearly['tauxpourmille'],
+                           mode='lines+markers', name=f"{nom_region}"))
+  fig.add_trace(go.Scatter(x=departement_yearly['annee'], y=departement_yearly['tauxpourmille'],
+                           mode='lines+markers', name=f"{nom_departement}"))
+
+  # Configuration du layout
+  fig.update_layout(
+      title='Évolution Totale de la Criminalité par Année par Niveau Administratif',
+      xaxis_title="Année",
+      yaxis_title="Taux pour mille total",
+      legend_title="Niveau Administratif",
+      template="plotly_white"
+  )
+
+  # Affichage du graphique dans Streamlit
+  st.plotly_chart(fig)
+
+  #########################################################################
+  # Création du graphique par catégorie
   fig = go.Figure()
 
   # Filtrage des données pour chaque catégorie et ajout dans le graphique
