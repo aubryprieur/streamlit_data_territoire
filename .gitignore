@@ -11,9 +11,6 @@ population
 QPV
 revenu
 sante
-tranquilite
-delinquance_2024.csv
-tranquilite/delinquance_2024.csv
 venv/
 __pycache__/
 *.pyc

@@ -25,10 +25,56 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   # Appeler la fonction et récupérer les informations
 
   #############################################################################
+
+  # Titre de l'application
   st.title("🚨 Tranquilité")
-  ############
-  st.header('1.Test')
-  #df_pop_iris = pd.read_csv("./tranquilite/delinquance_2024.csv", sep=";")
+  st.header('1. Principaux indicateurs des crimes et délits enregistrés par la police et la gendarmerie nationales')
+  st.caption("Dernier millésime " + '2023' + " - Paru le : mars 2024")
+
+  # Chargement du fichier Parquet
+  file_path = "./tranquilite/donnee-comm-2023.parquet"
+  df = pd.read_parquet(file_path)
+
+  # Liste des catégories à visualiser
+  categories = [
+      "Coups et blessures volontaires",
+      "Coups et blessures volontaires intrafamiliaux",
+      "Autres coups et blessures volontaires",
+      "Violences sexuelles",
+      "Vols avec armes",
+      "Vols violents sans arme",
+      "Vols sans violence contre des personnes",
+      "Cambriolages de logement",
+      "Vols de véhicules",
+      "Vols dans les véhicules",
+      "Vols d'accessoires sur véhicules",
+      "Destructions et dégradations volontaires",
+      "Trafic de stupéfiants",
+      "Usage de stupéfiants"
+  ]
+
+  # Création du graphique
+  fig = go.Figure()
+
+  # Filtrage des données pour chaque catégorie et ajout dans le graphique
+  for category in categories:
+      df_category = df[(df['CODGEO_2023'] == code_commune) & (df['classe'] == category)]
+      if not df_category.empty:
+          fig.add_trace(go.Scatter(x=df_category['annee'], y=df_category['tauxpourmille'], mode='lines+markers', name=category))
+
+  fig.update_layout(
+      title="Évolution des Incidents par Catégorie et par Année",
+      xaxis_title="Année",
+      yaxis_title="Taux pour mille",
+      legend_title="Catégorie",
+      template="plotly_white"
+  )
+
+  # Affichage du graphique dans Streamlit
+  st.plotly_chart(fig)
+
+
+
 
 
   ############################################################################
