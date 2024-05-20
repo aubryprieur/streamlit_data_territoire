@@ -135,3 +135,17 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
               with cols[j]:
                   st.plotly_chart(fig, use_container_width=True)
+
+  # Calcul des quartiles et de la médiane
+  # Filtrage des données pour "Coups et blessures volontaires"
+  df_cbv_commune = df_commune[(df_commune['classe'] == "Coups et blessures volontaires") & (df_commune['annee'] == 23)]
+  # Exclusion des valeurs zéro
+  df_cbv_commune_non_zero = df_cbv_commune[df_cbv_commune['tauxpourmille'] != 0]
+  q1 = df_cbv_commune_non_zero['tauxpourmille'].quantile(0.25)
+  median = df_cbv_commune_non_zero['tauxpourmille'].median()
+  q3 = df_cbv_commune_non_zero['tauxpourmille'].quantile(0.75)
+  # Affichage des valeurs calculées
+  st.write("### Statistiques pour 'Coups et blessures volontaires' au niveau communal")
+  st.write(f"1er quartile: {q1:.2f}")
+  st.write(f"Médiane: {median:.2f}")
+  st.write(f"3ème quartile: {q3:.2f}")
