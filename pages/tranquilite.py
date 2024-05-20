@@ -29,11 +29,18 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   # Titre de l'application
   st.title("🚨 Tranquilité")
   st.header('1. Principaux indicateurs des crimes et délits enregistrés par la police et la gendarmerie nationales')
+  st.subheader("À l'échelle d'une commune")
   st.caption("Dernier millésime " + '2023' + " - Paru le : mars 2024")
 
-  # Chargement du fichier Parquet
-  file_path = "./tranquilite/donnee-comm-2023.parquet"
-  df = pd.read_parquet(file_path)
+  # Chargement des données pour la commune
+  file_path_commune = "./tranquilite/donnee-comm-2023.parquet"
+  df_commune = pd.read_parquet(file_path_commune)
+  # Chargement des données pour la région
+  file_path_region = "./tranquilite/donnee-reg-2023.csv"
+  df_region = pd.read_csv(file_path_region, dtype={"Code.région": str}, sep=';', decimal=',')
+  # Chargement des données pour le département
+  file_path_departement = "./tranquilite/donnee-dep-2023.csv"
+  df_departement = pd.read_csv(file_path_departement, sep=';', decimal=',', dtype={"Code.département": str})
 
   # Liste des catégories à visualiser
   categories = [
@@ -58,7 +65,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   # Filtrage des données pour chaque catégorie et ajout dans le graphique
   for category in categories:
-      df_category = df[(df['CODGEO_2023'] == code_commune) & (df['classe'] == category)]
+      df_category = df_commune[(df_commune['CODGEO_2023'] == code_commune) & (df_commune['classe'] == category)]
       if not df_category.empty:
           fig.add_trace(go.Scatter(x=df_category['annee'], y=df_category['tauxpourmille'], mode='lines+markers', name=category))
 
@@ -73,10 +80,58 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   # Affichage du graphique dans Streamlit
   st.plotly_chart(fig)
 
-
-
-
-
   ############################################################################
+  st.subheader("Comparaison entre la commune, le département et la région")
+  # Configuration des graphiques
+  num_columns = 3
+  num_rows = (len(categories) + num_columns - 1) // num_columns
 
+  for i in range(num_rows):
+      cols = st.columns(num_columns)
+      for j in range(num_columns):
+          index = i * num_columns + j
+          if index < len(categories):
+              category = categories[index]
+              df_category_commune = df_commune[(df_commune['CODGEO_2023'] == code_commune) & (df_commune['classe'] == category)]
+              df_category_region = df_region[(df_region["Code.région"] == code_region) & (df_region['classe'] == category)]
+              df_category_departement = df_departement[(df_departement["Code.département"] == code_departement) & (df_departement['classe'] == category)]
 
+              fig = go.Figure()
+
+              # Ajout de la trace pour la commune
+              if not df_category_commune.empty:
+                  fig.add_trace(go.Scatter(
+                      x=df_category_commune['annee'], y=df_category_commune['tauxpourmille'],
+                      mode='lines+markers', name=f"{nom_commune}"
+                  ))
+
+              # Ajout de la trace pour la région
+              if not df_category_region.empty:
+                  fig.add_trace(go.Scatter(
+                      x=df_category_region['annee'], y=df_category_region['tauxpourmille'],
+                      mode='lines+markers', name=f"{nom_region}"
+                  ))
+              # Ajout de la trace pour le département
+              if not df_category_departement.empty:
+                  fig.add_trace(go.Scatter(
+                      x=df_category_departement['annee'], y=df_category_departement['tauxpourmille'],
+                      mode='lines+markers', name=f"{nom_departement}"
+                  ))
+
+              fig.update_layout(
+                  title=f"{category}",
+                  xaxis_title="Année",
+                  yaxis_title="Taux pour mille",
+                  legend_title="Catégorie",
+                  template="plotly_white",
+                  title_font=dict(size=12),
+                  legend=dict(
+                  orientation="h",
+                  xanchor="center",
+                  x=0.5,
+                  y=-0.3
+                )
+              )
+
+              with cols[j]:
+                  st.plotly_chart(fig, use_container_width=True)
