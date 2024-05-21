@@ -13,6 +13,8 @@ class MultiApp:
         })
 
     def run(self):
+        st.set_page_config(layout="wide")
+
         # Utiliser afficher_infos_commune pour centraliser la sélection de la commune
         st.sidebar.title("Sélection de la commune")
         code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region = afficher_infos_commune()
