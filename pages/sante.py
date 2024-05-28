@@ -21,6 +21,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   st.title("🩺 SANTÉ")
   st.header('1.Taux de mortalité')
+  st.caption("source : Insee RP. Parue le XXXX - Millésime 1968 à 2020")
   st.caption("Le taux de mortalité est ici un taux annuel moyen sur la dernière période intercensitaire. \
               C’est le rapport entre les décès de la période et la moyenne des populations entre les deux recensements. \
               Ce taux de mortalité est le taux 'brut' de mortalité. \
@@ -73,28 +74,31 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   st.write(result)
   ############################################################################
   st.header("Accessibilité potentielle localisée (APL) aux médecins généralistes")
+  st.caption("Source : SNDS, Système National des Données de Santé. Parue le XXXX - Millésime 2021")
   st.caption("L’Accessibilité Potentielle Localisée est un indicateur local, disponible au niveau de chaque commune, qui tient compte de l’offre et de la demande issue des communes environnantes. Calculé à l’échelle communale, l’APL met en évidence des disparités d’offre de soins. L’APL tient compte du niveau d’activité des professionnels en exercice ainsi que de la structure par âge de la population de chaque commune qui influence les besoins de soins. L’indicateur permet de quantifier la possibilité des habitants d’accéder aux soins des médecins généralistes libéraux.")
 
-  df_apl = pd.read_csv("./sante/apl/apl_medecin_generaliste_com_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
+  last_year_apl = "2021"
   #Commune
+  df_apl = pd.read_csv("./sante/apl/apl_medecin_generaliste_com_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
   df_apl_com = df_apl.loc[df_apl["codgeo"] == code_commune]
   apl_com = df_apl_com['apl_mg_hmep'].values[0]
   #epci
-  df_apl_epci = pd.read_csv("./sante/apl/apl_medecin_generaliste_epci_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
+  df_apl_epci = pd.read_csv("./sante/apl/apl_medecin_generaliste_epci_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
   df_apl_epci = df_apl_epci.loc[df_apl_epci["codgeo"] == code_epci]
   apl_epci = df_apl_epci['apl_mg_hmep'].values[0]
   #Département
-  df_apl_dpt = pd.read_csv("./sante/apl/apl_medecin_generaliste_dpt_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
+  df_apl_dpt = pd.read_csv("./sante/apl/apl_medecin_generaliste_dpt_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
   df_apl_dpt = df_apl_dpt.loc[df_apl_dpt["codgeo"] == code_departement]
   apl_dpt = df_apl_dpt['apl_mg_hmep'].values[0]
   #Région
-  df_apl_reg = pd.read_csv("./sante/apl/apl_medecin_generaliste_region_2018.csv", dtype={"codgeo": str, "an": str},sep=";")
+  df_apl_reg = pd.read_csv("./sante/apl/apl_medecin_generaliste_region_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
   df_apl_reg = df_apl_reg.loc[df_apl_reg["codgeo"] == code_region]
   apl_reg = df_apl_reg['apl_mg_hmep'].values[0]
   #France
-  apl_fr = "3,9"
+  df_apl_fr = pd.read_csv("./sante/apl/apl_medecin_generaliste_france_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
+  apl_fr = df_apl_fr['apl_mg_hmep'].values[0]
   #Comparaison
-  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "APL - 2018": [str(apl_com), apl_epci, apl_dpt, apl_reg, apl_fr]}
+  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "APL - " + last_year_apl + "": [str(apl_com), apl_epci, apl_dpt, apl_reg, apl_fr]}
   df = pd.DataFrame(data=d)
   st.write(df)
 
