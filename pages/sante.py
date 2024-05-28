@@ -98,12 +98,5 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   df = pd.DataFrame(data=d)
   st.write(df)
 
-  #Boite à moustaches
-  df_apl = df_apl.replace(',','.', regex=True)
-  df_apl['apl_mg_hmep'] = pd.to_numeric(df_apl['apl_mg_hmep'])
-  fig = px.box(df_apl, x='an', y='apl_mg_hmep')
-  boxplot_chart = st.plotly_chart(fig)
-  boxplot_chart
-
 
 
