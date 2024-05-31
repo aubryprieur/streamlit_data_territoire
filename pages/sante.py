@@ -13,6 +13,8 @@ from streamlit_folium import folium_static
 import folium # map rendering library
 import streamlit.components.v1 as components
 import fiona
+from streamlit_option_menu import option_menu
+
 
 def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_departement, code_region, nom_region):
   # Appeler la fonction et récupérer les informations
@@ -102,5 +104,128 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   df = pd.DataFrame(data=d)
   st.write(df)
 
+  ############################################################################
+  st.header("Les licenciés sportifs")
+  st.subheader("Population générale")
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
+  last_year_licsport = "2019"
 
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
+      df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
+      return df['p_licsport'].values[0]
 
+  # Commune
+  tx_licencies_sportifs_commune = load_data("./sante/licencies_sportifs/global/licsport_commune_" + last_year_licsport + ".csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_commune]})
+
+  # EPCI
+  tx_licencies_sportifs_epci = load_data("./sante/licencies_sportifs/global/licsport_epci_" + last_year_licsport + ".csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_epci]})
+
+  # Département
+  tx_licencies_sportifs_departement = load_data("./sante/licencies_sportifs/global/licsport_departement_" + last_year_licsport + ".csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_departement]})
+
+  # Région
+  tx_licencies_sportifs_region = load_data("./sante/licencies_sportifs/global/licsport_région_" + last_year_licsport + ".csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_region]})
+
+  # France
+  tx_licencies_sportifs_france = load_data("./sante/licencies_sportifs/global/licsport_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_france]})
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir la colonne 'taux de licenciés sportifs 2019' en numérique
+  all_data['Taux de licenciés sportifs 2019'] = all_data['Taux de licenciés sportifs 2019'].str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Taux de licenciés sportifs 2019', y='Territoires', orientation='h',
+               title='Comparaison du taux de licenciés sportifs en 2019')
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key1"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write("Données des licenciés sportifs en 2019")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+  ##############################################
+  st.subheader("Population des 0-14 ans")
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
+
+  last_year_licsport = "2019"
+
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
+      df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
+      return df['p_licsport014'].values[0]
+
+  # Commune
+  tx_licencies_sportifs_0014_commune = load_data("./sante/licencies_sportifs/00-14/licsport_0014_communes_" + last_year_licsport + ".csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_commune]})
+
+  # EPCI
+  tx_licencies_sportifs_0014_epci = load_data("./sante/licencies_sportifs/00-14/licsport_0014_epci_" + last_year_licsport + ".csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_epci]})
+
+  # Département
+  tx_licencies_sportifs_0014_departement = load_data("./sante/licencies_sportifs/00-14/licsport_0014_departement_" + last_year_licsport + ".csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_departement]})
+
+  # Région
+  tx_licencies_sportifs_0014_region = load_data("./sante/licencies_sportifs/00-14/licsport_0014_region_" + last_year_licsport + ".csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_region]})
+
+  # France
+  tx_licencies_sportifs_0014_france = load_data("./sante/licencies_sportifs/00-14/licsport_0014_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_france]})
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir la colonne des taux en numérique
+  all_data['Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport] = all_data['Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport].str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Taux de licenciés sportifs de 0 à 14 ans ' +  last_year_licsport, y='Territoires', orientation='h',
+               title='Comparaison du taux de licenciés sportifs de 0 à 14 ans en ' + last_year_licsport)
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key2"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write("Données des licenciés sportifs de 0 à 14 ans en " +  last_year_licsport)
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
