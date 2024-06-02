@@ -212,11 +212,45 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   fig = px.bar(all_data, x='Taux de licenciés sportifs de 0 à 14 ans ' +  last_year_licsport, y='Territoires', orientation='h',
                title='Comparaison du taux de licenciés sportifs de 0 à 14 ans en ' + last_year_licsport)
 
+
+  #Dont filles
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
+      df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
+      return df['p_licsport014_f'].values[0]
+
+  # Commune
+  tx_licencies_sportifs_014_f_commune = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_communes_" + last_year_licsport + ".csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_commune]})
+
+  # EPCI
+  tx_licencies_sportifs_014_f_epci = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_epci_" + last_year_licsport + ".csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_epci]})
+
+  # Département
+  tx_licencies_sportifs_014_f_departement = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_departement_" + last_year_licsport + ".csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_departement]})
+
+  # Région
+  tx_licencies_sportifs_014_f_region = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_region_" + last_year_licsport + ".csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_region]})
+
+  # France
+  tx_licencies_sportifs_014_f_france = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_france]})
+
+  # Fusionner les données
+  all_data_f = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data_f.reset_index(drop=True, inplace=True)
+
   # Créer le menu d'options pour les onglets
   selected = option_menu(
       menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
+      options=["Tableau", "Graphique", "Dont filles"],  # required
+      icons=["table", "bar-chart", "gender-female"],  # optional
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
@@ -229,6 +263,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.dataframe(all_data)
   elif selected == "Graphique":
       st.plotly_chart(fig)
+  elif selected == "Dont filles":
+      st.dataframe(all_data_f)
 
   ##############################################
   st.subheader("Population des 15-29 ans")
@@ -275,11 +311,45 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   fig = px.bar(all_data, x='Taux de licenciés sportifs de 15 à 29 ans ' +  last_year_licsport, y='Territoires', orientation='h',
                title='Comparaison du taux de licenciés sportifs de 15 à 29 ans en ' + last_year_licsport)
 
+  # Dont femmes
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
+      df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
+      return df['p_licsport1529_f'].values[0]
+
+  # Commune
+  tx_licencies_sportifs_1529_commune = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_communes_" + last_year_licsport + ".csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_commune]})
+
+  # EPCI
+  tx_licencies_sportifs_1529_epci = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_epci_" + last_year_licsport + ".csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_epci]})
+
+  # Département
+  tx_licencies_sportifs_1529_departement = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_departement_" + last_year_licsport + ".csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_departement]})
+
+  # Région
+  tx_licencies_sportifs_1529_region = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_region_" + last_year_licsport + ".csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_region]})
+
+  # France
+  tx_licencies_sportifs_1529_france = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_france]})
+
+  # Fusionner les données
+  all_data_f = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data_f.reset_index(drop=True, inplace=True)
+
+
   # Créer le menu d'options pour les onglets
   selected = option_menu(
       menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
+      options=["Tableau", "Graphique", "Dont femmes"],  # required
+      icons=["table", "bar-chart", "gender-female"],  # optional
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
@@ -292,6 +362,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.dataframe(all_data)
   elif selected == "Graphique":
       st.plotly_chart(fig)
+  elif selected == "Dont femmes":
+      st.dataframe(all_data_f)
 
   ##############################################
   st.subheader("Population des 30-59 ans")
@@ -338,11 +410,45 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   fig = px.bar(all_data, x='Taux de licenciés sportifs de 30 à 59 ans ' +  last_year_licsport, y='Territoires', orientation='h',
                title='Comparaison du taux de licenciés sportifs de 30 à 59 ans en ' + last_year_licsport)
 
+
+  # Dont femmes
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
+      df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
+      return df['p_licsport3059_f'].values[0]
+
+  # Commune
+  tx_licencies_sportifs_3059_commune = load_data("./sante/licencies_sportifs/30-59/femmes/licsport_3059_f_communes_" + last_year_licsport + ".csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 30 à 59 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_3059_commune]})
+
+  # EPCI
+  tx_licencies_sportifs_3059_epci = load_data("./sante/licencies_sportifs/30-59/femmes/licsport_3059_f_epci_" + last_year_licsport + ".csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 30 à 59 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_3059_epci]})
+
+  # Département
+  tx_licencies_sportifs_3059_departement = load_data("./sante/licencies_sportifs/30-59/femmes/licsport_3059_f_departement_" + last_year_licsport + ".csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 30 à 59 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_3059_departement]})
+
+  # Région
+  tx_licencies_sportifs_3059_region = load_data("./sante/licencies_sportifs/30-59/femmes/licsport_3059_f_region_" + last_year_licsport + ".csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 30 à 59 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_3059_region]})
+
+  # France
+  tx_licencies_sportifs_3059_france = load_data("./sante/licencies_sportifs/30-59/femmes/licsport_3059_f_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 30 à 59 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_3059_france]})
+
+  # Fusionner les données
+  all_data_f = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data_f.reset_index(drop=True, inplace=True)
+
   # Créer le menu d'options pour les onglets
   selected = option_menu(
       menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
+      options=["Tableau", "Graphique", "Dont femmes"],  # required
+      icons=["table", "bar-chart", "gender-female"],  # optional
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
@@ -355,6 +461,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.dataframe(all_data)
   elif selected == "Graphique":
       st.plotly_chart(fig)
+  elif selected == "Dont femmes":
+      st.dataframe(all_data_f)
 
   ##############################################
   st.subheader("Population des 60 ans et plus")
@@ -401,11 +509,45 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   fig = px.bar(all_data, x='Taux de licenciés sportifs de 60 ans et plus ' +  last_year_licsport, y='Territoires', orientation='h',
                title='Comparaison du taux de licenciés sportifs de 60 ans et plus en ' + last_year_licsport)
 
+
+  # Dont femmes
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
+      df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
+      return df['p_licsport60_f'].values[0]
+
+  # Commune
+  tx_licencies_sportifs_60P_commune = load_data("./sante/licencies_sportifs/60P/femmes/licsport_60P_f_communes_" + last_year_licsport + ".csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 60 ans et plus femmes ' + last_year_licsport: [tx_licencies_sportifs_60P_commune]})
+
+  # EPCI
+  tx_licencies_sportifs_60P_epci = load_data("./sante/licencies_sportifs/60P/femmes/licsport_60P_f_epci_" + last_year_licsport + ".csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 60 ans et plus femmes ' + last_year_licsport: [tx_licencies_sportifs_60P_epci]})
+
+  # Département
+  tx_licencies_sportifs_60P_departement = load_data("./sante/licencies_sportifs/60P/femmes/licsport_60P_f_departement_" + last_year_licsport + ".csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 60 ans et plus femmes ' + last_year_licsport: [tx_licencies_sportifs_60P_departement]})
+
+  # Région
+  tx_licencies_sportifs_60P_region = load_data("./sante/licencies_sportifs/60P/femmes/licsport_60P_f_region_" + last_year_licsport + ".csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 60 ans et plus femmes ' + last_year_licsport: [tx_licencies_sportifs_60P_region]})
+
+  # France
+  tx_licencies_sportifs_60P_france = load_data("./sante/licencies_sportifs/60P/femmes/licsport_60P_f_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 60 ans et plus femmes ' + last_year_licsport: [tx_licencies_sportifs_60P_france]})
+
+  # Fusionner les données
+  all_data_f = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data_f.reset_index(drop=True, inplace=True)
+
   # Créer le menu d'options pour les onglets
   selected = option_menu(
       menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
+      options=["Tableau", "Graphique", "Dont femmes"],  # required
+      icons=["table", "bar-chart", "gender-female"],  # optional
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
@@ -418,3 +560,5 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.dataframe(all_data)
   elif selected == "Graphique":
       st.plotly_chart(fig)
+  elif selected == "Dont femmes":
+      st.dataframe(all_data_f)
