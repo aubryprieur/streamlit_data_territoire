@@ -29,7 +29,10 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
               Ce taux de mortalité est le taux 'brut' de mortalité. \
               Il ne doit pas être confondu avec le taux de mortalité standardisé qui permet de comparer des taux de mortalité \
               à structure d'âge équivalente ou avec le taux de mortalité prématuré qui ne s'intéresse qu'aux décès intervenus avant 65 ans.")
-
+  st.caption("L’indicateur d’accessibilité potentielle localisée (APL) a été développé par la DREES et l’IRDES* pour mesurer \
+              l’adéquation spatiale entre l’offre et la demande de soins de premier recours à un échelon géographique fin. \
+              Il vise à améliorer les indicateurs usuels d’accessibilité aux soins (distance d’accès, densité par bassin de vie ou département…). \
+              Il mobilise pour cela les données de l’Assurance maladie (SNIIR-AM) ainsi que les données de population de l’Insee.")
   #Commune
   period = "2014-2020"
   last_year_mortal = "2020"
@@ -75,38 +78,137 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   result = pd.concat([tx_mortalite_ville,tx_mortalite_epci, tx_mortalite_dpt, tx_mortalite_reg, tx_mortalite_france])
   st.write(result)
   ############################################################################
-  st.header("Accessibilité potentielle localisée (APL) aux médecins généralistes")
+  st.header("Accessibilité potentielle localisée (APL) à la médecine libérale")
   st.caption("Source : SNDS, Système National des Données de Santé. Parue le XXXX - Millésime 2021")
   st.caption("L’Accessibilité Potentielle Localisée est un indicateur local, disponible au niveau de chaque commune, qui tient compte de l’offre et de la demande issue des communes environnantes. Calculé à l’échelle communale, l’APL met en évidence des disparités d’offre de soins. L’APL tient compte du niveau d’activité des professionnels en exercice ainsi que de la structure par âge de la population de chaque commune qui influence les besoins de soins. L’indicateur permet de quantifier la possibilité des habitants d’accéder aux soins des médecins généralistes libéraux.")
 
   last_year_apl = "2021"
-  #Commune
-  df_apl = pd.read_csv("./sante/apl/apl_medecin_generaliste_com_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
-  df_apl_com = df_apl.loc[df_apl["codgeo"] == code_commune]
-  apl_com = df_apl_com['apl_mg_hmep'].values[0]
-  #epci
-  df_apl_epci = pd.read_csv("./sante/apl/apl_medecin_generaliste_epci_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
-  df_apl_epci = df_apl_epci.loc[df_apl_epci["codgeo"] == code_epci]
-  apl_epci = df_apl_epci['apl_mg_hmep'].values[0]
-  #Département
-  df_apl_dpt = pd.read_csv("./sante/apl/apl_medecin_generaliste_dpt_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
-  df_apl_dpt = df_apl_dpt.loc[df_apl_dpt["codgeo"] == code_departement]
-  apl_dpt = df_apl_dpt['apl_mg_hmep'].values[0]
-  #Région
-  df_apl_reg = pd.read_csv("./sante/apl/apl_medecin_generaliste_region_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
-  df_apl_reg = df_apl_reg.loc[df_apl_reg["codgeo"] == code_region]
-  apl_reg = df_apl_reg['apl_mg_hmep'].values[0]
-  #France
-  df_apl_fr = pd.read_csv("./sante/apl/apl_medecin_generaliste_france_" + last_year_apl + ".csv", dtype={"codgeo": str, "an": str},sep=";")
-  apl_fr = df_apl_fr['apl_mg_hmep'].values[0]
-  #Comparaison
-  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "APL - " + last_year_apl + "": [str(apl_com), apl_epci, apl_dpt, apl_reg, apl_fr]}
-  df = pd.DataFrame(data=d)
-  st.write(df)
 
+  # Charger les données pour les médecins généralistes
+  def load_data_generaliste(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['apl_mg_hmep'].values[0]
+
+  # Médecins généralistes
+  apl_com = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_com_" + last_year_apl + ".csv", code_commune)
+  apl_epci = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_epci_" + last_year_apl + ".csv", code_epci)
+  apl_dpt = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_dpt_" + last_year_apl + ".csv", code_departement)
+  apl_reg = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_region_" + last_year_apl + ".csv", code_region)
+  apl_fr = pd.read_csv("./sante/apl/medecin_generaliste/apl_medecin_generaliste_france_" + last_year_apl + ".csv", sep=';')['apl_mg_hmep'].values[0]
+
+  data_medecin_generaliste = pd.DataFrame({
+      'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'],
+      "APL - " + last_year_apl: [apl_com, apl_epci, apl_dpt, apl_reg, apl_fr]
+  })
+
+  # Charger les données pour les chirurgiens dentistes
+  def load_data_dentiste(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['apl_chirurgiens_dentistes'].values[0]
+
+  # Chirurgiens dentistes
+  apl_dentistes_commune = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_commune_" + last_year_apl + ".csv", code_commune)
+  apl_dentistes_epci = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_epci_" + last_year_apl + ".csv", code_epci)
+  apl_dentistes_departement = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_departement_" + last_year_apl + ".csv", code_departement)
+  apl_dentistes_region = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_region_" + last_year_apl + ".csv", code_region)
+  apl_dentistes_france = pd.read_csv("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_france_" + last_year_apl + ".csv", sep=';')['apl_chirurgiens_dentistes'].values[0]
+
+  data_chirurgiens_dentistes = pd.DataFrame({
+      'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'],
+      "APL - " + last_year_apl: [apl_dentistes_commune, apl_dentistes_epci, apl_dentistes_departement, apl_dentistes_region, apl_dentistes_france]
+  })
+
+  # Charger les données pour les sages-femmes
+  def load_data_sages_femmes(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['apl_sages_femmes'].values[0]
+
+  # Sages-femmes
+  apl_sages_femmes_commune = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_commune_" + last_year_apl + ".csv", code_commune)
+  apl_sages_femmes_epci = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_epci_" + last_year_apl + ".csv", code_epci)
+  apl_sages_femmes_departement = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_departement_" + last_year_apl + ".csv", code_departement)
+  apl_sages_femmes_region = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_region_" + last_year_apl + ".csv", code_region)
+  apl_sages_femmes_france = pd.read_csv("./sante/apl/sages_femmes/apl_sages_femmes_france_" + last_year_apl + ".csv", sep=';')['apl_sages_femmes'].values[0]
+
+  data_sages_femmes = pd.DataFrame({
+      'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'],
+      "APL - " + last_year_apl: [apl_sages_femmes_commune, apl_sages_femmes_epci, apl_sages_femmes_departement, apl_sages_femmes_region, apl_sages_femmes_france]
+  })
+
+  # Charger les données pour les infirmiers
+  def load_data_infirmiers(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['apl_infirmiers'].values[0]
+
+  # Infirmiers
+  apl_infirmiers_commune = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_commune_" + last_year_apl + ".csv", code_commune)
+  apl_infirmiers_epci = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_epci_" + last_year_apl + ".csv", code_epci)
+  apl_infirmiers_departement = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_departement_" + last_year_apl + ".csv", code_departement)
+  apl_infirmiers_region = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_region_" + last_year_apl + ".csv", code_region)
+  apl_infirmiers_france = pd.read_csv("./sante/apl/infirmiers/apl_infirmiers_france_" + last_year_apl + ".csv", sep=';')['apl_infirmiers'].values[0]
+
+  data_infirmiers = pd.DataFrame({
+      'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'],
+      "APL - " + last_year_apl: [apl_infirmiers_commune, apl_infirmiers_epci, apl_infirmiers_departement, apl_infirmiers_region, apl_infirmiers_france]
+  })
+
+
+  # Charger les données pour les kinés
+  def load_data_kines(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['apl_kines'].values[0]
+
+  # Infirmiers
+  apl_kines_commune = load_data_kines("./sante/apl/kines/apl_kines_commune_" + last_year_apl + ".csv", code_commune)
+  apl_kines_epci = load_data_kines("./sante/apl/kines/apl_kines_epci_" + last_year_apl + ".csv", code_epci)
+  apl_kines_departement = load_data_kines("./sante/apl/kines/apl_kines_departement_" + last_year_apl + ".csv", code_departement)
+  apl_kines_region = load_data_kines("./sante/apl/kines/apl_kines_region_" + last_year_apl + ".csv", code_region)
+  apl_kines_france = pd.read_csv("./sante/apl/kines/apl_kines_france_" + last_year_apl + ".csv", sep=';')['apl_kines'].values[0]
+
+  data_kines = pd.DataFrame({
+      'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'],
+      "APL - " + last_year_apl: [apl_kines_commune, apl_kines_epci, apl_kines_departement, apl_kines_region, apl_kines_france]
+  })
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Médecins Généralistes", "Chirurgiens Dentistes", "Sages Femmes", "Infirmiers", "Kinés"],  # required
+      icons=["1-circle", "2-circle", "3-circle", "4-circle", "5-circle"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key8"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Médecins Généralistes":
+      st.write("Données des Médecins Généralistes - Accessibilité Potentielle Localisée (APL)")
+      st.dataframe(data_medecin_generaliste)
+  elif selected == "Chirurgiens Dentistes":
+      st.write("Données des Chirurgiens Dentistes de 65 ans et moins - Accessibilité Potentielle Localisée (APL)")
+      st.dataframe(data_chirurgiens_dentistes)
+      st.caption("L’accessibilité aux chirurgiens-dentistes pour la ville de " + nom_commune + " et de " + apl_dentistes_commune + " ETP pour 100 000 habitants en " + last_year_apl + ". Pour comparaison, l’accessibilité nationale moyenne est de 59,0 ETP pour 100 000 habitants en 2021." )
+      if float(apl_dentistes_commune) > float(apl_dentistes_france):
+        st.caption(f"Votre commune est donc mieux dotée en chirurgiens-dentistes, soit une accessibilité {round(float(apl_dentistes_commune) / float(apl_dentistes_france), 1)} fois plus élevée. A titre de comparaison, l’accessibilité moyenne des 10 % de la population les moins bien dotés en chirurgiens-dentistes est de 15,3 ETP pour 100 000 habitants. Celle des 10 % les mieux dotés en chirurgiens-dentistes est de 111,0 ETP pour 100 000 habitants.")
+      st.caption("Pour plus d'information : l'article de la dress du 01/02/2023 sur [l'accessibilité aux chirurgiens-dentistes](https://drees.solidarites-sante.gouv.fr/jeux-de-donnees-communique-de-presse/accessibilite-aux-soins-de-premier-recours-de-fortes)")
+  elif selected == "Sages Femmes":
+      st.write("Données des Sages Femmes - Accessibilité Potentielle Localisée (APL)")
+      st.dataframe(data_sages_femmes)
+  elif selected == "Infirmiers":
+      st.write("Données des Infirmiers de 65 ans et moins - Accessibilité Potentielle Localisée (APL)")
+      st.dataframe(data_infirmiers)
+  elif selected == "Kinés":
+      st.write("Données des Kinés de 65 ans et moins - Accessibilité Potentielle Localisée (APL)")
+      st.dataframe(data_kines)
   ############################################################################
-  st.header("Les licenciés sportifs")
-  st.subheader("Population générale")
+  st.header("La prévention par le sport")
+  st.subheader("Les licenciés sportifs - Sur la population totale")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
   last_year_licsport = "2019"
 
@@ -168,7 +270,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.plotly_chart(fig)
 
   ##############################################
-  st.subheader("Population des 0-14 ans")
+  st.subheader("Les licenciés sportifs des 0-14 ans")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
 
   last_year_licsport = "2019"
@@ -267,7 +369,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.dataframe(all_data_f)
 
   ##############################################
-  st.subheader("Population des 15-29 ans")
+  st.subheader("Les licenciés sportifs des 15-29 ans")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
 
   last_year_licsport = "2019"
@@ -366,7 +468,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.dataframe(all_data_f)
 
   ##############################################
-  st.subheader("Population des 30-59 ans")
+  st.subheader("Les licenciés sportifs des 30-59 ans")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
 
   last_year_licsport = "2019"
@@ -465,7 +567,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.dataframe(all_data_f)
 
   ##############################################
-  st.subheader("Population des 60 ans et plus")
+  st.subheader("Les licenciés sportifs des 60 ans et plus")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
 
   last_year_licsport = "2019"
