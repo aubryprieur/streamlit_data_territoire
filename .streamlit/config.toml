@@ -1,7 +1,7 @@
 [server]
 headless = false
 port = 8501
-enableCORS = true
+enableCORS = false
 enableXsrfProtection = true
 enableWebsocketCompression = false
 address = "0.0.0.0"
