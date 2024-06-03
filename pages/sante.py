@@ -36,12 +36,12 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   #Commune
   period = "2014-2020"
   last_year_mortal = "2020"
-  def tx_mortalite_commune(fichier, nom_ville, period) :
+  def tx_mortalite_commune(fichier, code_ville, period) :
     df = pd.read_csv(fichier, dtype={"codgeo": str, "an": str},sep=";")
-    df_ville = df.loc[df["libgeo"] == nom_ville]
+    df_ville = df.loc[df["codgeo"] == code_ville]
     df_ville = df_ville.loc[df_ville["an"] == period ]
     return df_ville
-  tx_mortalite_ville = tx_mortalite_commune("./sante/taux_de_mortalite/insee_rp_evol_1968_communes_" + last_year_mortal + ".csv",nom_commune, period)
+  tx_mortalite_ville = tx_mortalite_commune("./sante/taux_de_mortalite/insee_rp_evol_1968_communes_" + last_year_mortal + ".csv",code_commune, period)
 
   #EPCI
   def tx_mortalite_epci(fichier, epci, period) :
