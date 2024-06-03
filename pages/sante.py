@@ -78,7 +78,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   result = pd.concat([tx_mortalite_ville,tx_mortalite_epci, tx_mortalite_dpt, tx_mortalite_reg, tx_mortalite_france])
   st.write(result)
   ############################################################################
-  st.header("Accessibilité potentielle localisée (APL) à la médecine libérale")
+  st.header("2.L'accessibilité aux soins")
+  st.subheader("Accessibilité potentielle localisée (APL) à la médecine libérale")
   st.caption("Source : SNDS, Système National des Données de Santé. Parue le XXXX - Millésime 2021")
   st.caption("L’Accessibilité Potentielle Localisée est un indicateur local, disponible au niveau de chaque commune, qui tient compte de l’offre et de la demande issue des communes environnantes. Calculé à l’échelle communale, l’APL met en évidence des disparités d’offre de soins. L’APL tient compte du niveau d’activité des professionnels en exercice ainsi que de la structure par âge de la population de chaque commune qui influence les besoins de soins. L’indicateur permet de quantifier la possibilité des habitants d’accéder aux soins des médecins généralistes libéraux.")
 
@@ -206,8 +207,79 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   elif selected == "Kinés":
       st.write("Données des Kinés de 65 ans et moins - Accessibilité Potentielle Localisée (APL)")
       st.dataframe(data_kines)
+
+
+  #############################################
+  st.header("3. Accès aux droits et aux soins")
+  st.subheader("Les Affections de Longue Durée (ALD)")
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2022")
+  st.caption("L’allocation affection de longue durée (ALD) permet la prise en charge à 100% \
+              des soins apportés à une personne souffrant de maladies chroniques.  \
+              Ces maladies reconnues figurent dans une liste officielle d’une trentaine \
+              d’affections. On peut y voir le diabète, les maladies de Parkinson et \
+              d’Alzheimer, la scoliose ou encore la tuberculose.")
+
+  last_year_ald = "2022"
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(file_path, code, column_code='codgeo'):
+      df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['ald'].values[0]
+
+  # Commune
+  tx_ald_commune = load_data("./sante/ald/ald_commune_" + last_year_ald + ".csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], f"Taux de ALD {last_year_ald}": [tx_ald_commune]})
+
+  # EPCI
+  tx_ald_epci = load_data("./sante/ald/ald_epci_" + last_year_ald + ".csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], f"Taux de ALD {last_year_ald}": [tx_ald_epci]})
+
+  # Département
+  tx_ald_departement = load_data("./sante/ald/ald_departement_" + last_year_ald + ".csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], f"Taux de ALD {last_year_ald}": [tx_ald_departement]})
+
+  # Région
+  tx_ald_region = load_data("./sante/ald/ald_region_" + last_year_ald + ".csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], f"Taux de ALD {last_year_ald}": [tx_ald_region]})
+
+  # France
+  tx_ald_france = load_data("./sante/ald/ald_france_" + last_year_ald + ".csv", '1111', column_code='codgeo')
+  data_france = pd.DataFrame({'Territoires': ['France'], f"Taux de ALD {last_year_ald}": [tx_ald_france]})
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir la colonne 'Taux de ALD 2022' en numérique
+  all_data[f"Taux de ALD {last_year_ald}"] = all_data[f"Taux de ALD {last_year_ald}"].apply(lambda x: str(x).replace(',', '.')).astype(float)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x=f"Taux de ALD {last_year_ald}", y='Territoires', orientation='h',
+               title=f"Comparaison du taux de ALD en {last_year_ald}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key9"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Données des Affections de Longue Durée (ALD) en {last_year_ald}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+
   ############################################################################
-  st.header("La prévention par le sport")
+  st.header("4.La prévention par le sport")
   st.subheader("Les licenciés sportifs - Sur la population totale")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
   last_year_licsport = "2019"
@@ -269,7 +341,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   elif selected == "Graphique":
       st.plotly_chart(fig)
 
-  ##############################################
+  ###################################################
   st.subheader("Les licenciés sportifs des 0-14 ans")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
 
@@ -664,65 +736,3 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.plotly_chart(fig)
   elif selected == "Dont femmes":
       st.dataframe(all_data_f)
-
-  #############################################
-  st.header("Statistiques des Affections de Longue Durée (ALD)")
-  st.caption("Source : xxx. Parue le XXXX - Millésime 2022")
-
-  last_year_ald = "2022"
-  # Charger et filtrer les données pour chaque niveau géographique
-  def load_data(file_path, code, column_code='codgeo'):
-      df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
-      df = df.loc[df[column_code] == code]
-      return df['ald'].values[0]
-
-  # Commune
-  tx_ald_commune = load_data("./sante/ald/ald_commune_" + last_year_ald + ".csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], f"Taux de ALD {last_year_ald}": [tx_ald_commune]})
-
-  # EPCI
-  tx_ald_epci = load_data("./sante/ald/ald_epci_" + last_year_ald + ".csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], f"Taux de ALD {last_year_ald}": [tx_ald_epci]})
-
-  # Département
-  tx_ald_departement = load_data("./sante/ald/ald_departement_" + last_year_ald + ".csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], f"Taux de ALD {last_year_ald}": [tx_ald_departement]})
-
-  # Région
-  tx_ald_region = load_data("./sante/ald/ald_region_" + last_year_ald + ".csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], f"Taux de ALD {last_year_ald}": [tx_ald_region]})
-
-  # France
-  tx_ald_france = load_data("./sante/ald/ald_france_" + last_year_ald + ".csv", '1111', column_code='codgeo')
-  data_france = pd.DataFrame({'Territoires': ['France'], f"Taux de ALD {last_year_ald}": [tx_ald_france]})
-
-  # Fusionner les données
-  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
-
-  # Réinitialiser l'index et renommer les colonnes
-  all_data.reset_index(drop=True, inplace=True)
-
-  # Convertir la colonne 'Taux de ALD 2022' en numérique
-  all_data[f"Taux de ALD {last_year_ald}"] = all_data[f"Taux de ALD {last_year_ald}"].apply(lambda x: str(x).replace(',', '.')).astype(float)
-
-  # Créer le graphique interactif en barres horizontales
-  fig = px.bar(all_data, x=f"Taux de ALD {last_year_ald}", y='Territoires', orientation='h',
-               title=f"Comparaison du taux de ALD en {last_year_ald}")
-
-  # Créer le menu d'options pour les onglets
-  selected = option_menu(
-      menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
-      menu_icon="cast",  # optional
-      default_index=0,  # optional
-      orientation="horizontal",
-      key="key9"
-  )
-
-  # Afficher le contenu basé sur l'onglet sélectionné
-  if selected == "Tableau":
-      st.write(f"Données des Affections de Longue Durée (ALD) en {last_year_ald}")
-      st.dataframe(all_data)
-  elif selected == "Graphique":
-      st.plotly_chart(fig)
