@@ -78,7 +78,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key10"
+      key="key19"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -194,15 +194,17 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key8"
+      key="key11"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
   if selected == "Médecins Généralistes":
       st.write("Données des Médecins Généralistes - Accessibilité Potentielle Localisée (APL)")
+      st.caption("Unité : nombre de consultations accessibles par an et par habitant")
       st.dataframe(data_medecin_generaliste)
   elif selected == "Chirurgiens Dentistes":
       st.write("Données des Chirurgiens Dentistes de 65 ans et moins - Accessibilité Potentielle Localisée (APL)")
+      st.caption("Unité : nombre d'équivalents temps-plein (ETP) accessibles pour 100 000 habitants standardisés")
       st.dataframe(data_chirurgiens_dentistes)
       st.caption("L’accessibilité aux chirurgiens-dentistes pour la ville de " + nom_commune + " et de " + apl_dentistes_commune + " ETP pour 100 000 habitants en " + last_year_apl + ". Pour comparaison, l’accessibilité nationale moyenne est de 59,0 ETP pour 100 000 habitants en 2021." )
       if float(apl_dentistes_commune) > float(apl_dentistes_france):
@@ -210,12 +212,15 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.caption("Pour plus d'information : l'article de la dress du 01/02/2023 sur [l'accessibilité aux chirurgiens-dentistes](https://drees.solidarites-sante.gouv.fr/jeux-de-donnees-communique-de-presse/accessibilite-aux-soins-de-premier-recours-de-fortes)")
   elif selected == "Sages Femmes":
       st.write("Données des Sages Femmes - Accessibilité Potentielle Localisée (APL)")
+      st.caption("Unité : nombre d'équivalents temps-plein (ETP) accessibles pour 100 000 habitants standardisés")
       st.dataframe(data_sages_femmes)
   elif selected == "Infirmiers":
       st.write("Données des Infirmiers de 65 ans et moins - Accessibilité Potentielle Localisée (APL)")
+      st.caption("Unité : nombre d'équivalents temps-plein (ETP) accessibles pour 100 000 habitants standardisés")
       st.dataframe(data_infirmiers)
   elif selected == "Kinés":
       st.write("Données des Kinés de 65 ans et moins - Accessibilité Potentielle Localisée (APL)")
+      st.caption("Unité : nombre d'équivalents temps-plein (ETP) accessibles pour 100 000 habitants standardisés")
       st.dataframe(data_kines)
 
 
@@ -277,7 +282,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key9"
+      key="key12"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -287,9 +292,128 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   elif selected == "Graphique":
       st.plotly_chart(fig)
 
+  #############################################
+  st.header("4. La prévention")
+  st.subheader("Les bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois")
+  st.caption("Source : Observatoire interrégime des situaitons de fragilité. Parue le XXXX - Millésime 2023")
 
-  ############################################################################
-  st.header("4.La prévention par le sport")
+  last_year_vag = "2023"
+
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['sans_vag_24mois'].values[0]
+
+  # Commune
+  tx_sans_vag_commune = load_data(f"./sante/prevention/vag/sans_vag_commune_{last_year_vag}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans VAG 24 mois': [tx_sans_vag_commune]})
+
+  # EPCI
+  tx_sans_vag_epci = load_data(f"./sante/prevention/vag/sans_vag_epci_{last_year_vag}.csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans VAG 24 mois': [tx_sans_vag_epci]})
+
+  # Département
+  tx_sans_vag_departement = load_data(f"./sante/prevention/vag/sans_vag_departement_{last_year_vag}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans VAG 24 mois': [tx_sans_vag_departement]})
+
+  # Région
+  tx_sans_vag_region = load_data(f"./sante/prevention/vag/sans_vag_region_{last_year_vag}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans VAG 24 mois': [tx_sans_vag_region]})
+
+  # France
+  tx_sans_vag_france = load_data(f"./sante/prevention/vag/sans_vag_france_{last_year_vag}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans VAG 24 mois': [tx_sans_vag_france]})
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Taux sans VAG 24 mois', y='Territoires', orientation='h',
+               title=f"Comparaison du taux sans VAG sur 24 mois en {last_year_vag}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key13"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Données des bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois en {last_year_vag}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+
+  ##############################
+  st.subheader("Les bénéficiaires du Régime Général de 65 ans et plus sans recours à la VAG sur les 24 derniers mois")
+  st.caption("Source : Observatoire interrégime des situaitons de fragilité. Parue le XXXX - Millésime 2023")
+
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['sans_vag_65p_24mois'].values[0]
+
+  # Commune
+  tx_sans_vag_65p_commune = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_commune_{last_year_vag}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_commune]})
+
+  # EPCI
+  tx_sans_vag_65p_epci = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_epci_{last_year_vag}.csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_epci]})
+
+  # Département
+  tx_sans_vag_65p_departement = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_departement_{last_year_vag}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_departement]})
+
+  # Région
+  tx_sans_vag_65p_region = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_region_{last_year_vag}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_region]})
+
+  # France
+  tx_sans_vag_65p_france = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_france_{last_year_vag}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_france]})
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Taux sans VAG 65 ans et plus 24 mois', y='Territoires', orientation='h',
+               title=f"Comparaison du taux sans VAG sur 24 mois pour les 65 ans et plus en {last_year_vag}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key20"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Données des bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois pour les 65 ans et plus en {last_year_vag}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+###############################################################
+  st.header("5.La prévention par le sport")
   st.subheader("Les licenciés sportifs - Sur la population totale")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
   last_year_licsport = "2019"
@@ -341,7 +465,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key1"
+      key="key14"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -438,7 +562,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key2"
+      key="key15"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -537,7 +661,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key3"
+      key="key16"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -636,7 +760,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key4"
+      key="key17"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -735,7 +859,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key5"
+      key="key18"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
