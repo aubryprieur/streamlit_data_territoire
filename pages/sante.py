@@ -78,7 +78,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key19"
+      key="key1"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -194,7 +194,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key11"
+      key="key2"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -282,7 +282,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key12"
+      key="key3"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -343,7 +343,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key13"
+      key="key4"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -402,7 +402,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key20"
+      key="key5"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -412,7 +412,126 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   elif selected == "Graphique":
       st.plotly_chart(fig)
 
-###############################################################
+
+  ##############################
+  st.subheader('Les femmes de 20 à 64 ans sans consultation gynécologique sur les 24 derniers mois')
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
+
+  last_year_gynecologue = "2023"
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['sans_consultation_gynecologue_24mois'].values[0]
+
+  # Commune
+  tx_sans_gynecologue_commune = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_commune_{last_year_gynecologue}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_commune]})
+
+  # EPCI
+  tx_sans_gynecologue_epci = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_epci_{last_year_gynecologue}.csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_epci]})
+
+  # Département
+  tx_sans_gynecologue_departement = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_departement_{last_year_gynecologue}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_departement]})
+
+  # Région
+  tx_sans_gynecologue_region = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_region_{last_year_gynecologue}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_region]})
+
+  # France
+  tx_sans_gynecologue_france = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_france_{last_year_gynecologue}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_france]})
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Taux sans consultation gynécologique 24 mois', y='Territoires', orientation='h',
+               title=f"Comparaison du taux sans consultation gynécologique sur 24 mois en {last_year_gynecologue}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key6"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Données des bénéficiaires éligibles de 20 à 64 ans sans consultation gynécologique sur les 24 derniers mois en {last_year_gynecologue}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+  ##############################
+  st.subheader("Les femmes de 50 à 74 ans n'ayant pas eu d'acte de mammographie sur les 24 derniers mois")
+  st.caption("Source : Observatoire Interrégime des situations de fragilité. Parue le XXXX - Millésime 2023")
+
+  last_year_mammographie = "2023"
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df['sans_mammographie_24mois'].values[0]
+
+  # Commune
+  tx_sans_mammographie_commune = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_commune_{last_year_mammographie}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_commune]})
+
+  # EPCI
+  tx_sans_mammographie_epci = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_epci_{last_year_mammographie}.csv", code_epci)
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_epci]})
+
+  # Département
+  tx_sans_mammographie_departement = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_departement_{last_year_mammographie}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_departement]})
+
+  # Région
+  tx_sans_mammographie_region = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_region_{last_year_mammographie}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_region]})
+
+  # France
+  tx_sans_mammographie_france = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_france_{last_year_mammographie}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_france]})
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Taux des femmes sans acte de mammographie 24 mois', y='Territoires', orientation='h',
+               title=f"Comparaison du taux des femmes sans acte de mammographie sur 24 mois en {last_year_mammographie}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key7"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Données des bénéficiaires femmes de 50 à 74 ans n'ayant pas eu un acte de mammographie sur les 24 derniers mois en {last_year_mammographie}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+  ###############################################################
   st.header("5.La prévention par le sport")
   st.subheader("Les licenciés sportifs - Sur la population totale")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
@@ -465,7 +584,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key14"
+      key="key8"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -562,7 +681,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key15"
+      key="key9"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -661,7 +780,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key16"
+      key="key10"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -760,7 +879,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key17"
+      key="key11"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
@@ -859,7 +978,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       menu_icon="cast",  # optional
       default_index=0,  # optional
       orientation="horizontal",
-      key="key18"
+      key="key12"
   )
 
   # Afficher le contenu basé sur l'onglet sélectionné
