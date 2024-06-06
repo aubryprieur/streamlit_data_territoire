@@ -381,6 +381,86 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.dataframe(all_data)
   elif selected == "Graphique":
       st.plotly_chart(fig)
+
+
+  #####################
+  st.subheader("Part des bénéficiaires de la pension d'invalidité")
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
+
+  last_year_pension = "2023"
+
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df
+
+  # Commune
+  df_pension_invalidite_commune = load_data(f"./sante/acces_droits/pension_invalidite/pension_invalidite_commune_{last_year_pension}.csv", code_commune)
+  data_commune = pd.DataFrame({
+      'Territoires': [nom_commune],
+      'Pension d\'invalidité': df_pension_invalidite_commune['pension_invalidite'].values[0]
+  })
+
+  # EPCI
+  df_pension_invalidite_epci = load_data(f"./sante/acces_droits/pension_invalidite/pension_invalidite_epci_{last_year_pension}.csv", code_epci)
+  data_epci = pd.DataFrame({
+      'Territoires': [nom_epci],
+      'Pension d\'invalidité': df_pension_invalidite_epci['pension_invalidite'].values[0]
+  })
+
+  # Département
+  df_pension_invalidite_departement = load_data(f"./sante/acces_droits/pension_invalidite/pension_invalidite_departement_{last_year_pension}.csv", code_departement)
+  data_departement = pd.DataFrame({
+      'Territoires': [nom_departement],
+      'Pension d\'invalidité': df_pension_invalidite_departement['pension_invalidite'].values[0]
+  })
+
+  # Région
+  df_pension_invalidite_region = load_data(f"./sante/acces_droits/pension_invalidite/pension_invalidite_region_{last_year_pension}.csv", code_region)
+  data_region = pd.DataFrame({
+      'Territoires': [nom_region],
+      'Pension d\'invalidité': df_pension_invalidite_region['pension_invalidite'].values[0]
+  })
+
+  # France
+  df_pension_invalidite_france = load_data(f"./sante/acces_droits/pension_invalidite/pension_invalidite_france_{last_year_pension}.csv", '1111')
+  data_france = pd.DataFrame({
+      'Territoires': ['France'],
+      'Pension d\'invalidité': df_pension_invalidite_france['pension_invalidite'].values[0]
+  })
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir la colonne 'Pension d'invalidité' en numérique si nécessaire
+  all_data['Pension d\'invalidité'] = all_data['Pension d\'invalidité'].astype(str).str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Pension d\'invalidité', y='Territoires', orientation='h',
+               title=f"Comparaison de la part des bénéficiaires de la pension d'invalidité en {last_year_pension}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key16"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Part des bénéficiaires de la pension d'invalidité en {last_year_pension}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
   #############################################
   st.header("4. La prévention")
   st.subheader("Les bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois")
