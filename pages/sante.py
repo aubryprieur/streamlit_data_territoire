@@ -293,7 +293,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
       st.plotly_chart(fig)
 
   #####################
-  st.subheader("Les bénéficaires de la CSS")
+  st.subheader("Les bénéficiaires de la CSS")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
   last_year_css = "2023"
 
@@ -457,6 +457,316 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   # Afficher le contenu basé sur l'onglet sélectionné
   if selected == "Tableau":
       st.write(f"Part des bénéficiaires de la pension d'invalidité en {last_year_pension}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+  ####################
+  st.subheader('Part des bénéficiaires sans médecin traitant déclaré')
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
+
+  last_year_medecin = "2023"
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df
+
+  # Commune
+  df_sans_medecin_commune = load_data(f"./sante/acces_droits/sans_medecin_traitant_declare/sans_medecin_traitant_declare_commune_{last_year_medecin}.csv", code_commune)
+  data_commune = pd.DataFrame({
+      'Territoires': [nom_commune],
+      'Sans médecin traitant déclaré': df_sans_medecin_commune['sans_medecin_traitant_declare'].values[0]
+  })
+
+  # EPCI
+  df_sans_medecin_epci = load_data(f"./sante/acces_droits/sans_medecin_traitant_declare/sans_medecin_traitant_declare_epci_{last_year_medecin}.csv", code_epci)
+  data_epci = pd.DataFrame({
+      'Territoires': [nom_epci],
+      'Sans médecin traitant déclaré': df_sans_medecin_epci['sans_medecin_traitant_declare'].values[0]
+  })
+
+  # Département
+  df_sans_medecin_departement = load_data(f"./sante/acces_droits/sans_medecin_traitant_declare/sans_medecin_traitant_declare_departement_{last_year_medecin}.csv", code_departement)
+  data_departement = pd.DataFrame({
+      'Territoires': [nom_departement],
+      'Sans médecin traitant déclaré': df_sans_medecin_departement['sans_medecin_traitant_declare'].values[0]
+  })
+
+  # Région
+  df_sans_medecin_region = load_data(f"./sante/acces_droits/sans_medecin_traitant_declare/sans_medecin_traitant_declare_region_{last_year_medecin}.csv", code_region)
+  data_region = pd.DataFrame({
+      'Territoires': [nom_region],
+      'Sans médecin traitant déclaré': df_sans_medecin_region['sans_medecin_traitant_declare'].values[0]
+  })
+
+  # France
+  df_sans_medecin_france = load_data(f"./sante/acces_droits/sans_medecin_traitant_declare/sans_medecin_traitant_declare_france_{last_year_medecin}.csv", '1111')
+  data_france = pd.DataFrame({
+      'Territoires': ['France'],
+      'Sans médecin traitant déclaré': df_sans_medecin_france['sans_medecin_traitant_declare'].values[0]
+  })
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir la colonne 'Sans médecin traitant déclaré' en numérique si nécessaire
+  all_data['Sans médecin traitant déclaré'] = all_data['Sans médecin traitant déclaré'].astype(str).str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Sans médecin traitant déclaré', y='Territoires', orientation='h',
+               title=f"Comparaison de la part des bénéficiaires sans médecin traitant déclaré en {last_year_medecin}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key17"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Part des bénéficiaires sans médecin traitant déclaré en {last_year_medecin}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+  #####################
+  st.subheader('Part des bénéficiaires sans acte généraliste sur les 24 derniers mois')
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
+
+  last_year_generaliste = "2023"
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df
+
+  # Commune
+  df_sans_acte_generaliste_commune = load_data(f"./sante/acces_droits/sans_acte_generaliste_24mois/sans_acte_generaliste_24mois_commune_{last_year_generaliste}.csv", code_commune)
+  data_commune = pd.DataFrame({
+      'Territoires': [nom_commune],
+      'Sans acte généraliste 24 mois': df_sans_acte_generaliste_commune['sans_acte_generaliste_24mois'].values[0]
+  })
+
+  # EPCI
+  df_sans_acte_generaliste_epci = load_data(f"./sante/acces_droits/sans_acte_generaliste_24mois/sans_acte_generaliste_24mois_epci_{last_year_generaliste}.csv", code_epci)
+  data_epci = pd.DataFrame({
+      'Territoires': [nom_epci],
+      'Sans acte généraliste 24 mois': df_sans_acte_generaliste_epci['sans_acte_generaliste_24mois'].values[0]
+  })
+
+  # Département
+  df_sans_acte_generaliste_departement = load_data(f"./sante/acces_droits/sans_acte_generaliste_24mois/sans_acte_generaliste_24mois_departement_{last_year_generaliste}.csv", code_departement)
+  data_departement = pd.DataFrame({
+      'Territoires': [nom_departement],
+      'Sans acte généraliste 24 mois': df_sans_acte_generaliste_departement['sans_acte_generaliste_24mois'].values[0]
+  })
+
+  # Région
+  df_sans_acte_generaliste_region = load_data(f"./sante/acces_droits/sans_acte_generaliste_24mois/sans_acte_generaliste_24mois_region_{last_year_generaliste}.csv", code_region)
+  data_region = pd.DataFrame({
+      'Territoires': [nom_region],
+      'Sans acte généraliste 24 mois': df_sans_acte_generaliste_region['sans_acte_generaliste_24mois'].values[0]
+  })
+
+  # France
+  df_sans_acte_generaliste_france = load_data(f"./sante/acces_droits/sans_acte_generaliste_24mois/sans_acte_generaliste_24mois_france_{last_year_generaliste}.csv", '1111')
+  data_france = pd.DataFrame({
+      'Territoires': ['France'],
+      'Sans acte généraliste 24 mois': df_sans_acte_generaliste_france['sans_acte_generaliste_24mois'].values[0]
+  })
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir la colonne 'Sans acte généraliste 24 mois' en numérique si nécessaire
+  all_data['Sans acte généraliste 24 mois'] = all_data['Sans acte généraliste 24 mois'].astype(str).str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Sans acte généraliste 24 mois', y='Territoires', orientation='h',
+               title=f"Comparaison de la part des bénéficiaires sans acte généraliste sur 24 mois en {last_year_generaliste}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key18"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Part des bénéficiaires sans acte généraliste sur 24 mois en {last_year_generaliste}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+
+  #########################
+  st.subheader('Part des bénéficiaires sans consultation dentiste sur les 24 derniers mois')
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
+  last_year_dentiste = "2023"
+
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df
+
+  # Commune
+  df_sans_consultation_dentiste_commune = load_data(f"./sante/acces_droits/sans_consultation_dentiste_24mois/sans_consultation_dentiste_24mois_commune_{last_year_dentiste}.csv", code_commune)
+  data_commune = pd.DataFrame({
+      'Territoires': [nom_commune],
+      'Sans consultation dentiste 24 mois': df_sans_consultation_dentiste_commune['sans_consultation_dentiste_24mois'].values[0]
+  })
+
+  # EPCI
+  df_sans_consultation_dentiste_epci = load_data(f"./sante/acces_droits/sans_consultation_dentiste_24mois/sans_consultation_dentiste_24mois_epci_{last_year_dentiste}.csv", code_epci)
+  data_epci = pd.DataFrame({
+      'Territoires': [nom_epci],
+      'Sans consultation dentiste 24 mois': df_sans_consultation_dentiste_epci['sans_consultation_dentiste_24mois'].values[0]
+  })
+
+  # Département
+  df_sans_consultation_dentiste_departement = load_data(f"./sante/acces_droits/sans_consultation_dentiste_24mois/sans_consultation_dentiste_24mois_departement_{last_year_dentiste}.csv", code_departement)
+  data_departement = pd.DataFrame({
+      'Territoires': [nom_departement],
+      'Sans consultation dentiste 24 mois': df_sans_consultation_dentiste_departement['sans_consultation_dentiste_24mois'].values[0]
+  })
+
+  # Région
+  df_sans_consultation_dentiste_region = load_data(f"./sante/acces_droits/sans_consultation_dentiste_24mois/sans_consultation_dentiste_24mois_region_{last_year_dentiste}.csv", code_region)
+  data_region = pd.DataFrame({
+      'Territoires': [nom_region],
+      'Sans consultation dentiste 24 mois': df_sans_consultation_dentiste_region['sans_consultation_dentiste_24mois'].values[0]
+  })
+
+  # France
+  df_sans_consultation_dentiste_france = load_data(f"./sante/acces_droits/sans_consultation_dentiste_24mois/sans_consultation_dentiste_24mois_france_{last_year_dentiste}.csv", '1111')
+  data_france = pd.DataFrame({
+      'Territoires': ['France'],
+      'Sans consultation dentiste 24 mois': df_sans_consultation_dentiste_france['sans_consultation_dentiste_24mois'].values[0]
+  })
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir la colonne 'Sans consultation dentiste 24 mois' en numérique si nécessaire
+  all_data['Sans consultation dentiste 24 mois'] = all_data['Sans consultation dentiste 24 mois'].astype(str).str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Sans consultation dentiste 24 mois', y='Territoires', orientation='h',
+               title=f"Comparaison de la part des bénéficiaires sans consultation dentiste sur 24 mois en {last_year_dentiste}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key19"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Part des bénéficiaires sans consultation dentiste sur 24 mois en {last_year_dentiste}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
+
+  #########################################
+  st.subheader('Part des bénéficiaires sans recours aux soins sur les 24 derniers mois')
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
+
+  last_year_soins = "2023"
+
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df
+
+  # Commune
+  df_sans_recours_soins_commune = load_data(f"./sante/acces_droits/sans_recours_soins_24mois/sans_recours_soins_24mois_commune_{last_year_soins}.csv", code_commune)
+  data_commune = pd.DataFrame({
+      'Territoires': [nom_commune],
+      'Sans recours aux soins 24 mois': df_sans_recours_soins_commune['sans_recours_soins_24mois'].values[0]
+  })
+
+  # EPCI
+  df_sans_recours_soins_epci = load_data(f"./sante/acces_droits/sans_recours_soins_24mois/sans_recours_soins_24mois_epci_{last_year_soins}.csv", code_epci)
+  data_epci = pd.DataFrame({
+      'Territoires': [nom_epci],
+      'Sans recours aux soins 24 mois': df_sans_recours_soins_epci['sans_recours_soins_24mois'].values[0]
+  })
+
+  # Département
+  df_sans_recours_soins_departement = load_data(f"./sante/acces_droits/sans_recours_soins_24mois/sans_recours_soins_24mois_departement_{last_year_soins}.csv", code_departement)
+  data_departement = pd.DataFrame({
+      'Territoires': [nom_departement],
+      'Sans recours aux soins 24 mois': df_sans_recours_soins_departement['sans_recours_soins_24mois'].values[0]
+  })
+
+  # Région
+  df_sans_recours_soins_region = load_data(f"./sante/acces_droits/sans_recours_soins_24mois/sans_recours_soins_24mois_region_{last_year_soins}.csv", code_region)
+  data_region = pd.DataFrame({
+      'Territoires': [nom_region],
+      'Sans recours aux soins 24 mois': df_sans_recours_soins_region['sans_recours_soins_24mois'].values[0]
+  })
+
+  # France
+  df_sans_recours_soins_france = load_data(f"./sante/acces_droits/sans_recours_soins_24mois/sans_recours_soins_24mois_france_{last_year_soins}.csv", '1111')
+  data_france = pd.DataFrame({
+      'Territoires': ['France'],
+      'Sans recours aux soins 24 mois': df_sans_recours_soins_france['sans_recours_soins_24mois'].values[0]
+  })
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir la colonne 'Sans recours aux soins 24 mois' en numérique si nécessaire
+  all_data['Sans recours aux soins 24 mois'] = all_data['Sans recours aux soins 24 mois'].astype(str).str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales
+  fig = px.bar(all_data, x='Sans recours aux soins 24 mois', y='Territoires', orientation='h',
+               title=f"Comparaison de la part des bénéficiaires sans recours aux soins sur 24 mois en {last_year_soins}")
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key20"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Part des bénéficiaires sans recours aux soins sur 24 mois en {last_year_soins}")
       st.dataframe(all_data)
   elif selected == "Graphique":
       st.plotly_chart(fig)
