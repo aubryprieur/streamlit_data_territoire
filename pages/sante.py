@@ -292,6 +292,95 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   elif selected == "Graphique":
       st.plotly_chart(fig)
 
+  #####################
+  st.subheader("Les bénéficaires de la CSS")
+  st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
+  last_year_css = "2023"
+
+  # Charger et filtrer les données pour chaque niveau géographique
+  def load_data(fichier, code, column_code='codgeo'):
+      df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
+      df = df.loc[df[column_code] == code]
+      return df
+
+  # Commune
+  df_css_non_participative_commune = load_data(f"./sante/acces_droits/css_non_participative/css_non_participative_commune_{last_year_css}.csv", code_commune)
+  df_css_participative_commune = load_data(f"./sante/acces_droits/css_participative/css_participative_commune_{last_year_css}.csv", code_commune)
+  data_commune = pd.DataFrame({
+      'Territoires': [nom_commune],
+      'CSS non participative': df_css_non_participative_commune['css_non_participative'].values[0],
+      'CSS participative': df_css_participative_commune['css_participative'].values[0]
+  })
+
+  # EPCI
+  df_css_non_participative_epci = load_data(f"./sante/acces_droits/css_non_participative/css_non_participative_epci_{last_year_css}.csv", code_epci)
+  df_css_participative_epci = load_data(f"./sante/acces_droits/css_participative/css_participative_epci_{last_year_css}.csv", code_epci)
+  data_epci = pd.DataFrame({
+      'Territoires': [nom_epci],
+      'CSS non participative': df_css_non_participative_epci['css_non_participative'].values[0],
+      'CSS participative': df_css_participative_epci['css_participative'].values[0]
+  })
+
+  # Département
+  df_css_non_participative_departement = load_data(f"./sante/acces_droits/css_non_participative/css_non_participative_departement_{last_year_css}.csv", code_departement)
+  df_css_participative_departement = load_data(f"./sante/acces_droits/css_participative/css_participative_departement_{last_year_css}.csv", code_departement)
+  data_departement = pd.DataFrame({
+      'Territoires': [nom_departement],
+      'CSS non participative': df_css_non_participative_departement['css_non_participative'].values[0],
+      'CSS participative': df_css_participative_departement['css_participative'].values[0]
+  })
+
+  # Région
+  df_css_non_participative_region = load_data(f"./sante/acces_droits/css_non_participative/css_non_participative_region_{last_year_css}.csv", code_region)
+  df_css_participative_region = load_data(f"./sante/acces_droits/css_participative/css_participative_region_{last_year_css}.csv", code_region)
+  data_region = pd.DataFrame({
+      'Territoires': [nom_region],
+      'CSS non participative': df_css_non_participative_region['css_non_participative'].values[0],
+      'CSS participative': df_css_participative_region['css_participative'].values[0]
+  })
+
+  # France
+  df_css_non_participative_france = load_data(f"./sante/acces_droits/css_non_participative/css_non_participative_france_{last_year_css}.csv", '1111')
+  df_css_participative_france = load_data(f"./sante/acces_droits/css_participative/css_participative_france_{last_year_css}.csv", '1111')
+  data_france = pd.DataFrame({
+      'Territoires': ['France'],
+      'CSS non participative': df_css_non_participative_france['css_non_participative'].values[0],
+      'CSS participative': df_css_participative_france['css_participative'].values[0]
+  })
+
+  # Fusionner les données
+  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+
+  # Réinitialiser l'index et renommer les colonnes
+  all_data.reset_index(drop=True, inplace=True)
+
+  # Convertir les colonnes 'CSS non participative' et 'CSS participative' en numérique si nécessaire
+  all_data['CSS non participative'] = all_data['CSS non participative'].astype(str).str.replace(',', '.').astype(float)
+  all_data['CSS participative'] = all_data['CSS participative'].astype(str).str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales pour les deux variables
+  fig = px.bar(all_data.melt(id_vars='Territoires', value_vars=['CSS non participative', 'CSS participative']),
+               x='value', y='Territoires', color='variable', barmode='group',
+               title=f"Comparaison des parts de CSS non participative et participative en {last_year_css}",
+               labels={'value': 'Part des bénéficiaires', 'variable': 'Type de CSS'})
+
+  # Créer le menu d'options pour les onglets
+  selected = option_menu(
+      menu_title=None,  # required
+      options=["Tableau", "Graphique"],  # required
+      icons=["table", "bar-chart"],  # optional
+      menu_icon="cast",  # optional
+      default_index=0,  # optional
+      orientation="horizontal",
+      key="key15"
+  )
+
+  # Afficher le contenu basé sur l'onglet sélectionné
+  if selected == "Tableau":
+      st.write(f"Part des bénéficiaires de la CSS non participative et participative en {last_year_css}")
+      st.dataframe(all_data)
+  elif selected == "Graphique":
+      st.plotly_chart(fig)
   #############################################
   st.header("4. La prévention")
   st.subheader("Les bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois")
