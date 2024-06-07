@@ -20,6 +20,11 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   # Appeler la fonction et récupérer les informations
 
   #############################################################################
+  # Recherche code epci alternatif
+  df_epci_bis = pd.read_csv("./EPCI.csv", dtype={"COM": str}, sep=";")
+  nom_epci_bis = df_epci_bis.loc[df_epci_bis['COM'] == code_commune, 'LIBEPCI'].iloc[0]
+  code_epci_bis = df_epci_bis.loc[df_epci_bis['COM'] == code_commune, 'EPCI'].iloc[0]
+  #############################################################################
 
   st.title("🩺 SANTÉ")
   st.header('1.Taux de mortalité')
@@ -46,6 +51,9 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   tx_mortalite_ville = load_data("./sante/taux_de_mortalite/insee_rp_evol_1968_communes_" + last_year_mortal + ".csv", code_commune, period)
   tx_mortalite_epci = load_data("./sante/taux_de_mortalite/insee_rp_evol_1968_epci_" + last_year_mortal + ".csv", code_epci, period)
+  if tx_mortalite_epci.empty:
+      tx_mortalite_epci = load_data("./sante/taux_de_mortalite/insee_rp_evol_1968_epci_" + last_year_mortal + ".csv", code_epci_bis, period)
+      nom_epci = nom_epci_bis
   tx_mortalite_dpt = load_data("./sante/taux_de_mortalite/insee_rp_evol_1968_departement_" + last_year_mortal + ".csv", code_departement, period)
   tx_mortalite_reg = load_data("./sante/taux_de_mortalite/insee_rp_evol_1968_region_" + last_year_mortal + ".csv", code_region, period)
 
@@ -99,11 +107,16 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data_generaliste(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df['apl_mg_hmep'].values[0]
 
   # Médecins généralistes
   apl_com = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_com_" + last_year_apl + ".csv", code_commune)
   apl_epci = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_epci_" + last_year_apl + ".csv", code_epci)
+  if apl_epci is None:
+      apl_epci = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_epci_" + last_year_apl + ".csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   apl_dpt = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_dpt_" + last_year_apl + ".csv", code_departement)
   apl_reg = load_data_generaliste("./sante/apl/medecin_generaliste/apl_medecin_generaliste_region_" + last_year_apl + ".csv", code_region)
   apl_fr = pd.read_csv("./sante/apl/medecin_generaliste/apl_medecin_generaliste_france_" + last_year_apl + ".csv", sep=';')['apl_mg_hmep'].values[0]
@@ -117,11 +130,16 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data_dentiste(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df['apl_chirurgiens_dentistes'].values[0]
 
   # Chirurgiens dentistes
   apl_dentistes_commune = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_commune_" + last_year_apl + ".csv", code_commune)
   apl_dentistes_epci = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_epci_" + last_year_apl + ".csv", code_epci)
+  if apl_dentistes_epci is None:
+      apl_dentistes_epci = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_epci_" + last_year_apl + ".csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   apl_dentistes_departement = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_departement_" + last_year_apl + ".csv", code_departement)
   apl_dentistes_region = load_data_dentiste("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_region_" + last_year_apl + ".csv", code_region)
   apl_dentistes_france = pd.read_csv("./sante/apl/chirurgiens_dentistes/apl_chirurgiens_dentistes_france_" + last_year_apl + ".csv", sep=';')['apl_chirurgiens_dentistes'].values[0]
@@ -135,11 +153,16 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data_sages_femmes(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df['apl_sages_femmes'].values[0]
 
   # Sages-femmes
   apl_sages_femmes_commune = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_commune_" + last_year_apl + ".csv", code_commune)
   apl_sages_femmes_epci = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_epci_" + last_year_apl + ".csv", code_epci)
+  if apl_sages_femmes_epci is None:
+      apl_sages_femmes_epci = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_epci_" + last_year_apl + ".csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   apl_sages_femmes_departement = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_departement_" + last_year_apl + ".csv", code_departement)
   apl_sages_femmes_region = load_data_sages_femmes("./sante/apl/sages_femmes/apl_sages_femmes_region_" + last_year_apl + ".csv", code_region)
   apl_sages_femmes_france = pd.read_csv("./sante/apl/sages_femmes/apl_sages_femmes_france_" + last_year_apl + ".csv", sep=';')['apl_sages_femmes'].values[0]
@@ -153,11 +176,16 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data_infirmiers(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df['apl_infirmiers'].values[0]
 
   # Infirmiers
   apl_infirmiers_commune = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_commune_" + last_year_apl + ".csv", code_commune)
   apl_infirmiers_epci = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_epci_" + last_year_apl + ".csv", code_epci)
+  if apl_infirmiers_epci is None:
+      apl_infirmiers_epci = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_epci_" + last_year_apl + ".csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   apl_infirmiers_departement = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_departement_" + last_year_apl + ".csv", code_departement)
   apl_infirmiers_region = load_data_infirmiers("./sante/apl/infirmiers/apl_infirmiers_region_" + last_year_apl + ".csv", code_region)
   apl_infirmiers_france = pd.read_csv("./sante/apl/infirmiers/apl_infirmiers_france_" + last_year_apl + ".csv", sep=';')['apl_infirmiers'].values[0]
@@ -172,11 +200,16 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data_kines(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df['apl_kines'].values[0]
 
   # Infirmiers
   apl_kines_commune = load_data_kines("./sante/apl/kines/apl_kines_commune_" + last_year_apl + ".csv", code_commune)
   apl_kines_epci = load_data_kines("./sante/apl/kines/apl_kines_epci_" + last_year_apl + ".csv", code_epci)
+  if apl_kines_epci is None:
+      apl_kines_epci = load_data_kines("./sante/apl/kines/apl_kines_epci_" + last_year_apl + ".csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   apl_kines_departement = load_data_kines("./sante/apl/kines/apl_kines_departement_" + last_year_apl + ".csv", code_departement)
   apl_kines_region = load_data_kines("./sante/apl/kines/apl_kines_region_" + last_year_apl + ".csv", code_region)
   apl_kines_france = pd.read_csv("./sante/apl/kines/apl_kines_france_" + last_year_apl + ".csv", sep=';')['apl_kines'].values[0]
@@ -239,6 +272,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df['ald'].values[0]
 
   # Commune
@@ -246,7 +281,10 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   data_commune = pd.DataFrame({'Territoires': [nom_commune], f"Taux de ALD {last_year_ald}": [tx_ald_commune]})
 
   # EPCI
-  tx_ald_epci = load_data("./sante/ald/ald_epci_" + last_year_ald + ".csv", code_epci)
+  tx_ald_epci = load_data(f"./sante/ald/ald_epci_{last_year_ald}.csv", code_epci)
+  if tx_ald_epci is None:
+      tx_ald_epci = load_data(f"./sante/ald/ald_epci_{last_year_ald}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   data_epci = pd.DataFrame({'Territoires': [nom_epci], f"Taux de ALD {last_year_ald}": [tx_ald_epci]})
 
   # Département
@@ -301,6 +339,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df
 
   # Commune
@@ -315,10 +355,14 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   # EPCI
   df_css_non_participative_epci = load_data(f"./sante/acces_droits/css_non_participative/css_non_participative_epci_{last_year_css}.csv", code_epci)
   df_css_participative_epci = load_data(f"./sante/acces_droits/css_participative/css_participative_epci_{last_year_css}.csv", code_epci)
+  if df_css_non_participative_epci is None or df_css_participative_epci is None:
+      df_css_non_participative_epci = load_data(f"./sante/acces_droits/css_non_participative/css_non_participative_epci_{last_year_css}.csv", code_epci_bis)
+      df_css_participative_epci = load_data(f"./sante/acces_droits/css_participative/css_participative_epci_{last_year_css}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   data_epci = pd.DataFrame({
       'Territoires': [nom_epci],
-      'CSS non participative': df_css_non_participative_epci['css_non_participative'].values[0],
-      'CSS participative': df_css_participative_epci['css_participative'].values[0]
+      'CSS non participative': df_css_non_participative_epci['css_non_participative'].values[0] if df_css_non_participative_epci is not None else None,
+      'CSS participative': df_css_participative_epci['css_participative'].values[0] if df_css_participative_epci is not None else None
   })
 
   # Département
@@ -393,6 +437,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df
 
   # Commune
@@ -404,9 +450,12 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   # EPCI
   df_pension_invalidite_epci = load_data(f"./sante/acces_droits/pension_invalidite/pension_invalidite_epci_{last_year_pension}.csv", code_epci)
+  if df_pension_invalidite_epci is None:
+      df_pension_invalidite_epci = load_data(f"./sante/acces_droits/pension_invalidite/pension_invalidite_epci_{last_year_pension}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   data_epci = pd.DataFrame({
       'Territoires': [nom_epci],
-      'Pension d\'invalidité': df_pension_invalidite_epci['pension_invalidite'].values[0]
+      'Pension d\'invalidité': df_pension_invalidite_epci['pension_invalidite'].values[0] if df_pension_invalidite_epci is not None else None
   })
 
   # Département
@@ -470,6 +519,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df
 
   # Commune
@@ -481,9 +532,12 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   # EPCI
   df_sans_medecin_epci = load_data(f"./sante/acces_droits/sans_medecin_traitant_declare/sans_medecin_traitant_declare_epci_{last_year_medecin}.csv", code_epci)
+  if df_sans_medecin_epci is None:
+      df_sans_medecin_epci = load_data(f"./sante/acces_droits/sans_medecin_traitant_declare/sans_medecin_traitant_declare_epci_{last_year_medecin}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   data_epci = pd.DataFrame({
       'Territoires': [nom_epci],
-      'Sans médecin traitant déclaré': df_sans_medecin_epci['sans_medecin_traitant_declare'].values[0]
+      'Sans médecin traitant déclaré': df_sans_medecin_epci['sans_medecin_traitant_declare'].values[0] if df_sans_medecin_epci is not None else None
   })
 
   # Département
@@ -547,6 +601,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df
 
   # Commune
@@ -558,9 +614,12 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   # EPCI
   df_sans_acte_generaliste_epci = load_data(f"./sante/acces_droits/sans_acte_generaliste_24mois/sans_acte_generaliste_24mois_epci_{last_year_generaliste}.csv", code_epci)
+  if df_sans_acte_generaliste_epci is None:
+      df_sans_acte_generaliste_epci = load_data(f"./sante/acces_droits/sans_acte_generaliste_24mois/sans_acte_generaliste_24mois_epci_{last_year_generaliste}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   data_epci = pd.DataFrame({
       'Territoires': [nom_epci],
-      'Sans acte généraliste 24 mois': df_sans_acte_generaliste_epci['sans_acte_generaliste_24mois'].values[0]
+      'Sans acte généraliste 24 mois': df_sans_acte_generaliste_epci['sans_acte_generaliste_24mois'].values[0] if df_sans_acte_generaliste_epci is not None else None
   })
 
   # Département
@@ -625,6 +684,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df
 
   # Commune
@@ -636,9 +697,12 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   # EPCI
   df_sans_consultation_dentiste_epci = load_data(f"./sante/acces_droits/sans_consultation_dentiste_24mois/sans_consultation_dentiste_24mois_epci_{last_year_dentiste}.csv", code_epci)
+  if df_sans_consultation_dentiste_epci is None:
+      df_sans_consultation_dentiste_epci = load_data(f"./sante/acces_droits/sans_consultation_dentiste_24mois/sans_consultation_dentiste_24mois_epci_{last_year_dentiste}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   data_epci = pd.DataFrame({
       'Territoires': [nom_epci],
-      'Sans consultation dentiste 24 mois': df_sans_consultation_dentiste_epci['sans_consultation_dentiste_24mois'].values[0]
+      'Sans consultation dentiste 24 mois': df_sans_consultation_dentiste_epci['sans_consultation_dentiste_24mois'].values[0] if df_sans_consultation_dentiste_epci is not None else None
   })
 
   # Département
@@ -703,6 +767,8 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
+      if df.empty:
+          return None
       return df
 
   # Commune
@@ -714,9 +780,12 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   # EPCI
   df_sans_recours_soins_epci = load_data(f"./sante/acces_droits/sans_recours_soins_24mois/sans_recours_soins_24mois_epci_{last_year_soins}.csv", code_epci)
+  if df_sans_recours_soins_epci is None:
+      df_sans_recours_soins_epci = load_data(f"./sante/acces_droits/sans_recours_soins_24mois/sans_recours_soins_24mois_epci_{last_year_soins}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
   data_epci = pd.DataFrame({
       'Territoires': [nom_epci],
-      'Sans recours aux soins 24 mois': df_sans_recours_soins_epci['sans_recours_soins_24mois'].values[0]
+      'Sans recours aux soins 24 mois': df_sans_recours_soins_epci['sans_recours_soins_24mois'].values[0] if df_sans_recours_soins_epci is not None else None
   })
 
   # Département
