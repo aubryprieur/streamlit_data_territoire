@@ -851,55 +851,67 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
-      return df['sans_vag_24mois'].values[0]
+      if df.empty:
+          return None
+      return df
 
   # Commune
-  tx_sans_vag_commune = load_data(f"./sante/prevention/vag/sans_vag_commune_{last_year_vag}.csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans VAG 24 mois': [tx_sans_vag_commune]})
+  df_sans_vag_commune = load_data(f"./sante/prevention/vag/sans_vag_commune_{last_year_vag}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans VAG 24 mois': df_sans_vag_commune['sans_vag_24mois'].values[0] if df_sans_vag_commune is not None else None})
 
   # EPCI
-  tx_sans_vag_epci = load_data(f"./sante/prevention/vag/sans_vag_epci_{last_year_vag}.csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans VAG 24 mois': [tx_sans_vag_epci]})
+  df_sans_vag_epci = load_data(f"./sante/prevention/vag/sans_vag_epci_{last_year_vag}.csv", code_epci)
+  if df_sans_vag_epci is None:
+      df_sans_vag_epci = load_data(f"./sante/prevention/vag/sans_vag_epci_{last_year_vag}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans VAG 24 mois': df_sans_vag_epci['sans_vag_24mois'].values[0] if df_sans_vag_epci is not None else None})
 
   # Département
-  tx_sans_vag_departement = load_data(f"./sante/prevention/vag/sans_vag_departement_{last_year_vag}.csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans VAG 24 mois': [tx_sans_vag_departement]})
+  df_sans_vag_departement = load_data(f"./sante/prevention/vag/sans_vag_departement_{last_year_vag}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans VAG 24 mois': df_sans_vag_departement['sans_vag_24mois'].values[0] if df_sans_vag_departement is not None else None})
 
   # Région
-  tx_sans_vag_region = load_data(f"./sante/prevention/vag/sans_vag_region_{last_year_vag}.csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans VAG 24 mois': [tx_sans_vag_region]})
+  df_sans_vag_region = load_data(f"./sante/prevention/vag/sans_vag_region_{last_year_vag}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans VAG 24 mois': df_sans_vag_region['sans_vag_24mois'].values[0] if df_sans_vag_region is not None else None})
 
   # France
-  tx_sans_vag_france = load_data(f"./sante/prevention/vag/sans_vag_france_{last_year_vag}.csv", '1111')
-  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans VAG 24 mois': [tx_sans_vag_france]})
+  df_sans_vag_france = load_data(f"./sante/prevention/vag/sans_vag_france_{last_year_vag}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans VAG 24 mois': df_sans_vag_france['sans_vag_24mois'].values[0] if df_sans_vag_france is not None else None})
 
-  # Fusionner les données
-  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+  # Vérifier que toutes les valeurs sont correctement chargées
+  if data_commune.isnull().values.any() or data_epci.isnull().values.any() or data_departement.isnull().values.any() or data_region.isnull().values.any() or data_france.isnull().values.any():
+      st.error("Certaines données n'ont pas pu être chargées. Veuillez vérifier les fichiers source.")
+  else:
+      # Fusionner les données
+      all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
 
-  # Réinitialiser l'index et renommer les colonnes
-  all_data.reset_index(drop=True, inplace=True)
+      # Réinitialiser l'index et renommer les colonnes
+      all_data.reset_index(drop=True, inplace=True)
 
-  # Créer le graphique interactif en barres horizontales
-  fig = px.bar(all_data, x='Taux sans VAG 24 mois', y='Territoires', orientation='h',
-               title=f"Comparaison du taux sans VAG sur 24 mois en {last_year_vag}")
+      # Convertir la colonne 'Taux sans VAG 24 mois' en numérique si nécessaire
+      all_data['Taux sans VAG 24 mois'] = all_data['Taux sans VAG 24 mois'].astype(str).str.replace(',', '.').astype(float)
 
-  # Créer le menu d'options pour les onglets
-  selected = option_menu(
-      menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
-      menu_icon="cast",  # optional
-      default_index=0,  # optional
-      orientation="horizontal",
-      key="key4"
-  )
+      # Créer le graphique interactif en barres horizontales
+      fig = px.bar(all_data, x='Taux sans VAG 24 mois', y='Territoires', orientation='h',
+                   title=f"Comparaison du taux sans VAG sur 24 mois en {last_year_vag}")
 
-  # Afficher le contenu basé sur l'onglet sélectionné
-  if selected == "Tableau":
-      st.write(f"Données des bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois en {last_year_vag}")
-      st.dataframe(all_data)
-  elif selected == "Graphique":
-      st.plotly_chart(fig)
+      # Créer le menu d'options pour les onglets
+      selected = option_menu(
+          menu_title=None,  # required
+          options=["Tableau", "Graphique"],  # required
+          icons=["table", "bar-chart"],  # optional
+          menu_icon="cast",  # optional
+          default_index=0,  # optional
+          orientation="horizontal",
+          key="key4"
+      )
+
+      # Afficher le contenu basé sur l'onglet sélectionné
+      if selected == "Tableau":
+          st.write(f"Données des bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois en {last_year_vag}")
+          st.dataframe(all_data)
+      elif selected == "Graphique":
+          st.plotly_chart(fig)
 
 
   ##############################
@@ -910,55 +922,67 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
-      return df['sans_vag_65p_24mois'].values[0]
+      if df.empty:
+          return None
+      return df
 
   # Commune
-  tx_sans_vag_65p_commune = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_commune_{last_year_vag}.csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_commune]})
+  df_sans_vag_65p_commune = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_commune_{last_year_vag}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans VAG 65 ans et plus 24 mois': df_sans_vag_65p_commune['sans_vag_65p_24mois'].values[0] if df_sans_vag_65p_commune is not None else None})
 
   # EPCI
-  tx_sans_vag_65p_epci = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_epci_{last_year_vag}.csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_epci]})
+  df_sans_vag_65p_epci = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_epci_{last_year_vag}.csv", code_epci)
+  if df_sans_vag_65p_epci is None:
+      df_sans_vag_65p_epci = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_epci_{last_year_vag}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans VAG 65 ans et plus 24 mois': df_sans_vag_65p_epci['sans_vag_65p_24mois'].values[0] if df_sans_vag_65p_epci is not None else None})
 
   # Département
-  tx_sans_vag_65p_departement = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_departement_{last_year_vag}.csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_departement]})
+  df_sans_vag_65p_departement = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_departement_{last_year_vag}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans VAG 65 ans et plus 24 mois': df_sans_vag_65p_departement['sans_vag_65p_24mois'].values[0] if df_sans_vag_65p_departement is not None else None})
 
   # Région
-  tx_sans_vag_65p_region = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_region_{last_year_vag}.csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_region]})
+  df_sans_vag_65p_region = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_region_{last_year_vag}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans VAG 65 ans et plus 24 mois': df_sans_vag_65p_region['sans_vag_65p_24mois'].values[0] if df_sans_vag_65p_region is not None else None})
 
   # France
-  tx_sans_vag_65p_france = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_france_{last_year_vag}.csv", '1111')
-  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans VAG 65 ans et plus 24 mois': [tx_sans_vag_65p_france]})
+  df_sans_vag_65p_france = load_data(f"./sante/prevention/vag_65p/sans_vag_65p_france_{last_year_vag}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans VAG 65 ans et plus 24 mois': df_sans_vag_65p_france['sans_vag_65p_24mois'].values[0] if df_sans_vag_65p_france is not None else None})
 
-  # Fusionner les données
-  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+  # Vérifier que toutes les valeurs sont correctement chargées
+  if data_commune.isnull().values.any() or data_epci.isnull().values.any() or data_departement.isnull().values.any() or data_region.isnull().values.any() or data_france.isnull().values.any():
+      st.error("Certaines données n'ont pas pu être chargées. Veuillez vérifier les fichiers source.")
+  else:
+      # Fusionner les données
+      all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
 
-  # Réinitialiser l'index et renommer les colonnes
-  all_data.reset_index(drop=True, inplace=True)
+      # Réinitialiser l'index et renommer les colonnes
+      all_data.reset_index(drop=True, inplace=True)
 
-  # Créer le graphique interactif en barres horizontales
-  fig = px.bar(all_data, x='Taux sans VAG 65 ans et plus 24 mois', y='Territoires', orientation='h',
-               title=f"Comparaison du taux sans VAG sur 24 mois pour les 65 ans et plus en {last_year_vag}")
+      # Convertir la colonne 'Taux sans VAG 65 ans et plus 24 mois' en numérique si nécessaire
+      all_data['Taux sans VAG 65 ans et plus 24 mois'] = all_data['Taux sans VAG 65 ans et plus 24 mois'].astype(str).str.replace(',', '.').astype(float)
 
-  # Créer le menu d'options pour les onglets
-  selected = option_menu(
-      menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
-      menu_icon="cast",  # optional
-      default_index=0,  # optional
-      orientation="horizontal",
-      key="key5"
-  )
+      # Créer le graphique interactif en barres horizontales
+      fig = px.bar(all_data, x='Taux sans VAG 65 ans et plus 24 mois', y='Territoires', orientation='h',
+                   title=f"Comparaison du taux sans VAG sur 24 mois pour les 65 ans et plus en {last_year_vag}")
 
-  # Afficher le contenu basé sur l'onglet sélectionné
-  if selected == "Tableau":
-      st.write(f"Données des bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois pour les 65 ans et plus en {last_year_vag}")
-      st.dataframe(all_data)
-  elif selected == "Graphique":
-      st.plotly_chart(fig)
+      # Créer le menu d'options pour les onglets
+      selected = option_menu(
+          menu_title=None,  # required
+          options=["Tableau", "Graphique"],  # required
+          icons=["table", "bar-chart"],  # optional
+          menu_icon="cast",  # optional
+          default_index=0,  # optional
+          orientation="horizontal",
+          key="key5"
+      )
+
+      # Afficher le contenu basé sur l'onglet sélectionné
+      if selected == "Tableau":
+          st.write(f"Données des bénéficiaires éligibles sans recours à la VAG sur les 24 derniers mois pour les 65 ans et plus en {last_year_vag}")
+          st.dataframe(all_data)
+      elif selected == "Graphique":
+          st.plotly_chart(fig)
 
 
   ##############################
@@ -966,59 +990,72 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   st.caption("Source : xxx. Parue le XXXX - Millésime 2023")
 
   last_year_gynecologue = "2023"
+
   # Charger et filtrer les données pour chaque niveau géographique
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
-      return df['sans_consultation_gynecologue_24mois'].values[0]
+      if df.empty:
+          return None
+      return df
 
   # Commune
-  tx_sans_gynecologue_commune = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_commune_{last_year_gynecologue}.csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_commune]})
+  df_sans_gynecologue_commune = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_commune_{last_year_gynecologue}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux sans consultation gynécologique 24 mois': df_sans_gynecologue_commune['sans_consultation_gynecologue_24mois'].values[0] if df_sans_gynecologue_commune is not None else None})
 
   # EPCI
-  tx_sans_gynecologue_epci = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_epci_{last_year_gynecologue}.csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_epci]})
+  df_sans_gynecologue_epci = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_epci_{last_year_gynecologue}.csv", code_epci)
+  if df_sans_gynecologue_epci is None:
+      df_sans_gynecologue_epci = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_epci_{last_year_gynecologue}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux sans consultation gynécologique 24 mois': df_sans_gynecologue_epci['sans_consultation_gynecologue_24mois'].values[0] if df_sans_gynecologue_epci is not None else None})
 
   # Département
-  tx_sans_gynecologue_departement = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_departement_{last_year_gynecologue}.csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_departement]})
+  df_sans_gynecologue_departement = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_departement_{last_year_gynecologue}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux sans consultation gynécologique 24 mois': df_sans_gynecologue_departement['sans_consultation_gynecologue_24mois'].values[0] if df_sans_gynecologue_departement is not None else None})
 
   # Région
-  tx_sans_gynecologue_region = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_region_{last_year_gynecologue}.csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_region]})
+  df_sans_gynecologue_region = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_region_{last_year_gynecologue}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux sans consultation gynécologique 24 mois': df_sans_gynecologue_region['sans_consultation_gynecologue_24mois'].values[0] if df_sans_gynecologue_region is not None else None})
 
   # France
-  tx_sans_gynecologue_france = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_france_{last_year_gynecologue}.csv", '1111')
-  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans consultation gynécologique 24 mois': [tx_sans_gynecologue_france]})
+  df_sans_gynecologue_france = load_data(f"./sante/prevention/gynecologue/sans_consultation_gynecologue_24mois_france_{last_year_gynecologue}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux sans consultation gynécologique 24 mois': df_sans_gynecologue_france['sans_consultation_gynecologue_24mois'].values[0] if df_sans_gynecologue_france is not None else None})
 
-  # Fusionner les données
-  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+  # Vérifier que toutes les valeurs sont correctement chargées
+  if data_commune.isnull().values.any() or data_epci.isnull().values.any() or data_departement.isnull().values.any() or data_region.isnull().values.any() or data_france.isnull().values.any():
+      st.error("Certaines données n'ont pas pu être chargées. Veuillez vérifier les fichiers source.")
+  else:
+      # Fusionner les données
+      all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
 
-  # Réinitialiser l'index et renommer les colonnes
-  all_data.reset_index(drop=True, inplace=True)
+      # Réinitialiser l'index et renommer les colonnes
+      all_data.reset_index(drop=True, inplace=True)
 
-  # Créer le graphique interactif en barres horizontales
-  fig = px.bar(all_data, x='Taux sans consultation gynécologique 24 mois', y='Territoires', orientation='h',
-               title=f"Comparaison du taux sans consultation gynécologique sur 24 mois en {last_year_gynecologue}")
+      # Convertir la colonne 'Taux sans consultation gynécologique 24 mois' en numérique si nécessaire
+      all_data['Taux sans consultation gynécologique 24 mois'] = all_data['Taux sans consultation gynécologique 24 mois'].astype(str).str.replace(',', '.').astype(float)
 
-  # Créer le menu d'options pour les onglets
-  selected = option_menu(
-      menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
-      menu_icon="cast",  # optional
-      default_index=0,  # optional
-      orientation="horizontal",
-      key="key6"
-  )
+      # Créer le graphique interactif en barres horizontales
+      fig = px.bar(all_data, x='Taux sans consultation gynécologique 24 mois', y='Territoires', orientation='h',
+                   title=f"Comparaison du taux sans consultation gynécologique sur 24 mois en {last_year_gynecologue}")
 
-  # Afficher le contenu basé sur l'onglet sélectionné
-  if selected == "Tableau":
-      st.write(f"Données des bénéficiaires éligibles de 20 à 64 ans sans consultation gynécologique sur les 24 derniers mois en {last_year_gynecologue}")
-      st.dataframe(all_data)
-  elif selected == "Graphique":
-      st.plotly_chart(fig)
+      # Créer le menu d'options pour les onglets
+      selected = option_menu(
+          menu_title=None,  # required
+          options=["Tableau", "Graphique"],  # required
+          icons=["table", "bar-chart"],  # optional
+          menu_icon="cast",  # optional
+          default_index=0,  # optional
+          orientation="horizontal",
+          key="key6"
+      )
+
+      # Afficher le contenu basé sur l'onglet sélectionné
+      if selected == "Tableau":
+          st.write(f"Données des bénéficiaires éligibles de 20 à 64 ans sans consultation gynécologique sur les 24 derniers mois en {last_year_gynecologue}")
+          st.dataframe(all_data)
+      elif selected == "Graphique":
+          st.plotly_chart(fig)
 
   ##############################
   st.subheader("Les femmes de 50 à 74 ans n'ayant pas eu d'acte de mammographie sur les 24 derniers mois")
@@ -1029,55 +1066,67 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(fichier, code, column_code='codgeo'):
       df = pd.read_csv(fichier, dtype={column_code: str}, sep=';')
       df = df.loc[df[column_code] == code]
-      return df['sans_mammographie_24mois'].values[0]
+      if df.empty:
+          return None
+      return df
 
   # Commune
-  tx_sans_mammographie_commune = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_commune_{last_year_mammographie}.csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_commune]})
+  df_sans_mammographie_commune = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_commune_{last_year_mammographie}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux des femmes sans acte de mammographie 24 mois': df_sans_mammographie_commune['sans_mammographie_24mois'].values[0] if df_sans_mammographie_commune is not None else None})
 
   # EPCI
-  tx_sans_mammographie_epci = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_epci_{last_year_mammographie}.csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_epci]})
+  df_sans_mammographie_epci = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_epci_{last_year_mammographie}.csv", code_epci)
+  if df_sans_mammographie_epci is None:
+      df_sans_mammographie_epci = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_epci_{last_year_mammographie}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux des femmes sans acte de mammographie 24 mois': df_sans_mammographie_epci['sans_mammographie_24mois'].values[0] if df_sans_mammographie_epci is not None else None})
 
   # Département
-  tx_sans_mammographie_departement = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_departement_{last_year_mammographie}.csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_departement]})
+  df_sans_mammographie_departement = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_departement_{last_year_mammographie}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux des femmes sans acte de mammographie 24 mois': df_sans_mammographie_departement['sans_mammographie_24mois'].values[0] if df_sans_mammographie_departement is not None else None})
 
   # Région
-  tx_sans_mammographie_region = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_region_{last_year_mammographie}.csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_region]})
+  df_sans_mammographie_region = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_region_{last_year_mammographie}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux des femmes sans acte de mammographie 24 mois': df_sans_mammographie_region['sans_mammographie_24mois'].values[0] if df_sans_mammographie_region is not None else None})
 
   # France
-  tx_sans_mammographie_france = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_france_{last_year_mammographie}.csv", '1111')
-  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux des femmes sans acte de mammographie 24 mois': [tx_sans_mammographie_france]})
+  df_sans_mammographie_france = load_data(f"./sante/prevention/mammographie/sans_mammographie_24mois_france_{last_year_mammographie}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux des femmes sans acte de mammographie 24 mois': df_sans_mammographie_france['sans_mammographie_24mois'].values[0] if df_sans_mammographie_france is not None else None})
 
-  # Fusionner les données
-  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+  # Vérifier que toutes les valeurs sont correctement chargées
+  if data_commune.isnull().values.any() or data_epci.isnull().values.any() or data_departement.isnull().values.any() or data_region.isnull().values.any() or data_france.isnull().values.any():
+      st.error("Certaines données n'ont pas pu être chargées. Veuillez vérifier les fichiers source.")
+  else:
+      # Fusionner les données
+      all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
 
-  # Réinitialiser l'index et renommer les colonnes
-  all_data.reset_index(drop=True, inplace=True)
+      # Réinitialiser l'index et renommer les colonnes
+      all_data.reset_index(drop=True, inplace=True)
 
-  # Créer le graphique interactif en barres horizontales
-  fig = px.bar(all_data, x='Taux des femmes sans acte de mammographie 24 mois', y='Territoires', orientation='h',
-               title=f"Comparaison du taux des femmes sans acte de mammographie sur 24 mois en {last_year_mammographie}")
+      # Convertir la colonne 'Taux des femmes sans acte de mammographie 24 mois' en numérique si nécessaire
+      all_data['Taux des femmes sans acte de mammographie 24 mois'] = all_data['Taux des femmes sans acte de mammographie 24 mois'].astype(str).str.replace(',', '.').astype(float)
 
-  # Créer le menu d'options pour les onglets
-  selected = option_menu(
-      menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
-      menu_icon="cast",  # optional
-      default_index=0,  # optional
-      orientation="horizontal",
-      key="key7"
-  )
+      # Créer le graphique interactif en barres horizontales
+      fig = px.bar(all_data, x='Taux des femmes sans acte de mammographie 24 mois', y='Territoires', orientation='h',
+                   title=f"Comparaison du taux des femmes sans acte de mammographie sur 24 mois en {last_year_mammographie}")
 
-  # Afficher le contenu basé sur l'onglet sélectionné
-  if selected == "Tableau":
-      st.write(f"Données des bénéficiaires femmes de 50 à 74 ans n'ayant pas eu un acte de mammographie sur les 24 derniers mois en {last_year_mammographie}")
-      st.dataframe(all_data)
-  elif selected == "Graphique":
-      st.plotly_chart(fig)
+      # Créer le menu d'options pour les onglets
+      selected = option_menu(
+          menu_title=None,  # required
+          options=["Tableau", "Graphique"],  # required
+          icons=["table", "bar-chart"],  # optional
+          menu_icon="cast",  # optional
+          default_index=0,  # optional
+          orientation="horizontal",
+          key="key7"
+      )
+
+      # Afficher le contenu basé sur l'onglet sélectionné
+      if selected == "Tableau":
+          st.write(f"Données des bénéficiaires femmes de 50 à 74 ans n'ayant pas eu un acte de mammographie sur les 24 derniers mois en {last_year_mammographie}")
+          st.dataframe(all_data)
+      elif selected == "Graphique":
+          st.plotly_chart(fig)
 
   ###############################################################
   st.header("5.La prévention par le sport")
@@ -1089,157 +1138,186 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   def load_data(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
       df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
-      return df['p_licsport'].values[0]
+      if df.empty:
+          return None
+      return df
 
   # Commune
-  tx_licencies_sportifs_commune = load_data("./sante/licencies_sportifs/global/licsport_commune_" + last_year_licsport + ".csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_commune]})
+  df_licsport_commune = load_data(f"./sante/licencies_sportifs/global/licsport_commune_{last_year_licsport}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs 2019': df_licsport_commune['p_licsport'].values[0] if df_licsport_commune is not None else None})
 
   # EPCI
-  tx_licencies_sportifs_epci = load_data("./sante/licencies_sportifs/global/licsport_epci_" + last_year_licsport + ".csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_epci]})
+  df_licsport_epci = load_data(f"./sante/licencies_sportifs/global/licsport_epci_{last_year_licsport}.csv", code_epci)
+  if df_licsport_epci is None:
+      df_licsport_epci = load_data(f"./sante/licencies_sportifs/global/licsport_epci_{last_year_licsport}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs 2019': df_licsport_epci['p_licsport'].values[0] if df_licsport_epci is not None else None})
 
   # Département
-  tx_licencies_sportifs_departement = load_data("./sante/licencies_sportifs/global/licsport_departement_" + last_year_licsport + ".csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_departement]})
+  df_licsport_departement = load_data(f"./sante/licencies_sportifs/global/licsport_departement_{last_year_licsport}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs 2019': df_licsport_departement['p_licsport'].values[0] if df_licsport_departement is not None else None})
 
   # Région
-  tx_licencies_sportifs_region = load_data("./sante/licencies_sportifs/global/licsport_région_" + last_year_licsport + ".csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_region]})
+  df_licsport_region = load_data(f"./sante/licencies_sportifs/global/licsport_région_{last_year_licsport}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs 2019': df_licsport_region['p_licsport'].values[0] if df_licsport_region is not None else None})
 
   # France
-  tx_licencies_sportifs_france = load_data("./sante/licencies_sportifs/global/licsport_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
-  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs 2019': [tx_licencies_sportifs_france]})
+  df_licsport_france = load_data(f"./sante/licencies_sportifs/global/licsport_france_{last_year_licsport}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs 2019': df_licsport_france['p_licsport'].values[0] if df_licsport_france is not None else None})
 
-  # Fusionner les données
-  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+  # Vérifier que toutes les valeurs sont correctement chargées
+  if data_commune.isnull().values.any() or data_epci.isnull().values.any() or data_departement.isnull().values.any() or data_region.isnull().values.any() or data_france.isnull().values.any():
+      st.error("Certaines données n'ont pas pu être chargées. Veuillez vérifier les fichiers source.")
+  else:
+      # Fusionner les données
+      all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
 
-  # Réinitialiser l'index et renommer les colonnes
-  all_data.reset_index(drop=True, inplace=True)
+      # Réinitialiser l'index et renommer les colonnes
+      all_data.reset_index(drop=True, inplace=True)
 
-  # Convertir la colonne 'taux de licenciés sportifs 2019' en numérique
-  all_data['Taux de licenciés sportifs 2019'] = all_data['Taux de licenciés sportifs 2019'].str.replace(',', '.').astype(float)
+      # Convertir la colonne 'Taux de licenciés sportifs 2019' en numérique si nécessaire
+      all_data['Taux de licenciés sportifs 2019'] = all_data['Taux de licenciés sportifs 2019'].astype(str).str.replace(',', '.').astype(float)
 
-  # Créer le graphique interactif en barres horizontales
-  fig = px.bar(all_data, x='Taux de licenciés sportifs 2019', y='Territoires', orientation='h',
-               title='Comparaison du taux de licenciés sportifs en 2019')
+      # Créer le graphique interactif en barres horizontales
+      fig = px.bar(all_data, x='Taux de licenciés sportifs 2019', y='Territoires', orientation='h',
+                   title='Comparaison du taux de licenciés sportifs en 2019')
 
-  # Créer le menu d'options pour les onglets
-  selected = option_menu(
-      menu_title=None,  # required
-      options=["Tableau", "Graphique"],  # required
-      icons=["table", "bar-chart"],  # optional
-      menu_icon="cast",  # optional
-      default_index=0,  # optional
-      orientation="horizontal",
-      key="key8"
-  )
+      # Créer le menu d'options pour les onglets
+      selected = option_menu(
+          menu_title=None,  # required
+          options=["Tableau", "Graphique"],  # required
+          icons=["table", "bar-chart"],  # optional
+          menu_icon="cast",  # optional
+          default_index=0,  # optional
+          orientation="horizontal",
+          key="key8"
+      )
 
-  # Afficher le contenu basé sur l'onglet sélectionné
-  if selected == "Tableau":
-      st.write("Données des licenciés sportifs en 2019")
-      st.dataframe(all_data)
-  elif selected == "Graphique":
-      st.plotly_chart(fig)
+      # Afficher le contenu basé sur l'onglet sélectionné
+      if selected == "Tableau":
+          st.write("Données des licenciés sportifs en 2019")
+          st.dataframe(all_data)
+      elif selected == "Graphique":
+          st.plotly_chart(fig)
 
   ###################################################
   st.subheader("Les licenciés sportifs des 0-14 ans")
   st.caption("Source : xxx. Parue le XXXX - Millésime 2019")
 
   last_year_licsport = "2019"
-
   # Charger et filtrer les données pour chaque niveau géographique
   def load_data(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
       df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
-      return df['p_licsport014'].values[0]
+      if df.empty:
+          return None
+      return df
 
   # Commune
-  tx_licencies_sportifs_0014_commune = load_data("./sante/licencies_sportifs/00-14/licsport_0014_communes_" + last_year_licsport + ".csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_commune]})
+  df_licsport_commune = load_data(f"./sante/licencies_sportifs/00-14/licsport_0014_communes_{last_year_licsport}.csv", code_commune)
+  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 0 à 14 ans 2019': df_licsport_commune['p_licsport014'].values[0] if df_licsport_commune is not None else None})
 
   # EPCI
-  tx_licencies_sportifs_0014_epci = load_data("./sante/licencies_sportifs/00-14/licsport_0014_epci_" + last_year_licsport + ".csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_epci]})
+  df_licsport_epci = load_data(f"./sante/licencies_sportifs/00-14/licsport_0014_epci_{last_year_licsport}.csv", code_epci)
+  if df_licsport_epci is None:
+      df_licsport_epci = load_data(f"./sante/licencies_sportifs/00-14/licsport_0014_epci_{last_year_licsport}.csv", code_epci_bis)
+      nom_epci = nom_epci_bis
+  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 0 à 14 ans 2019': df_licsport_epci['p_licsport014'].values[0] if df_licsport_epci is not None else None})
 
   # Département
-  tx_licencies_sportifs_0014_departement = load_data("./sante/licencies_sportifs/00-14/licsport_0014_departement_" + last_year_licsport + ".csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_departement]})
+  df_licsport_departement = load_data(f"./sante/licencies_sportifs/00-14/licsport_0014_departement_{last_year_licsport}.csv", code_departement)
+  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 0 à 14 ans 2019': df_licsport_departement['p_licsport014'].values[0] if df_licsport_departement is not None else None})
 
   # Région
-  tx_licencies_sportifs_0014_region = load_data("./sante/licencies_sportifs/00-14/licsport_0014_region_" + last_year_licsport + ".csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_region]})
+  df_licsport_region = load_data(f"./sante/licencies_sportifs/00-14/licsport_0014_region_{last_year_licsport}.csv", code_region)
+  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 0 à 14 ans 2019': df_licsport_region['p_licsport014'].values[0] if df_licsport_region is not None else None})
 
   # France
-  tx_licencies_sportifs_0014_france = load_data("./sante/licencies_sportifs/00-14/licsport_0014_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
-  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport : [tx_licencies_sportifs_0014_france]})
+  df_licsport_france = load_data(f"./sante/licencies_sportifs/00-14/licsport_0014_france_{last_year_licsport}.csv", '1111')
+  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 0 à 14 ans 2019': df_licsport_france['p_licsport014'].values[0] if df_licsport_france is not None else None})
 
-  # Fusionner les données
-  all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+  # Vérifier que toutes les valeurs sont correctement chargées
+  if data_commune.isnull().values.any() or data_epci.isnull().values.any() or data_departement.isnull().values.any() or data_region.isnull().values.any() or data_france.isnull().values.any():
+      st.error("Certaines données n'ont pas pu être chargées. Veuillez vérifier les fichiers source.")
+  else:
+    # Fusionner les données
+    all_data = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
 
-  # Réinitialiser l'index et renommer les colonnes
-  all_data.reset_index(drop=True, inplace=True)
+    # Réinitialiser l'index et renommer les colonnes
+    all_data.reset_index(drop=True, inplace=True)
 
-  # Convertir la colonne des taux en numérique
-  all_data['Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport] = all_data['Taux de licenciés sportifs de 0 à 14 ans ' + last_year_licsport].str.replace(',', '.').astype(float)
+    # Convertir la colonne des taux en numérique
+    all_data['Taux de licenciés sportifs de 0 à 14 ans 2019'] = all_data['Taux de licenciés sportifs de 0 à 14 ans 2019'].astype(str).str.replace(',', '.').astype(float)
 
-  # Créer le graphique interactif en barres horizontales
-  fig = px.bar(all_data, x='Taux de licenciés sportifs de 0 à 14 ans ' +  last_year_licsport, y='Territoires', orientation='h',
-               title='Comparaison du taux de licenciés sportifs de 0 à 14 ans en ' + last_year_licsport)
+    # Créer le graphique interactif en barres horizontales
+    fig = px.bar(all_data, x='Taux de licenciés sportifs de 0 à 14 ans 2019', y='Territoires', orientation='h',
+                 title='Comparaison du taux de licenciés sportifs de 0 à 14 ans en 2019')
 
+    # Charger et filtrer les données pour chaque niveau géographique pour les filles
+    def load_data_filles(file_path, code, column_code='codgeo'):
+        df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
+        df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
+        if df.empty:
+            return None
+        return df
 
-  #Dont filles
-  # Charger et filtrer les données pour chaque niveau géographique
-  def load_data(file_path, code, column_code='codgeo'):
-      df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
-      df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
-      return df['p_licsport014_f'].values[0]
+    # Commune
+    df_licsport_filles_commune = load_data_filles(f"./sante/licencies_sportifs/00-14/filles/licsport_0014_f_communes_{last_year_licsport}.csv", code_commune)
+    data_f_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 0 à 14 ans filles 2019': df_licsport_filles_commune['p_licsport014_f'].values[0] if df_licsport_filles_commune is not None else None})
 
-  # Commune
-  tx_licencies_sportifs_014_f_commune = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_communes_" + last_year_licsport + ".csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_commune]})
+    # EPCI
+    df_licsport_filles_epci = load_data_filles(f"./sante/licencies_sportifs/00-14/filles/licsport_0014_f_epci_{last_year_licsport}.csv", code_epci)
+    if df_licsport_filles_epci is None:
+        df_licsport_filles_epci = load_data_filles(f"./sante/licencies_sportifs/00-14/filles/licsport_0014_f_epci_{last_year_licsport}.csv", code_epci_bis)
+        nom_epci = nom_epci_bis
+    data_f_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 0 à 14 ans filles 2019': df_licsport_filles_epci['p_licsport014_f'].values[0] if df_licsport_filles_epci is not None else None})
 
-  # EPCI
-  tx_licencies_sportifs_014_f_epci = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_epci_" + last_year_licsport + ".csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_epci]})
+    # Département
+    df_licsport_filles_departement = load_data_filles(f"./sante/licencies_sportifs/00-14/filles/licsport_0014_f_departement_{last_year_licsport}.csv", code_departement)
+    data_f_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 0 à 14 ans filles 2019': df_licsport_filles_departement['p_licsport014_f'].values[0] if df_licsport_filles_departement is not None else None})
 
-  # Département
-  tx_licencies_sportifs_014_f_departement = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_departement_" + last_year_licsport + ".csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_departement]})
+    # Région
+    df_licsport_filles_region = load_data_filles(f"./sante/licencies_sportifs/00-14/filles/licsport_0014_f_region_{last_year_licsport}.csv", code_region)
+    data_f_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 0 à 14 ans filles 2019': df_licsport_filles_region['p_licsport014_f'].values[0] if df_licsport_filles_region is not None else None})
 
-  # Région
-  tx_licencies_sportifs_014_f_region = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_region_" + last_year_licsport + ".csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_region]})
+    # France
+    df_licsport_filles_france = load_data_filles(f"./sante/licencies_sportifs/00-14/filles/licsport_0014_f_france_{last_year_licsport}.csv", '1111')
+    data_f_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 0 à 14 ans filles 2019': df_licsport_filles_france['p_licsport014_f'].values[0] if df_licsport_filles_france is not None else None})
 
-  # France
-  tx_licencies_sportifs_014_f_france = load_data("./sante/licencies_sportifs/00-14/filles/licsport_0014_f_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
-  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 00 à 14 ans filles ' + last_year_licsport: [tx_licencies_sportifs_014_f_france]})
+    # Fusionner les données pour les filles
+    all_data_f = pd.concat([data_f_commune, data_f_epci, data_f_departement, data_f_region, data_f_france])
 
-  # Fusionner les données
-  all_data_f = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+    # Réinitialiser l'index et renommer les colonnes
+    all_data_f.reset_index(drop=True, inplace=True)
 
-  # Réinitialiser l'index et renommer les colonnes
-  all_data_f.reset_index(drop=True, inplace=True)
+    # Convertir la colonne des taux en numérique
+    all_data_f['Taux de licenciés sportifs de 0 à 14 ans filles 2019'] = all_data_f['Taux de licenciés sportifs de 0 à 14 ans filles 2019'].astype(str).str.replace(',', '.').astype(float)
 
-  # Créer le menu d'options pour les onglets
-  selected = option_menu(
-      menu_title=None,  # required
-      options=["Tableau", "Graphique", "Dont filles"],  # required
-      icons=["table", "bar-chart", "gender-female"],  # optional
-      menu_icon="cast",  # optional
-      default_index=0,  # optional
-      orientation="horizontal",
-      key="key9"
-  )
+    # Créer le graphique interactif en barres horizontales pour les filles
+    fig_filles = px.bar(all_data_f, x='Taux de licenciés sportifs de 0 à 14 ans filles 2019', y='Territoires', orientation='h',
+                        title='Comparaison du taux de licenciés sportifs de 0 à 14 ans filles en 2019')
 
-  # Afficher le contenu basé sur l'onglet sélectionné
-  if selected == "Tableau":
-      st.write("Données des licenciés sportifs de 0 à 14 ans en " +  last_year_licsport)
-      st.dataframe(all_data)
-  elif selected == "Graphique":
-      st.plotly_chart(fig)
-  elif selected == "Dont filles":
-      st.dataframe(all_data_f)
+    # Créer le menu d'options pour les onglets
+    selected = option_menu(
+        menu_title=None,  # required
+        options=["Tableau", "Graphique", "Dont filles"],  # required
+        icons=["table", "bar-chart", "gender-female"],  # optional
+        menu_icon="cast",  # optional
+        default_index=0,  # optional
+        orientation="horizontal",
+        key="key9"
+    )
+
+    # Afficher le contenu basé sur l'onglet sélectionné
+    if selected == "Tableau":
+        st.write("Données des licenciés sportifs de 0 à 14 ans en " + last_year_licsport)
+        st.dataframe(all_data)
+    elif selected == "Graphique":
+        st.plotly_chart(fig)
+    elif selected == "Dont filles":
+        st.write("Données des licenciés sportifs de 0 à 14 ans filles en " + last_year_licsport)
+        st.dataframe(all_data_f)
+        st.plotly_chart(fig_filles)
 
   ##############################################
   st.subheader("Les licenciés sportifs des 15-29 ans")
@@ -1288,37 +1366,43 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   # Dont femmes
   # Charger et filtrer les données pour chaque niveau géographique
-  def load_data(file_path, code, column_code='codgeo'):
+  def load_data_femmes(file_path, code, column_code='codgeo'):
       df = pd.read_csv(file_path, dtype={column_code: str, "an": str}, sep=';')
       df = df.loc[(df[column_code] == code) & (df['an'] == last_year_licsport)]
       return df['p_licsport1529_f'].values[0]
 
   # Commune
-  tx_licencies_sportifs_1529_commune = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_communes_" + last_year_licsport + ".csv", code_commune)
-  data_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_commune]})
+  tx_licencies_sportifs_1529_f_commune = load_data_femmes("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_communes_" + last_year_licsport + ".csv", code_commune)
+  data_f_commune = pd.DataFrame({'Territoires': [nom_commune], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_f_commune]})
 
   # EPCI
-  tx_licencies_sportifs_1529_epci = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_epci_" + last_year_licsport + ".csv", code_epci)
-  data_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_epci]})
+  tx_licencies_sportifs_1529_f_epci = load_data_femmes("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_epci_" + last_year_licsport + ".csv", code_epci)
+  data_f_epci = pd.DataFrame({'Territoires': [nom_epci], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_f_epci]})
 
   # Département
-  tx_licencies_sportifs_1529_departement = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_departement_" + last_year_licsport + ".csv", code_departement)
-  data_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_departement]})
+  tx_licencies_sportifs_1529_f_departement = load_data_femmes("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_departement_" + last_year_licsport + ".csv", code_departement)
+  data_f_departement = pd.DataFrame({'Territoires': [nom_departement], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_f_departement]})
 
   # Région
-  tx_licencies_sportifs_1529_region = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_region_" + last_year_licsport + ".csv", code_region)
-  data_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_region]})
+  tx_licencies_sportifs_1529_f_region = load_data_femmes("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_region_" + last_year_licsport + ".csv", code_region)
+  data_f_region = pd.DataFrame({'Territoires': [nom_region], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_f_region]})
 
   # France
-  tx_licencies_sportifs_1529_france = load_data("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
-  data_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_france]})
+  tx_licencies_sportifs_1529_f_france = load_data_femmes("./sante/licencies_sportifs/15-29/femmes/licsport_1529_f_france_" + last_year_licsport + ".csv", '1111', column_code='codgeo')
+  data_f_france = pd.DataFrame({'Territoires': ['France'], 'Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport: [tx_licencies_sportifs_1529_f_france]})
 
   # Fusionner les données
-  all_data_f = pd.concat([data_commune, data_epci, data_departement, data_region, data_france])
+  all_data_f = pd.concat([data_f_commune, data_f_epci, data_f_departement, data_f_region, data_f_france])
 
   # Réinitialiser l'index et renommer les colonnes
   all_data_f.reset_index(drop=True, inplace=True)
 
+  # Convertir la colonne des taux en numérique
+  all_data_f['Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport] = all_data_f['Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport].str.replace(',', '.').astype(float)
+
+  # Créer le graphique interactif en barres horizontales pour les femmes
+  fig_femmes = px.bar(all_data_f, x='Taux de licenciés sportifs de 15 à 29 ans femmes ' + last_year_licsport, y='Territoires', orientation='h',
+                      title='Comparaison du taux de licenciés sportifs de 15 à 29 ans femmes en ' + last_year_licsport)
 
   # Créer le menu d'options pour les onglets
   selected = option_menu(
