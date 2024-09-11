@@ -40,8 +40,9 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   ####################
 
   st.header('2.Les moins de 3 ans')
-  st.caption("Paru le 27/06/2023 - Millésime 2020")
+  st.caption("Paru le 27/06/2024 - Millésime 2021")
   st.caption("Calcul des territoires issu de l'échelle communale")
+  last_year_00_03 = "2021"
   #Commune
   def part_0003(code_commune, last_year):
     df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
@@ -50,10 +51,10 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
     pop_0003_commune =  (df_commune['SEXE1_AGEPYR1000'] + df_commune['SEXE2_AGEPYR1000']).values[0]
     part_pop0003_commune = round(((pop_0003_commune / total_pop_commune) * 100), 2)
     return part_pop0003_commune, pop_0003_commune
-  part_pop0003_commune = part_0003(code_commune, last_year)
-  st.write("En " + last_year + ", la commune de " + nom_commune + " compte " + str(part_pop0003_commune[1]) + " enfants de moins de 3 ans.")
+  part_pop0003_commune = part_0003(code_commune, last_year_00_03)
+  st.write("En " + last_year_00_03 + ", la commune de " + nom_commune + " compte " + str(part_pop0003_commune[1]) + " enfants de moins de 3 ans.")
   #EPCI
-  df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+  df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year_00_03 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
   df_epci = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
   df_epci_merge = pd.merge(df, df_epci[['CODGEO','EPCI', 'LIBEPCI']], left_on='CODGEO', right_on='CODGEO')
   df_epci = df_epci_merge.loc[df_epci_merge["EPCI"] == str(code_epci)]
@@ -75,17 +76,17 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   total_pop_region = (df_region.iloc[:,2:22].sum(axis=1)).sum()
   part_pop0003_region = round(((pop_0003_region / total_pop_region) * 100), 2)
   #France
-  df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+  df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year_00_03 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
   total_pop_france = df.sum(axis = 1).values[0]
   pop_0003_france =  (df['SEXE1_AGEPYR1000'] + df['SEXE2_AGEPYR1000']).values[0]
   part_pop0003_france = round(((pop_0003_france / total_pop_france) * 100), 2)
   #Comparaison
-  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part des 0-3 ans - " + last_year + " (en %)": [part_pop0003_commune[0], part_pop0003_epci, part_pop0003_dpt, part_pop0003_region, part_pop0003_france]}
+  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part des 0-3 ans - " + last_year_00_03 + " (en %)": [part_pop0003_commune[0], part_pop0003_epci, part_pop0003_dpt, part_pop0003_region, part_pop0003_france]}
   df = pd.DataFrame(data=d)
   st.write(df)
 
   #Evolution de la commune
-  part_0003_commune_2020 = part_0003(code_commune, last_year)
+  part_0003_commune_2020 = part_0003(code_commune, last_year_00_03)
   part_0003_commune_2015 = part_0003(code_commune, '2015')
   evolution_2015_2020 = ((part_0003_commune_2020[1] - part_0003_commune_2015[1])/part_0003_commune_2015[1])*100
   if evolution_2015_2020 > 0:
