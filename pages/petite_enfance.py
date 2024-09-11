@@ -128,8 +128,9 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   ############
   st.header('2.Les enfants de 3 à 5 ans')
-  st.caption("Paru le 27/06/2023 - Millésime 2020")
+  st.caption("Paru le 27/06/2024 - Millésime 2021")
   st.caption("Calcul des territoires issu de l'échelle communale")
+  last_year_0305 = "2021"
   #Commune
   def part_0305(code_commune, last_year):
     df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
@@ -138,10 +139,10 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
     pop_0305_commune =  (df_commune['SEXE1_AGEPYR1003'] + df_commune['SEXE2_AGEPYR1003']).values[0]
     part_pop0305_commune = round(((pop_0305_commune / total_pop_commune) * 100), 2)
     return part_pop0305_commune, pop_0305_commune
-  part_pop0305_commune = part_0305(code_commune, last_year)
-  st.write("En " + last_year + ", la commune de " + nom_commune + " compte " + str(part_pop0305_commune[1]) + " enfants de 3 à 5 ans.")
+  part_pop0305_commune = part_0305(code_commune, last_year_0305)
+  st.write("En " + last_year_0305 + ", la commune de " + nom_commune + " compte " + str(part_pop0305_commune[1]) + " enfants de 3 à 5 ans.")
   #EPCI
-  df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+  df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year_0305 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
   df_epci = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
   df_epci_merge = pd.merge(df, df_epci[['CODGEO','EPCI', 'LIBEPCI']], left_on='CODGEO', right_on='CODGEO')
   df_epci = df_epci_merge.loc[df_epci_merge["EPCI"] == str(code_epci)]
@@ -163,17 +164,17 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   total_pop_region = (df_region.iloc[:,2:22].sum(axis=1)).sum()
   part_pop0305_region = round(((pop_0305_region / total_pop_region) * 100), 2)
   #France
-  df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+  df = pd.read_csv("./petite_enfance/commune/BTX_TD_POP1A_" + last_year_0305 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
   total_pop_france = df.sum(axis = 1).values[0]
   pop_0305_france =  (df['SEXE1_AGEPYR1003'] + df['SEXE2_AGEPYR1003']).values[0]
   part_pop0305_france = round(((pop_0305_france / total_pop_france) * 100), 2)
   #Comparaison
-  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part des 3-5 ans - " + last_year + " (en %)": [part_pop0305_commune[0], part_pop0305_epci, part_pop0305_dpt, part_pop0305_region, part_pop0305_france]}
+  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part des 3-5 ans - " + last_year_0305 + " (en %)": [part_pop0305_commune[0], part_pop0305_epci, part_pop0305_dpt, part_pop0305_region, part_pop0305_france]}
   df = pd.DataFrame(data=d)
   st.write(df)
 
   #Evolution de la commune
-  part_0305_commune_2020 = part_0305(code_commune, last_year)
+  part_0305_commune_2020 = part_0305(code_commune, last_year_0305)
   part_0305_commune_2015 = part_0305(code_commune, '2015')
   evolution_2015_2020 = ((part_0305_commune_2020[1] - part_0305_commune_2015[1])/part_0305_commune_2015[1])*100
   if evolution_2015_2020 > 0:
@@ -183,10 +184,11 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
 
   #############
   st.header('4.La scolarisation des enfants de 2 ans')
-  st.caption("Paru le 27/06/2023 - Millésime 2020")
+  st.caption("Paru le 27/06/2024 - Millésime 2021")
   st.caption("Calcul des territoires issu de l'échelle communale")
+  last_year_scol2 = "2021"
   #Commune 2020
-  df = pd.read_csv("./petite_enfance/scol_2ans/BTT_TD_FOR1_" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+  df = pd.read_csv("./petite_enfance/scol_2ans/BTT_TD_FOR1_" + last_year_scol2 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
   df_com = df.loc[df['CODGEO'] == code_commune]
   df_com = df_com.loc[df['AGEFORD'] == 2]
   df_scol02 = df_com.groupby(['ILETUR'])['NB'].sum()
@@ -194,7 +196,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   pop_02 = df_com['NB'].sum()
   scol_02 = pop_02 - non_scol_02
   tx_scol_02 = (scol_02 / pop_02) * 100
-  st.write("En " + last_year + ", " + str(round(scol_02)) + " enfants de moins de 2 ans sont scolarisés. Ce qui représente " + str(round(tx_scol_02, 2)) + "% des enfants de moins de 2 ans de la commune.")
+  st.write("En " + last_year_scol2 + ", " + str(round(scol_02)) + " enfants de moins de 2 ans sont scolarisés. Ce qui représente " + str(round(tx_scol_02, 2)) + "% des enfants de moins de 2 ans de la commune.")
 
   #EPCI
   df_epci = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
@@ -230,7 +232,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   tx_scol_02_region = (scol_02_region / pop_02_region) * 100
 
   #France
-  df_fr = pd.read_csv("./petite_enfance/scol_2ans/BTT_TD_FOR1_" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+  df_fr = pd.read_csv("./petite_enfance/scol_2ans/BTT_TD_FOR1_" + last_year_scol2 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
   df_fr = df_fr.loc[df['AGEFORD'] == 2]
   df_scol02_fr = df_fr.groupby(['ILETUR'])['NB'].sum()
   non_scol_02_fr = df_scol02_fr['Z']
@@ -239,58 +241,58 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
   tx_scol_02_fr = (scol_02_fr / pop_02_fr) * 100
 
   #Comparaison
-  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Taux de scolarisation des enfants de 2 ans - " + last_year + " (en %)": [tx_scol_02, tx_scol_02_epci, tx_scol_02_dpt, tx_scol_02_region, tx_scol_02_fr]}
+  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Taux de scolarisation des enfants de 2 ans - " + last_year_scol2 + " (en %)": [tx_scol_02, tx_scol_02_epci, tx_scol_02_dpt, tx_scol_02_region, tx_scol_02_fr]}
   df_scol_02 = pd.DataFrame(data=d)
   st.write(df_scol_02)
 
   #############
 
   st.header('4.La scolarisation des moins de 6 ans')
-  st.caption("Paru le  27/06/2023 - Millésime 2020")
+  st.caption("Paru le  27/06/2024 - Millésime 2021")
   st.caption("Calcul des territoires issu de l'échelle communale")
-
+  last_year_scol6 = "2021"
   #Commune
   def part_scol_0205(code_commune, last_year):
-    df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+    df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year_scol6 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
     df_commune = df.loc[df['CODGEO'] == code_commune]
-    total_pop0205_commune = df_commune["P" + last_year[-2:] + "_POP0205"].values[0]
-    pop_scol0205_commune = df_commune["P" + last_year[-2:] + "_SCOL0205"].values[0]
+    total_pop0205_commune = df_commune["P" + last_year_scol6[-2:] + "_POP0205"].values[0]
+    pop_scol0205_commune = df_commune["P" + last_year_scol6[-2:] + "_SCOL0205"].values[0]
     part_scol0205_commune = (pop_scol0205_commune / total_pop0205_commune) * 100
     return part_scol0205_commune, pop_scol0205_commune
-  part_pop_scol0205_commune = part_scol_0205(code_commune, last_year)
-  st.write("En " + last_year + ", la commune de " + nom_commune + " compte " + str(part_pop_scol0205_commune[1]) + " enfants de moins de 6 ans scolarisés.")
+  part_pop_scol0205_commune = part_scol_0205(code_commune, last_year_scol6)
+  st.write("En " + last_year_scol6 + ", la commune de " + nom_commune + " compte " + str(part_pop_scol0205_commune[1]) + " enfants de moins de 6 ans scolarisés.")
   #EPCI
-  df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+  df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year_scol6 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
   df_epci = pd.read_csv('./EPCI_2020.csv', dtype={"CODGEO": str, "DEP": str, "REG": str, "EPCI":str}, sep = ';')
   df_epci_merge = pd.merge(df, df_epci[['CODGEO','EPCI', 'LIBEPCI']], left_on='CODGEO', right_on='CODGEO')
   df_epci = df_epci_merge.loc[df_epci_merge["EPCI"] == str(code_epci)]
-  pop_0205_epci = df_epci["P" + last_year[-2:] + "_POP0205"].sum()
-  pop_scol0205__epci = df_epci["P" + last_year[-2:] + "_SCOL0205"].sum()
+  pop_0205_epci = df_epci["P" + last_year_scol6[-2:] + "_POP0205"].sum()
+  pop_scol0205__epci = df_epci["P" + last_year_scol6[-2:] + "_SCOL0205"].sum()
   part_pop_scol0205_epci = round(((pop_scol0205__epci / pop_0205_epci) * 100), 2)
   #Département
-  df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str, "DEP": str}, sep=";")
+  df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year_scol6 + ".csv", dtype={"CODGEO": str, "LIBGEO": str, "DEP": str}, sep=";")
   df_dpt = df.loc[df['DEP'] == code_departement]
-  pop_0205_dpt = df_dpt["P" + last_year[-2:] + "_POP0205"].sum()
-  pop_scol_0205_dpt = df_dpt["P" + last_year[-2:] + "_SCOL0205"].sum()
+  pop_0205_dpt = df_dpt["P" + last_year_scol6[-2:] + "_POP0205"].sum()
+  pop_scol_0205_dpt = df_dpt["P" + last_year_scol6[-2:] + "_SCOL0205"].sum()
   part_pop_scol0205_dpt = round(((pop_scol_0205_dpt / pop_0205_dpt) * 100), 2)
   #Région
-  df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str, "REG": str}, sep=";")
+  df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year_scol6 + ".csv", dtype={"CODGEO": str, "LIBGEO": str, "REG": str}, sep=";")
   df_region = df.loc[df['REG'] == str(code_region)]
-  pop_0205_region = df_region["P" + last_year[-2:] + "_POP0205"].sum()
-  pop_scol_0205_region = df_region["P" + last_year[-2:] + "_SCOL0205"].sum()
+  pop_0205_region = df_region["P" + last_year_scol6[-2:] + "_POP0205"].sum()
+  pop_scol_0205_region = df_region["P" + last_year_scol6[-2:] + "_SCOL0205"].sum()
   part_pop_scol0205_region = round(((pop_scol_0205_region / pop_0205_region) * 100), 2)
   #France
-  df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
-  pop_0205_france = df["P" + last_year[-2:] + "_POP0205"].sum()
-  pop_scol_0205_france = df["P" + last_year[-2:] + "_SCOL0205"].sum()
+  df = pd.read_csv("./diplome/commune/base-cc-diplomes-formation-" + last_year_scol6 + ".csv", dtype={"CODGEO": str, "LIBGEO": str}, sep=";")
+  pop_0205_france = df["P" + last_year_scol6[-2:] + "_POP0205"].sum()
+  pop_scol_0205_france = df["P" + last_year_scol6[-2:] + "_SCOL0205"].sum()
   part_pop_scol_0205_france = round(((pop_scol_0205_france / pop_0205_france) * 100), 2)
   #Comparaison
-  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part de la population scolarisée de 2-5 ans - " + last_year + " (en %)": [part_pop_scol0205_commune[0], part_pop_scol0205_epci, part_pop_scol0205_dpt, part_pop_scol0205_region, part_pop_scol_0205_france]}
+  d = {'Territoires': [nom_commune, nom_epci, nom_departement, nom_region, 'France'], "Part de la population scolarisée de 2-5 ans - " + last_year_scol6 + " (en %)": [part_pop_scol0205_commune[0], part_pop_scol0205_epci, part_pop_scol0205_dpt, part_pop_scol0205_region, part_pop_scol_0205_france]}
   df = pd.DataFrame(data=d)
   st.write(df)
 
   #Evolution de la commune
-  pop_scol0205_commune_2020 = part_scol_0205(code_commune, last_year)
+  pop_scol0205_commune_2020 = part_scol_0205(code_commune, last_year_scol6)
   pop_scol0205_commune_2015 = part_scol_0205(code_commune, '2015')
   evolution_2015_2020 = ((pop_scol0205_commune_2020[1] - pop_scol0205_commune_2015[1])/pop_scol0205_commune_2015[1])*100
   if evolution_2015_2020 > 0:
@@ -299,7 +301,7 @@ def app(code_commune, nom_commune, code_epci, nom_epci, code_departement, nom_de
     st.write("Le nombre d'enfants de moins de 6 ans scolarisés de la commune de " + nom_commune + " a baissé de " + str(round(evolution_2015_2020,2)) + "% depuis 2015.")
 
   #Iris
-  #def part_scol0205_iris(fichier, code, annee) :
+  last_year = "2020"
   st.subheader('Comparaison entre iris')
   st.caption("Paru le 19/10/2023 - Millésime 2020")
   df = pd.read_csv("./diplome/base-ic-diplomes-formation-" + last_year + ".csv", dtype={"IRIS": str, "DEP": str,"UU2010": str, "GRD_QUART": str, "COM": str,"LAB_IRIS": str}, sep=";", header=0)
